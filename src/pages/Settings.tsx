@@ -1,0 +1,256 @@
+import { motion } from 'framer-motion';
+import { useUserStore } from '../stores/userStore';
+import { Moon, Sun, Monitor, Download, Trash2, Shield, Snowflake } from 'lucide-react';
+import { GamificationLevel, ThemeMode } from '../types';
+import { useTaskStore } from '../stores/taskStore';
+
+export function Settings() {
+    const { settings, updateSettings, streakFreezeTokens, resetUser } = useUserStore();
+    const taskStore = useTaskStore();
+
+    const themeOptions: { value: ThemeMode; icon: React.ReactNode; label: string }[] = [
+        { value: 'LIGHT', icon: <Sun className="w-4 h-4" />, label: 'Light' },
+        { value: 'DARK', icon: <Moon className="w-4 h-4" />, label: 'Dark' },
+        { value: 'AUTO', icon: <Monitor className="w-4 h-4" />, label: 'Auto' },
+    ];
+
+    const gamificationOptions: { value: GamificationLevel; label: string; desc: string }[] = [
+        { value: 'CASUAL', label: 'Casual', desc: 'Light penalties, relaxed' },
+        { value: 'STANDARD', label: 'Standard', desc: 'Balanced challenge' },
+        { value: 'HARDCORE', label: 'Hardcore', desc: 'Heavy penalties, no freezes' },
+    ];
+
+    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const dayValues = [1, 2, 3, 4, 5, 6, 0];
+
+    const toggleWorkDay = (day: number) => {
+        const current = settings.workDays;
+        const newDays = current.includes(day)
+            ? current.filter((d) => d !== day)
+            : [...current, day];
+        updateSettings({ workDays: newDays });
+    };
+
+    const handleExportData = () => {
+        const data = {
+            user: useUserStore.getState(),
+            tasks: taskStore.tasks,
+            completions: taskStore.completions,
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `todolist-export-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const handleReset = () => {
+        if (window.confirm('Are you sure? This will delete all your data, tasks, and progress. This cannot be undone.')) {
+            resetUser();
+            localStorage.removeItem('todolist-task-store');
+            localStorage.removeItem('todolist-achievement-store');
+            localStorage.removeItem('todolist-mission-store');
+            window.location.reload();
+        }
+    };
+
+    return (
+        <div className="page-container">
+            <h1 className="text-2xl font-bold mb-6">Settings</h1>
+
+            {/* Theme */}
+            <Section title="Appearance">
+                <label className="text-sm font-medium mb-2 block">Theme</label>
+                <div className="grid grid-cols-3 gap-2">
+                    {themeOptions.map((opt) => (
+                        <motion.button
+                            key={opt.value}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => updateSettings({ theme: opt.value })}
+                            className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${settings.theme === opt.value
+                                    ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
+                                    : 'card-surface'
+                                }`}
+                        >
+                            {opt.icon}
+                            {opt.label}
+                        </motion.button>
+                    ))}
+                </div>
+            </Section>
+
+            {/* Daily Goal */}
+            <Section title="Daily Goal">
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm">Tasks per day for streak</span>
+                    <span className="text-lg font-bold text-primary-500">{settings.dailyGoal}</span>
+                </div>
+                <input
+                    type="range"
+                    min={1}
+                    max={10}
+                    value={settings.dailyGoal}
+                    onChange={(e) => updateSettings({ dailyGoal: parseInt(e.target.value) })}
+                    className="w-full h-2 rounded-full appearance-none bg-[var(--color-surface-hover)] accent-primary-500"
+                />
+                <div className="flex justify-between mt-1">
+                    <span className="text-[10px] text-[var(--color-text-secondary)]">1</span>
+                    <span className="text-[10px] text-[var(--color-text-secondary)]">10</span>
+                </div>
+            </Section>
+
+            {/* Gamification Level */}
+            <Section title="Gamification">
+                <div className="space-y-2">
+                    {gamificationOptions.map((opt) => (
+                        <motion.button
+                            key={opt.value}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => updateSettings({ gamificationLevel: opt.value })}
+                            className={`w-full text-left p-3 rounded-xl transition-all ${settings.gamificationLevel === opt.value
+                                    ? 'bg-primary-500/10 border-2 border-primary-500'
+                                    : 'card-surface'
+                                }`}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-bold">{opt.label}</p>
+                                    <p className="text-xs text-[var(--color-text-secondary)]">{opt.desc}</p>
+                                </div>
+                                {settings.gamificationLevel === opt.value && (
+                                    <div className="w-6 h-6 rounded-full bg-primary-500 flex items-center justify-center">
+                                        <Shield className="w-3.5 h-3.5 text-white" />
+                                    </div>
+                                )}
+                            </div>
+                        </motion.button>
+                    ))}
+                </div>
+            </Section>
+
+            {/* Streak Freeze */}
+            <Section title="Streak Freeze">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Snowflake className="w-5 h-5 text-blue-400" />
+                        <span className="text-sm">Available freeze tokens</span>
+                    </div>
+                    <span className="text-lg font-bold text-blue-400">{streakFreezeTokens}</span>
+                </div>
+                <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+                    Use a freeze token to protect your streak on off days
+                </p>
+            </Section>
+
+            {/* Work Days */}
+            <Section title="Work Days">
+                <p className="text-xs text-[var(--color-text-secondary)] mb-2">
+                    Days that count toward your streak
+                </p>
+                <div className="flex gap-2">
+                    {dayValues.map((day, i) => (
+                        <motion.button
+                            key={day}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => toggleWorkDay(day)}
+                            className={`w-10 h-10 rounded-xl text-xs font-bold transition-all ${settings.workDays.includes(day)
+                                    ? 'bg-primary-500 text-white'
+                                    : 'card-surface text-[var(--color-text-secondary)]'
+                                }`}
+                        >
+                            {dayLabels[i]}
+                        </motion.button>
+                    ))}
+                </div>
+            </Section>
+
+            {/* Toggles */}
+            <Section title="Features">
+                <Toggle
+                    label="Daily Missions"
+                    description="Generate 3 missions each day"
+                    checked={settings.dailyMissionsEnabled}
+                    onChange={(v) => updateSettings({ dailyMissionsEnabled: v })}
+                />
+                <Toggle
+                    label="Health Bar"
+                    description="Track health with critical deadlines"
+                    checked={settings.healthBarEnabled}
+                    onChange={(v) => updateSettings({ healthBarEnabled: v })}
+                />
+            </Section>
+
+            {/* Data */}
+            <Section title="Data">
+                <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleExportData}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl card-surface mb-2"
+                >
+                    <Download className="w-5 h-5 text-primary-500" />
+                    <div className="text-left">
+                        <p className="text-sm font-medium">Export Data</p>
+                        <p className="text-xs text-[var(--color-text-secondary)]">Download all your data as JSON</p>
+                    </div>
+                </motion.button>
+                <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleReset}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl card-surface border-red-500/20"
+                >
+                    <Trash2 className="w-5 h-5 text-red-500" />
+                    <div className="text-left">
+                        <p className="text-sm font-medium text-red-500">Reset All Data</p>
+                        <p className="text-xs text-[var(--color-text-secondary)]">Delete everything and start fresh</p>
+                    </div>
+                </motion.button>
+            </Section>
+        </div>
+    );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+    return (
+        <div className="mb-6">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)] mb-3">
+                {title}
+            </h2>
+            {children}
+        </div>
+    );
+}
+
+function Toggle({
+    label,
+    description,
+    checked,
+    onChange,
+}: {
+    label: string;
+    description: string;
+    checked: boolean;
+    onChange: (v: boolean) => void;
+}) {
+    return (
+        <div className="flex items-center justify-between py-3">
+            <div>
+                <p className="text-sm font-medium">{label}</p>
+                <p className="text-xs text-[var(--color-text-secondary)]">{description}</p>
+            </div>
+            <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => onChange(!checked)}
+                className={`relative w-12 h-7 rounded-full transition-colors ${checked ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+            >
+                <motion.div
+                    animate={{ x: checked ? 20 : 2 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    className="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md"
+                />
+            </motion.button>
+        </div>
+    );
+}
