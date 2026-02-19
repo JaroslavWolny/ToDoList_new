@@ -38,7 +38,15 @@ export function Onboarding() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center px-6 py-8">
+        <div
+            className="min-h-screen flex flex-col items-center justify-center px-6 py-8"
+            style={{
+                paddingTop: 'calc(2rem + env(safe-area-inset-top, 0px))',
+                paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))',
+                paddingLeft: 'calc(1.5rem + env(safe-area-inset-left, 0px))',
+                paddingRight: 'calc(1.5rem + env(safe-area-inset-right, 0px))',
+            }}
+        >
             {/* Progress bar */}
             <div className="w-full max-w-sm mb-8">
                 <div className="flex gap-2">
@@ -93,8 +101,8 @@ export function Onboarding() {
                                                 whileTap={{ scale: 0.98 }}
                                                 onClick={() => setWorkStyle(opt.value)}
                                                 className={`w-full text-left p-3.5 rounded-xl transition-all flex items-center gap-3 ${workStyle === opt.value
-                                                        ? 'bg-primary-500/10 border-2 border-primary-500'
-                                                        : 'card-surface'
+                                                    ? 'bg-primary-500/10 border-2 border-primary-500'
+                                                    : 'card-surface'
                                                     }`}
                                             >
                                                 <span className="text-2xl">{opt.emoji}</span>
@@ -160,8 +168,8 @@ export function Onboarding() {
                                             whileTap={{ scale: 0.98 }}
                                             onClick={() => setGamificationLevel(opt.value)}
                                             className={`w-full text-left p-4 rounded-xl transition-all ${gamificationLevel === opt.value
-                                                    ? 'bg-primary-500/10 border-2 border-primary-500'
-                                                    : 'card-surface'
+                                                ? 'bg-primary-500/10 border-2 border-primary-500'
+                                                : 'card-surface'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3">
@@ -223,8 +231,8 @@ export function Onboarding() {
                                             whileTap={{ scale: 0.95 }}
                                             onClick={() => setTheme(opt.value)}
                                             className={`flex flex-col items-center gap-2 py-6 rounded-2xl transition-all ${theme === opt.value
-                                                    ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-                                                    : 'card-surface'
+                                                ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
+                                                : 'card-surface'
                                                 }`}
                                         >
                                             {opt.icon}

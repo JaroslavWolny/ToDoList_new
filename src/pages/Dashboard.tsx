@@ -180,8 +180,8 @@ export function Dashboard() {
                                     }`}
                             >
                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${mission.completed
-                                        ? 'bg-green-100 dark:bg-green-900/30'
-                                        : 'bg-yellow-100 dark:bg-yellow-900/30'
+                                    ? 'bg-green-100 dark:bg-green-900/30'
+                                    : 'bg-yellow-100 dark:bg-yellow-900/30'
                                     }`}>
                                     {mission.completed ? '✅' : '⚡'}
                                 </div>
@@ -222,7 +222,8 @@ export function Dashboard() {
                     setEditingTask(null);
                     setShowTaskForm(true);
                 }}
-                className="fixed bottom-24 right-6 w-14 h-14 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-xl shadow-primary-500/40 flex items-center justify-center z-20"
+                className="fixed right-6 w-14 h-14 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-xl shadow-primary-500/40 flex items-center justify-center z-20"
+                style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom, 0px) + 0.5rem)', right: 'calc(1.5rem + env(safe-area-inset-right, 0px))' }}
             >
                 <Plus className="w-6 h-6" />
             </motion.button>

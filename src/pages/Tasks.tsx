@@ -116,8 +116,8 @@ export function Tasks() {
                                     key={s}
                                     onClick={() => setFilterStatus(s)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterStatus === s
-                                            ? 'bg-primary-500 text-white'
-                                            : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]'
+                                        ? 'bg-primary-500 text-white'
+                                        : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]'
                                         }`}
                                 >
                                     {s === 'ALL' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase()}
@@ -133,8 +133,8 @@ export function Tasks() {
                                     key={p}
                                     onClick={() => setFilterPriority(p)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterPriority === p
-                                            ? 'bg-primary-500 text-white'
-                                            : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]'
+                                        ? 'bg-primary-500 text-white'
+                                        : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]'
                                         }`}
                                 >
                                     {p === 'ALL' ? 'All' : p.charAt(0) + p.slice(1).toLowerCase()}
@@ -154,8 +154,8 @@ export function Tasks() {
                                     key={s.value}
                                     onClick={() => setSortBy(s.value)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${sortBy === s.value
-                                            ? 'bg-primary-500 text-white'
-                                            : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]'
+                                        ? 'bg-primary-500 text-white'
+                                        : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]'
                                         }`}
                                 >
                                     {s.label}
@@ -186,7 +186,8 @@ export function Tasks() {
                     setEditingTask(null);
                     setShowTaskForm(true);
                 }}
-                className="fixed bottom-24 right-6 w-14 h-14 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-xl shadow-primary-500/40 flex items-center justify-center z-20"
+                className="fixed right-6 w-14 h-14 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-xl shadow-primary-500/40 flex items-center justify-center z-20"
+                style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom, 0px) + 0.5rem)', right: 'calc(1.5rem + env(safe-area-inset-right, 0px))' }}
             >
                 <Plus className="w-6 h-6" />
             </motion.button>

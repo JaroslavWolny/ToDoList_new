@@ -18,6 +18,10 @@
     --color-xp-via: #a855f7;
     --color-xp-to: #c084fc;
     --bottom-nav-height: 5rem;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
   }
 
   .dark {
@@ -51,12 +55,15 @@
   ::-webkit-scrollbar {
     width: 4px;
   }
+
   ::-webkit-scrollbar-track {
     background: transparent;
   }
+
   ::-webkit-scrollbar-thumb {
     @apply bg-primary-300/30 rounded-full;
   }
+
   .dark ::-webkit-scrollbar-thumb {
     @apply bg-primary-600/30;
   }
@@ -86,7 +93,11 @@
   }
 
   .page-container {
-    @apply px-4 pb-24 pt-4 max-w-lg mx-auto min-h-screen;
+    @apply px-4 max-w-lg mx-auto min-h-screen;
+    padding-top: calc(1rem + var(--safe-top));
+    padding-bottom: calc(6rem + var(--safe-bottom));
+    padding-left: calc(1rem + var(--safe-left));
+    padding-right: calc(1rem + var(--safe-right));
   }
 
   .xp-gradient {
@@ -102,22 +113,49 @@
   }
 
   /* Priority colors */
-  .priority-low { @apply bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400; }
-  .priority-medium { @apply bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400; }
-  .priority-high { @apply bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400; }
-  .priority-critical { @apply bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400; }
+  .priority-low {
+    @apply bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400;
+  }
+
+  .priority-medium {
+    @apply bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400;
+  }
+
+  .priority-high {
+    @apply bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400;
+  }
+
+  .priority-critical {
+    @apply bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400;
+  }
 }
 
 @layer utilities {
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .safe-x {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
 }
 
 /* Particle animation for XP */
 @keyframes particleFloat {
-  0% { transform: translateY(0) scale(1); opacity: 1; }
-  100% { transform: translateY(-60px) scale(0.5); opacity: 0; }
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-60px) scale(0.5);
+    opacity: 0;
+  }
 }
 
 .animate-particle {
@@ -126,8 +164,15 @@
 
 /* Confetti */
 @keyframes confettiFall {
-  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
 }
 
 .animate-confetti {

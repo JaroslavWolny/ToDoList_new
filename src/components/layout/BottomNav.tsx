@@ -14,7 +14,7 @@ export function BottomNav() {
     if (location.pathname === '/onboarding') return null;
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-30 glass safe-bottom">
+        <nav className="fixed bottom-0 left-0 right-0 z-30 glass safe-bottom safe-x">
             <div className="max-w-lg mx-auto flex items-center justify-around py-2 px-4">
                 {navItems.map((item) => {
                     const isActive = location.pathname === item.to;

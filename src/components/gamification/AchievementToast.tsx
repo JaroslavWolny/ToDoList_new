@@ -13,7 +13,7 @@ export function AchievementToast() {
                     animate={{ y: 0, opacity: 1, scale: 1 }}
                     exit={{ y: -100, opacity: 0, scale: 0.8 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                    className="fixed top-4 left-4 right-4 z-50 mx-auto max-w-sm"
+                    className="fixed top-4 left-4 right-4 z-50 mx-auto max-w-sm safe-top"
                     onClick={dismissUnlockAnimation}
                 >
                     <div className="glass rounded-2xl p-4 shadow-xl border border-yellow-500/30 bg-gradient-to-r from-yellow-500/10 to-amber-500/10">
