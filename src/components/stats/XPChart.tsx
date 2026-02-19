@@ -59,8 +59,8 @@ export function XPChart({ days = 14 }: XPChartProps) {
                                 borderRadius: '12px',
                                 fontSize: '12px',
                             }}
-                            formatter={(value: number, name: string) => [
-                                name === 'xp' ? `${value} XP` : `${value} tasks`,
+                            formatter={(value: number | undefined, name: string | undefined) => [
+                                name === 'xp' ? `${value ?? 0} XP` : `${value ?? 0} tasks`,
                                 name === 'xp' ? 'XP Earned' : 'Tasks',
                             ]}
                         />
