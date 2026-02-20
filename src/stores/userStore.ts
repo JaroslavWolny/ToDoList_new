@@ -3,12 +3,13 @@ import { persist } from 'zustand/middleware';
 import { UserState, UserSettings, GamificationLevel } from '../types';
 import { calculateLevel, calculateStreakBreakPenalty, isStreakDay } from '../lib/gamification';
 
+const MAX_FREEZE_TOKENS = 3;
+
 interface UserStore extends UserState {
     addXP: (amount: number) => void;
     removeXP: (amount: number) => void;
     updateStreak: () => void;
     breakStreak: () => void;
-    useStreakFreeze: () => boolean;
     loseHealth: () => void;
     gainHealth: () => void;
     incrementTasksCompleted: () => void;
@@ -57,10 +58,15 @@ export const useUserStore = create<UserStore>()(
                 set((state) => {
                     const newXP = state.xp + amount;
                     const newLevel = calculateLevel(newXP);
+                    const didLevelUp = newLevel > state.level;
                     return {
                         xp: newXP,
                         level: Math.max(state.level, newLevel),
                         totalXPEarned: state.totalXPEarned + amount,
+                        // Award a freeze token on level-up (max 3)
+                        streakFreezeTokens: didLevelUp
+                            ? Math.min(state.streakFreezeTokens + 1, MAX_FREEZE_TOKENS)
+                            : state.streakFreezeTokens,
                     };
                 });
             },
@@ -124,16 +130,7 @@ export const useUserStore = create<UserStore>()(
                 });
             },
 
-            useStreakFreeze: () => {
-                const state = get();
-                if (state.streakFreezeTokens <= 0) return false;
-                if (state.settings.gamificationLevel === 'HARDCORE') return false;
-                set({
-                    streakFreezeTokens: state.streakFreezeTokens - 1,
-                    lastCompletedDate: new Date().toISOString(),
-                });
-                return true;
-            },
+
 
             loseHealth: () => {
                 set((state) => ({
@@ -176,7 +173,22 @@ export const useUserStore = create<UserStore>()(
                 const streakStatus = isStreakDay(state.lastCompletedDate);
 
                 if (streakStatus === 'broken' && state.streakCurrent > 0) {
-                    // Streak is broken — apply penalty
+                    // Try to auto-use a freeze token (not available in HARDCORE)
+                    if (
+                        state.streakFreezeTokens > 0 &&
+                        state.settings.gamificationLevel !== 'HARDCORE'
+                    ) {
+                        // Freeze protects the streak — set lastCompletedDate to yesterday
+                        const yesterday = new Date();
+                        yesterday.setDate(yesterday.getDate() - 1);
+                        set({
+                            streakFreezeTokens: state.streakFreezeTokens - 1,
+                            lastCompletedDate: yesterday.toISOString(),
+                        });
+                        return;
+                    }
+
+                    // No freeze available — streak breaks
                     const penalty = calculateStreakBreakPenalty(
                         state.xp,
                         state.settings.gamificationLevel

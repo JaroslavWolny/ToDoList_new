@@ -6,9 +6,8 @@ import { GamificationLevel, ThemeMode } from '../types';
 import { useTaskStore } from '../stores/taskStore';
 
 export function Settings() {
-    const { settings, updateSettings, streakFreezeTokens, useStreakFreeze, resetUser } = useUserStore();
+    const { settings, updateSettings, streakFreezeTokens, resetUser } = useUserStore();
     const taskStore = useTaskStore();
-    const [freezeUsed, setFreezeUsed] = useState(false);
     const [importError, setImportError] = useState('');
 
     const themeOptions: { value: ThemeMode; icon: React.ReactNode; label: string }[] = [
@@ -34,13 +33,7 @@ export function Settings() {
         updateSettings({ workDays: newDays });
     };
 
-    const handleUseFreeze = () => {
-        const success = useStreakFreeze();
-        if (success) {
-            setFreezeUsed(true);
-            setTimeout(() => setFreezeUsed(false), 2000);
-        }
-    };
+
 
     const handleExportData = () => {
         const data = {
@@ -177,25 +170,24 @@ export function Settings() {
                         <Snowflake className="w-5 h-5 text-blue-400" />
                         <span className="text-sm">Available freeze tokens</span>
                     </div>
-                    <span className="text-lg font-bold text-blue-400">{streakFreezeTokens}</span>
+                    <div className="flex items-center gap-1">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                            <div
+                                key={i}
+                                className={`w-3 h-3 rounded-full transition-all ${i < streakFreezeTokens
+                                    ? 'bg-blue-400 shadow-sm shadow-blue-400/50'
+                                    : 'bg-[var(--color-surface-hover)]'
+                                    }`}
+                            />
+                        ))}
+                    </div>
                 </div>
-                <p className="text-xs text-[var(--color-text-secondary)] mt-1 mb-3">
-                    Use a freeze token to protect your streak on off days
+                <p className="text-xs text-[var(--color-text-secondary)] mt-2">
+                    Freeze tokens activate automatically to protect your streak when you miss a day.
+                    {settings.gamificationLevel === 'HARDCORE'
+                        ? ' Disabled in Hardcore mode.'
+                        : ' Earn a new token each time you level up (max 3).'}
                 </p>
-                <motion.button
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handleUseFreeze}
-                    disabled={streakFreezeTokens <= 0 || settings.gamificationLevel === 'HARDCORE' || freezeUsed}
-                    className={`w-full py-2.5 rounded-xl text-sm font-medium transition-all ${freezeUsed
-                            ? 'bg-green-500/20 text-green-500 border border-green-500/30'
-                            : streakFreezeTokens <= 0 || settings.gamificationLevel === 'HARDCORE'
-                                ? 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] opacity-50 cursor-not-allowed'
-                                : 'bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20'
-                        }`}
-                >
-                    <Snowflake className="w-4 h-4 inline mr-1.5" />
-                    {freezeUsed ? '✓ Streak Protected!' : settings.gamificationLevel === 'HARDCORE' ? 'Disabled in Hardcore' : 'Use Freeze Token'}
-                </motion.button>
             </Section>
 
             {/* Notifications */}
