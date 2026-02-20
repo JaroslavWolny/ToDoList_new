@@ -16,6 +16,7 @@ export interface Task {
     status: TaskStatus;
     createdAt: string;
     completedAt: string | null;
+    lastResetDate: string | null;
 }
 
 export interface Completion {

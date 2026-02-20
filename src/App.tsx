@@ -7,9 +7,16 @@ import { Stats } from './pages/Stats';
 import { Settings } from './pages/Settings';
 import { Onboarding } from './pages/Onboarding';
 import { useUserStore } from './stores/userStore';
+import { useTaskStore } from './stores/taskStore';
 
 function App() {
   const { onboardingComplete, settings } = useUserStore();
+  const { resetRecurringTasks } = useTaskStore();
+
+  // Reset recurring tasks on app load
+  useEffect(() => {
+    resetRecurringTasks();
+  }, []);
 
   // Apply theme
   useEffect(() => {

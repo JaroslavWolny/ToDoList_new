@@ -4,7 +4,7 @@ import { X, Calendar, Tag, AlertCircle } from 'lucide-react';
 import { Task, Priority, Recurrence } from '../../types';
 
 interface TaskFormProps {
-    onSubmit: (task: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status'>) => void;
+    onSubmit: (task: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate'>) => void;
     onClose: () => void;
     editTask?: Task | null;
 }
@@ -126,8 +126,8 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                         whileTap={{ scale: 0.95 }}
                                         onClick={() => setPriority(p.value)}
                                         className={`py-2.5 rounded-xl text-xs font-bold transition-all ${priority === p.value
-                                                ? `${p.color} text-white shadow-lg`
-                                                : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border)]'
+                                            ? `${p.color} text-white shadow-lg`
+                                            : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border)]'
                                             }`}
                                     >
                                         {p.label}
@@ -163,8 +163,8 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                         whileTap={{ scale: 0.95 }}
                                         onClick={() => setRecurrence(r)}
                                         className={`px-4 py-2 rounded-xl text-xs font-medium transition-all ${recurrence === r
-                                                ? 'bg-primary-500 text-white'
-                                                : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]'
+                                            ? 'bg-primary-500 text-white'
+                                            : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]'
                                             }`}
                                     >
                                         {r === 'NONE' ? 'Once' : r === 'DAILY' ? 'Daily' : 'Weekly'}

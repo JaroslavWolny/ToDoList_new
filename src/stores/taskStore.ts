@@ -7,11 +7,12 @@ import { calculateXP, calculateComboMultiplier } from '../lib/gamification';
 interface TaskStore {
     tasks: Task[];
     completions: Completion[];
-    addTask: (task: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status'>) => Task;
+    addTask: (task: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate'>) => Task;
     updateTask: (id: string, updates: Partial<Task>) => void;
     deleteTask: (id: string) => void;
     completeTask: (id: string) => { xpEarned: number; comboMultiplier: number } | null;
     failTask: (id: string) => void;
+    resetRecurringTasks: () => void;
     getTasksForToday: () => Task[];
     getActiveTasks: () => Task[];
     getOverdueTasks: () => Task[];
@@ -33,6 +34,7 @@ export const useTaskStore = create<TaskStore>()(
                     status: 'ACTIVE',
                     createdAt: new Date().toISOString(),
                     completedAt: null,
+                    lastResetDate: null,
                 };
                 set((state) => ({ tasks: [...state.tasks, newTask] }));
                 return newTask;
@@ -87,6 +89,52 @@ export const useTaskStore = create<TaskStore>()(
                     tasks: state.tasks.map((t) =>
                         t.id === id ? { ...t, status: 'FAILED' as TaskStatus } : t
                     ),
+                }));
+            },
+
+            resetRecurringTasks: () => {
+                const today = new Date();
+                const todayStr = today.toISOString().split('T')[0];
+
+                set((state) => ({
+                    tasks: state.tasks.map((task) => {
+                        // Only reset completed or failed recurring tasks
+                        if (task.recurrence === 'NONE' || task.status === 'ACTIVE') {
+                            return task;
+                        }
+
+                        // Determine the reference date (last reset or completion date)
+                        const referenceDate = task.lastResetDate || task.completedAt || task.createdAt;
+                        const refDateStr = referenceDate.split('T')[0];
+
+                        if (task.recurrence === 'DAILY') {
+                            // Reset if the reference date is before today
+                            if (refDateStr < todayStr) {
+                                return {
+                                    ...task,
+                                    status: 'ACTIVE' as TaskStatus,
+                                    completedAt: null,
+                                    lastResetDate: todayStr,
+                                };
+                            }
+                        } else if (task.recurrence === 'WEEKLY') {
+                            // Reset if 7+ days have passed since the reference date
+                            const refDate = new Date(refDateStr + 'T00:00:00');
+                            const daysDiff = Math.floor(
+                                (today.getTime() - refDate.getTime()) / (1000 * 60 * 60 * 24)
+                            );
+                            if (daysDiff >= 7) {
+                                return {
+                                    ...task,
+                                    status: 'ACTIVE' as TaskStatus,
+                                    completedAt: null,
+                                    lastResetDate: todayStr,
+                                };
+                            }
+                        }
+
+                        return task;
+                    }),
                 }));
             },
 

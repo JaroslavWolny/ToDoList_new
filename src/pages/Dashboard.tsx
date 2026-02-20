@@ -33,6 +33,7 @@ export function Dashboard() {
     const missions = missionStore.getMissionsForToday();
 
     useEffect(() => {
+        taskStore.resetRecurringTasks();
         missionStore.generateDailyMissions();
         achievementStore.initAchievements();
     }, []);
@@ -90,7 +91,7 @@ export function Dashboard() {
         achievementStore.checkAndUnlock();
     }, [userStore, taskStore, achievementStore, missionStore]);
 
-    const handleAddTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status'>) => {
+    const handleAddTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate'>) => {
         taskStore.addTask(taskData);
     }, [taskStore]);
 
@@ -103,7 +104,7 @@ export function Dashboard() {
         setShowTaskForm(true);
     }, []);
 
-    const handleUpdateTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status'>) => {
+    const handleUpdateTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate'>) => {
         if (editingTask) {
             taskStore.updateTask(editingTask.id, taskData);
             setEditingTask(null);
