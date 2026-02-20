@@ -1,6 +1,6 @@
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type TaskStatus = 'ACTIVE' | 'COMPLETED' | 'FAILED';
-export type Recurrence = 'NONE' | 'DAILY' | 'WEEKLY' | 'CUSTOM';
+export type Recurrence = 'NONE' | 'DAILY' | 'WEEKLY';
 export type GamificationLevel = 'CASUAL' | 'STANDARD' | 'HARDCORE';
 export type ThemeMode = 'LIGHT' | 'DARK' | 'AUTO';
 export type WorkStyle = 'MORNING' | 'NIGHT' | 'FLEXIBLE';

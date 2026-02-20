@@ -11,11 +11,22 @@ import { useTaskStore } from './stores/taskStore';
 
 function App() {
   const { onboardingComplete, settings } = useUserStore();
-  const { resetRecurringTasks } = useTaskStore();
+  const { resetRecurringTasks, processOverdueTasks } = useTaskStore();
+  const { checkStreakOnLoad, removeXP, loseHealth } = useUserStore();
 
-  // Reset recurring tasks on app load
+  // Reset recurring tasks, check streak, and process overdue on app load
   useEffect(() => {
     resetRecurringTasks();
+
+    // Check for broken streak
+    checkStreakOnLoad();
+
+    // Process overdue task penalties
+    const penalties = processOverdueTasks(settings.gamificationLevel);
+    penalties.forEach((p) => {
+      removeXP(p.xpLost);
+      loseHealth();
+    });
   }, []);
 
   // Apply theme

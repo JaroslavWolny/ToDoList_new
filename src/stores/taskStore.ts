@@ -1,17 +1,19 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
-import { Task, Completion, Priority, Recurrence, TaskStatus } from '../types';
-import { calculateXP, calculateComboMultiplier } from '../lib/gamification';
+import { Task, Completion, Penalty, Priority, Recurrence, TaskStatus } from '../types';
+import { calculateXP, calculateComboMultiplier, calculatePenalty } from '../lib/gamification';
 
 interface TaskStore {
     tasks: Task[];
     completions: Completion[];
+    penalties: Penalty[];
     addTask: (task: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate'>) => Task;
     updateTask: (id: string, updates: Partial<Task>) => void;
     deleteTask: (id: string) => void;
     completeTask: (id: string) => { xpEarned: number; comboMultiplier: number } | null;
     failTask: (id: string) => void;
+    processOverdueTasks: (gamificationLevel: 'CASUAL' | 'STANDARD' | 'HARDCORE') => Penalty[];
     resetRecurringTasks: () => void;
     getTasksForToday: () => Task[];
     getActiveTasks: () => Task[];
@@ -26,6 +28,7 @@ export const useTaskStore = create<TaskStore>()(
         (set, get) => ({
             tasks: [],
             completions: [],
+            penalties: [],
 
             addTask: (taskData) => {
                 const newTask: Task = {
@@ -92,6 +95,44 @@ export const useTaskStore = create<TaskStore>()(
                 }));
             },
 
+            processOverdueTasks: (gamificationLevel) => {
+                const state = get();
+                const now = new Date();
+                const newPenalties: Penalty[] = [];
+
+                const overdueTasks = state.tasks.filter(
+                    (t) => t.status === 'ACTIVE' && t.deadline && new Date(t.deadline) < now
+                );
+
+                // Only penalize tasks that are overdue by more than 24h
+                const penalizedTaskIds = new Set(state.penalties.map(p => p.taskId));
+
+                overdueTasks.forEach((task) => {
+                    if (penalizedTaskIds.has(task.id)) return; // already penalized
+
+                    const overdueDuration = now.getTime() - new Date(task.deadline!).getTime();
+                    if (overdueDuration > 24 * 60 * 60 * 1000) {
+                        const xpLost = calculatePenalty(task.priority, gamificationLevel);
+                        const penalty: Penalty = {
+                            id: uuidv4(),
+                            taskId: task.id,
+                            xpLost,
+                            reason: `Overdue: ${task.title}`,
+                            createdAt: now.toISOString(),
+                        };
+                        newPenalties.push(penalty);
+                    }
+                });
+
+                if (newPenalties.length > 0) {
+                    set((state) => ({
+                        penalties: [...state.penalties, ...newPenalties],
+                    }));
+                }
+
+                return newPenalties;
+            },
+
             resetRecurringTasks: () => {
                 const today = new Date();
                 const todayStr = today.toISOString().split('T')[0];
@@ -143,13 +184,23 @@ export const useTaskStore = create<TaskStore>()(
                 const today = new Date().toISOString().split('T')[0];
                 return tasks.filter((t) => {
                     if (t.status !== 'ACTIVE') return false;
+
+                    // Recurring tasks always show
+                    if (t.recurrence !== 'NONE') return true;
+
+                    // Tasks with deadline today or past
                     if (t.deadline) {
                         const deadlineDate = t.deadline.split('T')[0];
                         return deadlineDate <= today;
                     }
-                    // Show tasks created today that have no deadline
-                    const createdDate = t.createdAt.split('T')[0];
-                    return createdDate === today || !t.deadline;
+
+                    // Non-recurring tasks without deadline: show if created within 7 days
+                    const createdDate = new Date(t.createdAt);
+                    const now = new Date();
+                    const daysSinceCreated = Math.floor(
+                        (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
+                    );
+                    return daysSinceCreated <= 7;
                 });
             },
 

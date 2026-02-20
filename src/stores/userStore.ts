@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { UserState, UserSettings, GamificationLevel } from '../types';
-import { calculateLevel, calculateStreakBreakPenalty } from '../lib/gamification';
+import { calculateLevel, calculateStreakBreakPenalty, isStreakDay } from '../lib/gamification';
 
 interface UserStore extends UserState {
     addXP: (amount: number) => void;
@@ -15,6 +15,7 @@ interface UserStore extends UserState {
     updateSettings: (settings: Partial<UserSettings>) => void;
     completeOnboarding: (settings: Partial<UserSettings> & { displayName?: string }) => void;
     resetUser: () => void;
+    checkStreakOnLoad: () => void;
 }
 
 const defaultSettings: UserSettings = {
@@ -119,6 +120,7 @@ export const useUserStore = create<UserStore>()(
                 set({
                     streakCurrent: 0,
                     xp: Math.max(0, state.xp - penalty),
+                    health: Math.max(0, state.health - 1),
                 });
             },
 
@@ -158,11 +160,33 @@ export const useUserStore = create<UserStore>()(
             },
 
             completeOnboarding: (data) => {
+                const { displayName, ...settingsData } = data;
                 set((state) => ({
                     onboardingComplete: true,
-                    displayName: data.displayName || state.displayName,
-                    settings: { ...state.settings, ...data },
+                    displayName: displayName || state.displayName,
+                    settings: { ...state.settings, ...settingsData },
                 }));
+            },
+
+            checkStreakOnLoad: () => {
+                const state = get();
+                if (!state.onboardingComplete) return;
+                if (!state.lastCompletedDate) return;
+
+                const streakStatus = isStreakDay(state.lastCompletedDate);
+
+                if (streakStatus === 'broken' && state.streakCurrent > 0) {
+                    // Streak is broken — apply penalty
+                    const penalty = calculateStreakBreakPenalty(
+                        state.xp,
+                        state.settings.gamificationLevel
+                    );
+                    set({
+                        streakCurrent: 0,
+                        xp: Math.max(0, state.xp - penalty),
+                        health: Math.max(0, state.health - 1),
+                    });
+                }
             },
 
             resetUser: () => {

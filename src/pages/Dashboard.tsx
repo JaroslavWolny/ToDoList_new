@@ -96,7 +96,9 @@ export function Dashboard() {
     }, [taskStore]);
 
     const handleDeleteTask = useCallback((id: string) => {
-        taskStore.deleteTask(id);
+        if (window.confirm('Are you sure you want to delete this task?')) {
+            taskStore.deleteTask(id);
+        }
     }, [taskStore]);
 
     const handleEditTask = useCallback((task: Task) => {

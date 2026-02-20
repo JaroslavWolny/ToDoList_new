@@ -1,9 +1,17 @@
+import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAchievementStore } from '../../stores/achievementStore';
 import { Trophy } from 'lucide-react';
 
 export function AchievementToast() {
     const { lastUnlocked, showUnlockAnimation, dismissUnlockAnimation } = useAchievementStore();
+
+    useEffect(() => {
+        if (showUnlockAnimation) {
+            const timer = setTimeout(dismissUnlockAnimation, 4000);
+            return () => clearTimeout(timer);
+        }
+    }, [showUnlockAnimation, dismissUnlockAnimation]);
 
     return (
         <AnimatePresence>
@@ -40,3 +48,4 @@ export function AchievementToast() {
         </AnimatePresence>
     );
 }
+

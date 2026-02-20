@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useUserStore } from '../stores/userStore';
-import { Moon, Sun, Monitor, Download, Trash2, Shield, Snowflake } from 'lucide-react';
+import { Moon, Sun, Monitor, Download, Trash2, Shield, Snowflake, Bell, BellOff, Upload } from 'lucide-react';
 import { GamificationLevel, ThemeMode } from '../types';
 import { useTaskStore } from '../stores/taskStore';
 
 export function Settings() {
-    const { settings, updateSettings, streakFreezeTokens, resetUser } = useUserStore();
+    const { settings, updateSettings, streakFreezeTokens, useStreakFreeze, resetUser } = useUserStore();
     const taskStore = useTaskStore();
+    const [freezeUsed, setFreezeUsed] = useState(false);
+    const [importError, setImportError] = useState('');
 
     const themeOptions: { value: ThemeMode; icon: React.ReactNode; label: string }[] = [
         { value: 'LIGHT', icon: <Sun className="w-4 h-4" />, label: 'Light' },
@@ -31,6 +34,14 @@ export function Settings() {
         updateSettings({ workDays: newDays });
     };
 
+    const handleUseFreeze = () => {
+        const success = useStreakFreeze();
+        if (success) {
+            setFreezeUsed(true);
+            setTimeout(() => setFreezeUsed(false), 2000);
+        }
+    };
+
     const handleExportData = () => {
         const data = {
             user: useUserStore.getState(),
@@ -44,6 +55,35 @@ export function Settings() {
         a.download = `todolist-export-${new Date().toISOString().split('T')[0]}.json`;
         a.click();
         URL.revokeObjectURL(url);
+    };
+
+    const handleImportData = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const data = JSON.parse(reader.result as string);
+                    if (data.tasks && data.user) {
+                        localStorage.setItem('todolist-task-store', JSON.stringify({ state: { tasks: data.tasks, completions: data.completions || [] }, version: 0 }));
+                        localStorage.setItem('todolist-user-store', JSON.stringify({ state: data.user, version: 0 }));
+                        window.location.reload();
+                    } else {
+                        setImportError('Invalid file format');
+                        setTimeout(() => setImportError(''), 3000);
+                    }
+                } catch {
+                    setImportError('Failed to parse file');
+                    setTimeout(() => setImportError(''), 3000);
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
     };
 
     const handleReset = () => {
@@ -70,8 +110,8 @@ export function Settings() {
                             whileTap={{ scale: 0.95 }}
                             onClick={() => updateSettings({ theme: opt.value })}
                             className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${settings.theme === opt.value
-                                    ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-                                    : 'card-surface'
+                                ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
+                                : 'card-surface'
                                 }`}
                         >
                             {opt.icon}
@@ -110,8 +150,8 @@ export function Settings() {
                             whileTap={{ scale: 0.98 }}
                             onClick={() => updateSettings({ gamificationLevel: opt.value })}
                             className={`w-full text-left p-3 rounded-xl transition-all ${settings.gamificationLevel === opt.value
-                                    ? 'bg-primary-500/10 border-2 border-primary-500'
-                                    : 'card-surface'
+                                ? 'bg-primary-500/10 border-2 border-primary-500'
+                                : 'card-surface'
                                 }`}
                         >
                             <div className="flex items-center justify-between">
@@ -139,9 +179,60 @@ export function Settings() {
                     </div>
                     <span className="text-lg font-bold text-blue-400">{streakFreezeTokens}</span>
                 </div>
-                <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+                <p className="text-xs text-[var(--color-text-secondary)] mt-1 mb-3">
                     Use a freeze token to protect your streak on off days
                 </p>
+                <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleUseFreeze}
+                    disabled={streakFreezeTokens <= 0 || settings.gamificationLevel === 'HARDCORE' || freezeUsed}
+                    className={`w-full py-2.5 rounded-xl text-sm font-medium transition-all ${freezeUsed
+                            ? 'bg-green-500/20 text-green-500 border border-green-500/30'
+                            : streakFreezeTokens <= 0 || settings.gamificationLevel === 'HARDCORE'
+                                ? 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] opacity-50 cursor-not-allowed'
+                                : 'bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20'
+                        }`}
+                >
+                    <Snowflake className="w-4 h-4 inline mr-1.5" />
+                    {freezeUsed ? '✓ Streak Protected!' : settings.gamificationLevel === 'HARDCORE' ? 'Disabled in Hardcore' : 'Use Freeze Token'}
+                </motion.button>
+            </Section>
+
+            {/* Notifications */}
+            <Section title="Notifications">
+                <Toggle
+                    label="Enable Notifications"
+                    description="Receive morning and evening reminders"
+                    checked={settings.notificationsEnabled}
+                    onChange={(v) => updateSettings({ notificationsEnabled: v })}
+                    icon={settings.notificationsEnabled ? <Bell className="w-4 h-4 text-primary-500" /> : <BellOff className="w-4 h-4 text-[var(--color-text-secondary)]" />}
+                />
+                {settings.notificationsEnabled && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        className="space-y-3 mt-3"
+                    >
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm">Morning Reminder</span>
+                            <input
+                                type="time"
+                                value={settings.notificationMorning}
+                                onChange={(e) => updateSettings({ notificationMorning: e.target.value })}
+                                className="px-3 py-1.5 rounded-lg border-none bg-[var(--color-surface-hover)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-sm"
+                            />
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm">Evening Summary</span>
+                            <input
+                                type="time"
+                                value={settings.notificationEvening}
+                                onChange={(e) => updateSettings({ notificationEvening: e.target.value })}
+                                className="px-3 py-1.5 rounded-lg border-none bg-[var(--color-surface-hover)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-sm"
+                            />
+                        </div>
+                    </motion.div>
+                )}
             </Section>
 
             {/* Work Days */}
@@ -156,8 +247,8 @@ export function Settings() {
                             whileTap={{ scale: 0.9 }}
                             onClick={() => toggleWorkDay(day)}
                             className={`w-10 h-10 rounded-xl text-xs font-bold transition-all ${settings.workDays.includes(day)
-                                    ? 'bg-primary-500 text-white'
-                                    : 'card-surface text-[var(--color-text-secondary)]'
+                                ? 'bg-primary-500 text-white'
+                                : 'card-surface text-[var(--color-text-secondary)]'
                                 }`}
                         >
                             {dayLabels[i]}
@@ -197,6 +288,19 @@ export function Settings() {
                 </motion.button>
                 <motion.button
                     whileTap={{ scale: 0.98 }}
+                    onClick={handleImportData}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl card-surface mb-2"
+                >
+                    <Upload className="w-5 h-5 text-green-500" />
+                    <div className="text-left">
+                        <p className="text-sm font-medium">Import Data</p>
+                        <p className="text-xs text-[var(--color-text-secondary)]">
+                            {importError || 'Restore from a JSON backup'}
+                        </p>
+                    </div>
+                </motion.button>
+                <motion.button
+                    whileTap={{ scale: 0.98 }}
                     onClick={handleReset}
                     className="w-full flex items-center gap-3 p-3 rounded-xl card-surface border-red-500/20"
                 >
@@ -227,17 +331,22 @@ function Toggle({
     description,
     checked,
     onChange,
+    icon,
 }: {
     label: string;
     description: string;
     checked: boolean;
     onChange: (v: boolean) => void;
+    icon?: React.ReactNode;
 }) {
     return (
         <div className="flex items-center justify-between py-3">
-            <div>
-                <p className="text-sm font-medium">{label}</p>
-                <p className="text-xs text-[var(--color-text-secondary)]">{description}</p>
+            <div className="flex items-center gap-2">
+                {icon}
+                <div>
+                    <p className="text-sm font-medium">{label}</p>
+                    <p className="text-xs text-[var(--color-text-secondary)]">{description}</p>
+                </div>
             </div>
             <motion.button
                 whileTap={{ scale: 0.9 }}

@@ -14,6 +14,8 @@ export function Onboarding() {
     const [dailyGoal, setDailyGoal] = useState(3);
     const [gamificationLevel, setGamificationLevel] = useState<GamificationLevel>('STANDARD');
     const [theme, setTheme] = useState<ThemeMode>('DARK');
+    const [notificationMorning, setNotificationMorning] = useState('08:00');
+    const [notificationEvening, setNotificationEvening] = useState('21:00');
     const navigate = useNavigate();
     const completeOnboarding = useUserStore((s) => s.completeOnboarding);
 
@@ -24,6 +26,9 @@ export function Onboarding() {
             dailyGoal,
             gamificationLevel,
             theme,
+            notificationMorning,
+            notificationEvening,
+            notificationsEnabled: true,
         });
         navigate('/');
     };
@@ -197,7 +202,8 @@ export function Onboarding() {
                                         <label className="text-sm font-medium block mb-2">Morning Reminder</label>
                                         <input
                                             type="time"
-                                            defaultValue="08:00"
+                                            value={notificationMorning}
+                                            onChange={(e) => setNotificationMorning(e.target.value)}
                                             className="w-full px-4 py-3 rounded-xl border-none bg-[var(--color-surface-hover)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-center text-lg"
                                         />
                                     </div>
@@ -205,7 +211,8 @@ export function Onboarding() {
                                         <label className="text-sm font-medium block mb-2">Evening Summary</label>
                                         <input
                                             type="time"
-                                            defaultValue="21:00"
+                                            value={notificationEvening}
+                                            onChange={(e) => setNotificationEvening(e.target.value)}
                                             className="w-full px-4 py-3 rounded-xl border-none bg-[var(--color-surface-hover)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-center text-lg"
                                         />
                                     </div>

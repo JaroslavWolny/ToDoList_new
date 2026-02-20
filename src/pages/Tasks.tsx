@@ -1,13 +1,13 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Filter, SortAsc } from 'lucide-react';
+import { Plus, Filter } from 'lucide-react';
 import { useTaskStore } from '../stores/taskStore';
 import { useUserStore } from '../stores/userStore';
 import { useAchievementStore } from '../stores/achievementStore';
 import { TaskList } from '../components/tasks/TaskList';
 import { TaskForm } from '../components/tasks/TaskForm';
 import { Task, Priority, TaskStatus } from '../types';
-import { calculateComboMultiplier, calculateLevel } from '../lib/gamification';
+import { calculateLevel } from '../lib/gamification';
 import { LevelUpOverlay } from '../components/gamification/LevelUpOverlay';
 import { useMissionStore } from '../stores/missionStore';
 
@@ -63,8 +63,37 @@ export function Tasks() {
         userStore.incrementTasksCompleted();
         userStore.gainHealth();
 
+        // Update all mission types (synced with Dashboard)
         const completionsNow = taskStore.getCompletionsToday();
         missionStore.updateMissionProgress('complete_tasks', completionsNow.length);
+
+        const task = taskStore.tasks.find((t) => t.id === id);
+        if (task?.priority === 'CRITICAL') {
+            missionStore.updateMissionProgress('complete_critical', 1);
+        }
+        if (task?.priority === 'HIGH' || task?.priority === 'CRITICAL') {
+            const highPriorityCount = completionsNow.filter(c => {
+                const t = taskStore.tasks.find(t => t.id === c.taskId);
+                return t?.priority === 'HIGH' || t?.priority === 'CRITICAL';
+            }).length;
+            missionStore.updateMissionProgress('complete_high', highPriorityCount);
+        }
+
+        const hour = new Date().getHours();
+        if (hour < 10) {
+            missionStore.updateMissionProgress('early_bird', 1);
+        }
+
+        // Check for completed missions
+        const currentMissions = missionStore.getMissionsForToday();
+        currentMissions.forEach((m) => {
+            if (!m.completed && m.progress >= m.target) {
+                const bonusXP = missionStore.completeMission(m.id);
+                if (bonusXP > 0) {
+                    userStore.addXP(bonusXP);
+                }
+            }
+        });
 
         const currentLevel = calculateLevel(useUserStore.getState().xp);
         if (currentLevel > prevLevel) {
@@ -170,7 +199,11 @@ export function Tasks() {
             <TaskList
                 tasks={filteredTasks}
                 onComplete={handleCompleteTask}
-                onDelete={(id) => taskStore.deleteTask(id)}
+                onDelete={(id) => {
+                    if (window.confirm('Are you sure you want to delete this task?')) {
+                        taskStore.deleteTask(id);
+                    }
+                }}
                 onEdit={(task) => {
                     setEditingTask(task);
                     setShowTaskForm(true);
