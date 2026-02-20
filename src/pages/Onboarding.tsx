@@ -198,7 +198,7 @@ export function Onboarding() {
                                         <input
                                             type="time"
                                             defaultValue="08:00"
-                                            className="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-hover)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-center text-lg"
+                                            className="w-full px-4 py-3 rounded-xl border-none bg-[var(--color-surface-hover)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-center text-lg"
                                         />
                                     </div>
                                     <div className="card-surface rounded-xl p-4">
@@ -206,7 +206,7 @@ export function Onboarding() {
                                         <input
                                             type="time"
                                             defaultValue="21:00"
-                                            className="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-hover)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-center text-lg"
+                                            className="w-full px-4 py-3 rounded-xl border-none bg-[var(--color-surface-hover)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-center text-lg"
                                         />
                                     </div>
                                 </div>
