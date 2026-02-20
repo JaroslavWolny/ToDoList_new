@@ -142,12 +142,12 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                 <Calendar className="w-4 h-4 inline mr-1.5" />
                                 Deadline
                             </label>
-                            <div className="w-full flex items-center border border-[var(--color-border)] bg-[var(--color-surface-hover)] rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-primary-500/50 focus-within:border-primary-500 transition-all overflow-hidden">
+                            <div className="w-full border border-[var(--color-border)] bg-[var(--color-surface-hover)] rounded-xl focus-within:ring-2 focus-within:ring-primary-500/50 focus-within:border-primary-500 transition-all overflow-hidden">
                                 <input
                                     type="datetime-local"
                                     value={deadline}
                                     onChange={(e) => setDeadline(e.target.value)}
-                                    className="w-full bg-transparent border-none outline-none appearance-none text-sm p-0 m-0 block"
+                                    className="w-full box-border bg-transparent border-none outline-none appearance-none text-sm px-4 py-3 m-0 block"
                                 />
                             </div>
                         </div>
