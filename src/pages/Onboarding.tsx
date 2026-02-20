@@ -200,21 +200,25 @@ export function Onboarding() {
                                 <div className="space-y-4 mt-4">
                                     <div className="card-surface rounded-xl p-4">
                                         <label className="text-sm font-medium block mb-2">Morning Reminder</label>
-                                        <input
-                                            type="time"
-                                            value={notificationMorning}
-                                            onChange={(e) => setNotificationMorning(e.target.value)}
-                                            className="w-full px-4 py-3 rounded-xl border-none bg-[var(--color-surface-hover)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-center text-lg"
-                                        />
+                                        <div className="w-full bg-[var(--color-surface-hover)] rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-primary-500/50 transition-all overflow-hidden flex items-center">
+                                            <input
+                                                type="time"
+                                                value={notificationMorning}
+                                                onChange={(e) => setNotificationMorning(e.target.value)}
+                                                className="w-full bg-transparent border-none outline-none appearance-none text-center text-lg p-0 m-0 block"
+                                            />
+                                        </div>
                                     </div>
                                     <div className="card-surface rounded-xl p-4">
                                         <label className="text-sm font-medium block mb-2">Evening Summary</label>
-                                        <input
-                                            type="time"
-                                            value={notificationEvening}
-                                            onChange={(e) => setNotificationEvening(e.target.value)}
-                                            className="w-full px-4 py-3 rounded-xl border-none bg-[var(--color-surface-hover)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-center text-lg"
-                                        />
+                                        <div className="w-full bg-[var(--color-surface-hover)] rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-primary-500/50 transition-all overflow-hidden flex items-center">
+                                            <input
+                                                type="time"
+                                                value={notificationEvening}
+                                                onChange={(e) => setNotificationEvening(e.target.value)}
+                                                className="w-full bg-transparent border-none outline-none appearance-none text-center text-lg p-0 m-0 block"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
