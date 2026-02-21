@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useUserStore } from '../stores/userStore';
-import { Moon, Sun, Monitor, Download, Trash2, Shield, Snowflake, Bell, BellOff, Upload } from 'lucide-react';
+import { Moon, Sun, Smartphone, Download, Trash2, Shield, Snowflake, Bell, BellOff, Upload } from 'lucide-react';
 import { GamificationLevel, ThemeMode } from '../types';
 import { useTaskStore } from '../stores/taskStore';
 
@@ -13,7 +13,7 @@ export function Settings() {
     const themeOptions: { value: ThemeMode; icon: React.ReactNode; label: string }[] = [
         { value: 'LIGHT', icon: <Sun className="w-4 h-4" />, label: 'Light' },
         { value: 'DARK', icon: <Moon className="w-4 h-4" />, label: 'Dark' },
-        { value: 'AUTO', icon: <Monitor className="w-4 h-4" />, label: 'Auto' },
+        { value: 'AUTO', icon: <Smartphone className="w-4 h-4" />, label: 'Auto' },
     ];
 
     const gamificationOptions: { value: GamificationLevel; label: string; desc: string }[] = [

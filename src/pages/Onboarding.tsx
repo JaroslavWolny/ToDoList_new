@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../stores/userStore';
 import { WorkStyle, GamificationLevel, ThemeMode } from '../types';
-import { Sun, Moon, Monitor, ChevronRight, ChevronLeft, Rocket } from 'lucide-react';
+import { Sun, Moon, Smartphone, ChevronRight, ChevronLeft, Rocket } from 'lucide-react';
 
 const TOTAL_STEPS = 5;
 
@@ -18,6 +18,22 @@ export function Onboarding() {
     const [notificationEvening, setNotificationEvening] = useState('21:00');
     const navigate = useNavigate();
     const completeOnboarding = useUserStore((s) => s.completeOnboarding);
+
+    useEffect(() => {
+        const root = document.documentElement;
+        if (theme === 'DARK') {
+            root.classList.add('dark');
+        } else if (theme === 'LIGHT') {
+            root.classList.remove('dark');
+        } else {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (prefersDark) {
+                root.classList.add('dark');
+            } else {
+                root.classList.remove('dark');
+            }
+        }
+    }, [theme]);
 
     const handleFinish = () => {
         completeOnboarding({
@@ -235,7 +251,7 @@ export function Onboarding() {
                                     {([
                                         { value: 'LIGHT', icon: <Sun className="w-6 h-6" />, label: 'Light' },
                                         { value: 'DARK', icon: <Moon className="w-6 h-6" />, label: 'Dark' },
-                                        { value: 'AUTO', icon: <Monitor className="w-6 h-6" />, label: 'Auto' },
+                                        { value: 'AUTO', icon: <Smartphone className="w-6 h-6" />, label: 'Auto' },
                                     ] as { value: ThemeMode; icon: React.ReactNode; label: string }[]).map((opt) => (
                                         <motion.button
                                             key={opt.value}
