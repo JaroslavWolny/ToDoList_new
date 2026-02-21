@@ -69,7 +69,7 @@ export function Stats() {
 
             {/* Heatmap Calendar */}
             <div className="mb-6">
-                <HeatmapCalendar months={3} />
+                <HeatmapCalendar />
             </div>
 
             {/* XP Chart */}

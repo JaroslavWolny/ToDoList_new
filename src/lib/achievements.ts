@@ -7,6 +7,7 @@ export interface AchievementDef {
     icon: string;
     category: 'streak' | 'tasks' | 'xp' | 'special';
     check: (user: UserState, completions: Completion[]) => boolean;
+    getProgress?: (user: UserState, completions: Completion[]) => { current: number; max: number };
 }
 
 export const ACHIEVEMENT_DEFS: AchievementDef[] = [
@@ -18,6 +19,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '🔥',
         category: 'streak',
         check: (u) => u.streakCurrent >= 7 || u.streakLongest >= 7,
+        getProgress: (u) => ({ current: Math.max(u.streakCurrent, u.streakLongest), max: 7 }),
     },
     {
         key: 'streak_warrior',
@@ -26,6 +28,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '⚔️',
         category: 'streak',
         check: (u) => u.streakCurrent >= 14 || u.streakLongest >= 14,
+        getProgress: (u) => ({ current: Math.max(u.streakCurrent, u.streakLongest), max: 14 }),
     },
     {
         key: 'streak_master',
@@ -34,6 +37,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '👑',
         category: 'streak',
         check: (u) => u.streakCurrent >= 30 || u.streakLongest >= 30,
+        getProgress: (u) => ({ current: Math.max(u.streakCurrent, u.streakLongest), max: 30 }),
     },
     {
         key: 'streak_legend',
@@ -42,6 +46,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '🏆',
         category: 'streak',
         check: (u) => u.streakCurrent >= 60 || u.streakLongest >= 60,
+        getProgress: (u) => ({ current: Math.max(u.streakCurrent, u.streakLongest), max: 60 }),
     },
     {
         key: 'streak_god',
@@ -50,6 +55,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '⚡',
         category: 'streak',
         check: (u) => u.streakCurrent >= 100 || u.streakLongest >= 100,
+        getProgress: (u) => ({ current: Math.max(u.streakCurrent, u.streakLongest), max: 100 }),
     },
     {
         key: 'marathon_runner',
@@ -58,6 +64,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '🏅',
         category: 'streak',
         check: (u) => u.streakCurrent >= 365 || u.streakLongest >= 365,
+        getProgress: (u) => ({ current: Math.max(u.streakCurrent, u.streakLongest), max: 365 }),
     },
 
     // Task achievements
@@ -68,6 +75,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '👣',
         category: 'tasks',
         check: (u) => u.totalTasksCompleted >= 1,
+        getProgress: (u) => ({ current: u.totalTasksCompleted, max: 1 }),
     },
     {
         key: 'getting_started',
@@ -76,6 +84,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '🚀',
         category: 'tasks',
         check: (u) => u.totalTasksCompleted >= 10,
+        getProgress: (u) => ({ current: u.totalTasksCompleted, max: 10 }),
     },
     {
         key: 'centurion',
@@ -84,6 +93,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '💯',
         category: 'tasks',
         check: (u) => u.totalTasksCompleted >= 100,
+        getProgress: (u) => ({ current: u.totalTasksCompleted, max: 100 }),
     },
     {
         key: 'taskmaster',
@@ -92,6 +102,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '🎯',
         category: 'tasks',
         check: (u) => u.totalTasksCompleted >= 500,
+        getProgress: (u) => ({ current: u.totalTasksCompleted, max: 500 }),
     },
     {
         key: 'critical_thinker',
@@ -100,9 +111,9 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '🧠',
         category: 'tasks',
         check: (_u, completions) => {
-            // We'll check from completions data
             return completions.filter(c => c.xpEarned >= 100).length >= 10;
         },
+        getProgress: (_u, completions) => ({ current: completions.filter(c => c.xpEarned >= 100).length, max: 10 }),
     },
 
     // XP achievements
@@ -113,6 +124,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '💎',
         category: 'xp',
         check: (u) => u.totalXPEarned >= 1000,
+        getProgress: (u) => ({ current: u.totalXPEarned, max: 1000 }),
     },
     {
         key: 'xp_hoarder',
@@ -121,6 +133,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '💰',
         category: 'xp',
         check: (u) => u.totalXPEarned >= 10000,
+        getProgress: (u) => ({ current: u.totalXPEarned, max: 10000 }),
     },
     {
         key: 'level_5',
@@ -129,6 +142,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '⭐',
         category: 'xp',
         check: (u) => u.level >= 5,
+        getProgress: (u) => ({ current: u.level, max: 5 }),
     },
     {
         key: 'level_10',
@@ -137,6 +151,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '🌟',
         category: 'xp',
         check: (u) => u.level >= 10,
+        getProgress: (u) => ({ current: u.level, max: 10 }),
     },
 
     // Special achievements
@@ -149,6 +164,10 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         check: (_u, completions) => {
             return completions.some(c => c.comboMultiplier >= 1.5);
         },
+        getProgress: (_u, completions) => {
+            const maxMultiplier = completions.reduce((max, c) => Math.max(max, c.comboMultiplier), 1);
+            return { current: maxMultiplier, max: 1.5 };
+        },
     },
     {
         key: 'comeback_kid',
@@ -157,6 +176,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '💪',
         category: 'special',
         check: (u) => u.streakCurrent >= 3 && u.streakLongest > u.streakCurrent,
+        getProgress: (u) => ({ current: (u.streakLongest > u.streakCurrent && u.streakCurrent > 0) ? u.streakCurrent : 0, max: 3 }),
     },
     {
         key: 'health_nut',
@@ -165,6 +185,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '❤️',
         category: 'special',
         check: (u) => u.health === u.maxHealth && u.streakCurrent >= 7,
+        getProgress: (u) => ({ current: u.health === u.maxHealth ? u.streakCurrent : 0, max: 7 }),
     },
 ];
 
@@ -177,3 +198,4 @@ export function checkAchievements(
         (def) => !unlockedKeys.has(def.key) && def.check(user, completions)
     );
 }
+
