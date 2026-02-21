@@ -38,7 +38,7 @@ function App() {
       root.classList.remove('dark');
     } else {
       // AUTO
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const prefersDark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
       if (prefersDark) {
         root.classList.add('dark');
       } else {

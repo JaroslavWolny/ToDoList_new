@@ -17,6 +17,22 @@
 
 <body>
   <div id="root"></div>
+  <script>
+    window.addEventListener('error', (e) => {
+      if (e.target && e.target.tagName === 'SCRIPT') {
+        if (navigator.serviceWorker) {
+          navigator.serviceWorker.getRegistrations().then((registrations) => {
+            for (let registration of registrations) {
+              registration.unregister();
+            }
+            window.location.reload();
+          });
+        } else {
+          window.location.reload();
+        }
+      }
+    }, true);
+  </script>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 

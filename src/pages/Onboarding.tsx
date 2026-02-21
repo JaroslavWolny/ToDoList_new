@@ -26,7 +26,7 @@ export function Onboarding() {
         } else if (theme === 'LIGHT') {
             root.classList.remove('dark');
         } else {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const prefersDark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
             if (prefersDark) {
                 root.classList.add('dark');
             } else {
