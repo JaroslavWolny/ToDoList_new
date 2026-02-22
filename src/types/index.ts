@@ -11,6 +11,7 @@ export interface Task {
     description: string;
     priority: Priority;
     deadline: string | null;
+    startDate: string | null;
     recurrence: Recurrence;
     tags: string[];
     status: TaskStatus;

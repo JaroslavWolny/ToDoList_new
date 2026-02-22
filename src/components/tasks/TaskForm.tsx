@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Tag, AlertCircle } from 'lucide-react';
+import { X, Calendar, Tag, AlertCircle, Clock } from 'lucide-react';
 import { Task, Priority, Recurrence } from '../../types';
 
 interface TaskFormProps {
@@ -21,6 +21,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
     const [description, setDescription] = useState(editTask?.description || '');
     const [priority, setPriority] = useState<Priority>(editTask?.priority || 'MEDIUM');
     const [deadline, setDeadline] = useState(editTask?.deadline?.slice(0, 16) || '');
+    const [startDate, setStartDate] = useState(editTask?.startDate?.slice(0, 16) || '');
     const [recurrence, setRecurrence] = useState<Recurrence>(editTask?.recurrence || 'NONE');
     const [tagInput, setTagInput] = useState('');
     const [tags, setTags] = useState<string[]>(editTask?.tags || []);
@@ -33,6 +34,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
             description: description.trim(),
             priority,
             deadline: deadline ? new Date(deadline).toISOString() : null,
+            startDate: startDate ? new Date(startDate).toISOString() : null,
             recurrence,
             tags,
         });
@@ -147,6 +149,22 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                     type="datetime-local"
                                     value={deadline}
                                     onChange={(e) => setDeadline(e.target.value)}
+                                    className="w-full box-border bg-transparent border-none outline-none appearance-none text-sm px-4 py-3 m-0 block"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Available From */}
+                        <div>
+                            <label className="block text-sm font-medium mb-1.5 text-[var(--color-text-secondary)]">
+                                <Clock className="w-4 h-4 inline mr-1.5" />
+                                Available From
+                            </label>
+                            <div className="w-full border border-[var(--color-border)] bg-[var(--color-surface-hover)] rounded-xl focus-within:ring-2 focus-within:ring-primary-500/50 focus-within:border-primary-500 transition-all overflow-hidden">
+                                <input
+                                    type="datetime-local"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
                                     className="w-full box-border bg-transparent border-none outline-none appearance-none text-sm px-4 py-3 m-0 block"
                                 />
                             </div>

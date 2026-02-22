@@ -1,9 +1,9 @@
 import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Clock, AlertTriangle, Trash2, Edit3 } from 'lucide-react';
+import { Check, Clock, AlertTriangle, Trash2, Edit3, Lock } from 'lucide-react';
 import { Task } from '../../types';
 import { getPriorityLabel, getPriorityColor } from '../../lib/gamification';
-import { format, isPast, parseISO } from 'date-fns';
+import { format, isPast, parseISO, isFuture } from 'date-fns';
 
 interface TaskCardProps {
     task: Task;
@@ -16,9 +16,10 @@ export function TaskCard({ task, onComplete, onDelete, onEdit }: TaskCardProps) 
     const [showXP, setShowXP] = useState(false);
     const [isCompleting, setIsCompleting] = useState(false);
     const isOverdue = task.deadline && isPast(parseISO(task.deadline)) && task.status === 'ACTIVE';
+    const isLocked = task.startDate && isFuture(parseISO(task.startDate)) && task.status === 'ACTIVE';
 
     const handleComplete = useCallback(() => {
-        if (task.status !== 'ACTIVE') return;
+        if (task.status !== 'ACTIVE' || isLocked) return;
         setIsCompleting(true);
         setShowXP(true);
         setTimeout(() => {
@@ -54,18 +55,21 @@ export function TaskCard({ task, onComplete, onDelete, onEdit }: TaskCardProps) 
             <div className="flex items-start gap-3">
                 {/* Checkbox */}
                 <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                    whileHover={!isLocked ? { scale: 1.1 } : {}}
+                    whileTap={!isLocked ? { scale: 0.9 } : {}}
                     onClick={handleComplete}
-                    disabled={task.status !== 'ACTIVE'}
-                    className={`mt-0.5 w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${task.status === 'COMPLETED'
+                    disabled={task.status !== 'ACTIVE' || !!isLocked}
+                    className={`mt-0.5 w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${isLocked
+                        ? 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 cursor-not-allowed opacity-60'
+                        : task.status === 'COMPLETED'
                             ? 'bg-green-500 border-green-500'
                             : isCompleting
                                 ? 'bg-green-500 border-green-500 animate-bounce-in'
                                 : 'border-gray-300 dark:border-gray-600 hover:border-primary-500'
                         }`}
                 >
-                    {(task.status === 'COMPLETED' || isCompleting) && (
+                    {isLocked && <Lock className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />}
+                    {(task.status === 'COMPLETED' || isCompleting) && !isLocked && (
                         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
                             <Check className="w-4 h-4 text-white" />
                         </motion.div>
@@ -96,6 +100,12 @@ export function TaskCard({ task, onComplete, onDelete, onEdit }: TaskCardProps) 
                                 }`}>
                                 {isOverdue ? <AlertTriangle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
                                 <span>{format(parseISO(task.deadline), 'MMM d, HH:mm')}</span>
+                            </div>
+                        )}
+                        {isLocked && task.startDate && (
+                            <div className="flex items-center gap-1 text-xs text-blue-500 opacity-80">
+                                <Lock className="w-3 h-3" />
+                                <span>Locked until {format(parseISO(task.startDate), 'MMM d, HH:mm')}</span>
                             </div>
                         )}
                         {task.tags.length > 0 && (
