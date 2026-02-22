@@ -19,7 +19,7 @@ const priorityOrder: Record<Priority, number> = { CRITICAL: 4, HIGH: 3, MEDIUM: 
 export function Tasks() {
     const [showTaskForm, setShowTaskForm] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
-    const [filterStatus, setFilterStatus] = useState<FilterStatus>('ALL');
+    const [filterStatus, setFilterStatus] = useState<FilterStatus>('ACTIVE');
     const [filterPriority, setFilterPriority] = useState<Priority | 'ALL'>('ALL');
     const [sortBy, setSortBy] = useState<SortOption>('created');
     const [showFilters, setShowFilters] = useState(false);
