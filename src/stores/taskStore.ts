@@ -63,7 +63,7 @@ export const useTaskStore = create<TaskStore>()(
                 if (!task || task.status !== 'ACTIVE') return null;
 
                 const completionsToday = state.getCompletionsToday();
-                const comboMultiplier = calculateComboMultiplier(completionsToday.length);
+                const comboMultiplier = calculateComboMultiplier(completionsToday.length + 1);
                 const baseXP = calculateXP(task.priority);
                 const xpEarned = Math.floor(baseXP * comboMultiplier);
 

@@ -1,4 +1,5 @@
 import { Achievement, UserState, Completion } from '../types';
+import { calculateComboMultiplier } from './gamification';
 
 export interface AchievementDef {
     key: string;
@@ -162,11 +163,24 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '👊',
         category: 'special',
         check: (_u, completions) => {
-            return completions.some(c => c.comboMultiplier >= 1.5);
+            const byDate = new Map<string, number>();
+            completions.forEach(c => {
+                const date = c.completedAt.split('T')[0];
+                byDate.set(date, (byDate.get(date) || 0) + 1);
+            });
+            const maxPerDay = Math.max(0, ...Array.from(byDate.values()));
+            return completions.some(c => c.comboMultiplier >= 1.5) || maxPerDay >= 8;
         },
         getProgress: (_u, completions) => {
+            const byDate = new Map<string, number>();
+            completions.forEach(c => {
+                const date = c.completedAt.split('T')[0];
+                byDate.set(date, (byDate.get(date) || 0) + 1);
+            });
+            const maxPerDay = Math.max(0, ...Array.from(byDate.values()));
             const maxMultiplier = completions.reduce((max, c) => Math.max(max, c.comboMultiplier), 1);
-            return { current: maxMultiplier, max: 1.5 };
+            const calculatedMax = calculateComboMultiplier(maxPerDay);
+            return { current: Math.max(maxMultiplier, calculatedMax), max: 1.5 };
         },
     },
     {

@@ -36,6 +36,7 @@ export function Dashboard() {
         taskStore.resetRecurringTasks();
         missionStore.generateDailyMissions();
         achievementStore.initAchievements();
+        achievementStore.checkAndUnlock();
     }, []);
 
     const handleCompleteTask = useCallback((id: string) => {
