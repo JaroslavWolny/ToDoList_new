@@ -185,6 +185,12 @@ export const useTaskStore = create<TaskStore>()(
                 return tasks.filter((t) => {
                     if (t.status !== 'ACTIVE') return false;
 
+                    // Exclude tasks scheduled for the future
+                    if (t.startDate) {
+                        const startDate = t.startDate.split('T')[0];
+                        if (startDate > today) return false;
+                    }
+
                     // Recurring tasks always show
                     if (t.recurrence !== 'NONE') return true;
 
