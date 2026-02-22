@@ -53,7 +53,7 @@ export function AchievementGrid() {
         return (
             <div className="mt-2.5">
                 <div className="flex justify-between items-center text-[10px] text-[var(--color-text-secondary)] mb-1">
-                    <span className="font-medium">Postup</span>
+                    <span className="font-medium">Progress</span>
                     <span className="font-bold">{progress.current} / {progress.max}</span>
                 </div>
                 <div className="h-1.5 w-full bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
@@ -87,10 +87,10 @@ export function AchievementGrid() {
                 )}
                 <div className="flex items-start gap-3 relative z-10 w-full">
                     <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-xl ${!isLocked
-                            ? 'bg-gradient-to-br from-yellow-400/20 to-amber-500/20 shadow-inner'
-                            : isHighlight
-                                ? 'bg-gradient-to-br from-blue-500/10 to-indigo-500/10 text-blue-500'
-                                : 'bg-gray-100 dark:bg-gray-800'
+                        ? 'bg-gradient-to-br from-yellow-400/20 to-amber-500/20 shadow-inner'
+                        : isHighlight
+                            ? 'bg-gradient-to-br from-blue-500/10 to-indigo-500/10 text-blue-500'
+                            : 'bg-gray-100 dark:bg-gray-800'
                         }`}>
                         {!isLocked ? (
                             achievement.icon
@@ -120,7 +120,7 @@ export function AchievementGrid() {
                 <div className="mb-8">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-blue-500 mb-3 flex items-center gap-2">
                         <Target className="w-4 h-4" />
-                        Právě plníš...
+                        In Progress...
                     </h4>
                     {renderAchievementCard(closestAchievement, true)}
                 </div>
