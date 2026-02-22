@@ -154,11 +154,11 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                             </div>
                         </div>
 
-                        {/* Scheduled For */}
+                        {/* Reminder */}
                         <div>
                             <label className="block text-sm font-medium mb-1.5 text-[var(--color-text-secondary)]">
                                 <Clock className="w-4 h-4 inline mr-1.5" />
-                                Scheduled For
+                                Reminder
                             </label>
                             <div className="w-full border border-[var(--color-border)] bg-[var(--color-surface-hover)] rounded-xl focus-within:ring-2 focus-within:ring-primary-500/50 focus-within:border-primary-500 transition-all overflow-hidden">
                                 <input

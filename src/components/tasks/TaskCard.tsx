@@ -105,7 +105,7 @@ export function TaskCard({ task, onComplete, onDelete, onEdit }: TaskCardProps) 
                         {isLocked && task.startDate && (
                             <div className="flex items-center gap-1 text-xs text-blue-500 opacity-80">
                                 <Lock className="w-3 h-3" />
-                                <span>Scheduled for {format(parseISO(task.startDate), 'MMM d, HH:mm')}</span>
+                                <span>Reminder for {format(parseISO(task.startDate), 'MMM d, HH:mm')}</span>
                             </div>
                         )}
                         {task.tags.length > 0 && (
