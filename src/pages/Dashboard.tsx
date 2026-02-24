@@ -37,6 +37,12 @@ export function Dashboard() {
         missionStore.generateDailyMissions();
         achievementStore.initAchievements();
         achievementStore.checkAndUnlock();
+
+        // Simulate 20,000 coins for testing once
+        if (userStore.coins < 20000 && !localStorage.getItem('simulated_20k_coins')) {
+            userStore.addCoins(20000);
+            localStorage.setItem('simulated_20k_coins', 'true');
+        }
     }, []);
 
     const handleCompleteTask = useCallback((id: string) => {
