@@ -16,20 +16,26 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
 
     return (
         <AnimatePresence>
-            <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center"
                 style={{
-                    paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))',
-                    paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
-                    paddingLeft: 'calc(1rem + env(safe-area-inset-left, 0px))',
-                    paddingRight: 'calc(1rem + env(safe-area-inset-right, 0px))'
+                    paddingTop: 'env(safe-area-inset-top, 0px)',
+                    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                    paddingLeft: 'env(safe-area-inset-left, 0px)',
+                    paddingRight: 'env(safe-area-inset-right, 0px)'
                 }}
+                onClick={onClose}
             >
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="card-surface w-full max-w-md rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col max-h-[100%]"
+                    initial={{ y: 100, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 100, opacity: 0 }}
+                    transition={{ type: 'spring', damping: 25 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full max-w-md card-surface rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col max-h-[85vh]"
                 >
                     <div className="p-6 border-b border-white/10 flex items-center justify-between">
                         <div>
@@ -133,7 +139,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                         })}
                     </div>
                 </motion.div>
-            </div>
+            </motion.div>
         </AnimatePresence>
     );
 }
