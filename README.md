@@ -27,6 +27,9 @@ Built as a blazing-fast, local-first Progressive Web App (PWA), it seamlessly bl
 ### 🗡️ Level Up Your Life
 Every task is a quest. Earn **XP** for completing your to-dos, fill up your XP bar, and level up just like in your favorite RPG! The progressive XP curve ensures that every new rank feels like a true achievement.
 
+### 🪙 Coin Economy & Avatar Customization
+Complete Daily Missions (e.g., "Complete 3 Critical Tasks") to earn **Coins**. Spend these newly-earned coins in the Avatar Shop to unlock premium, custom avatars (swords, shields, skulls, and more) to personalize your Level Badge and flex your progress.
+
 ### 🛡️ Guard Your Health
 Missed a deadline? Procrastinated too long? You'll take damage! **Keep your Health Bar (HP) high** by staying on top of your responsibilities. If you drop to zero... you'll face the consequences of broken discipline.
 
