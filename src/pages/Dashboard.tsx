@@ -122,13 +122,15 @@ export function Dashboard() {
         <div className="page-container">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold mb-1">
-                        {getGreeting()}, <span className="gradient-text">{userStore.displayName || 'Hero'}</span>
+                <div className="flex flex-col justify-center">
+                    <h1 className="text-2xl font-bold">
+                        {getGreeting()},
                     </h1>
-                    <p className="text-sm font-medium text-[var(--color-text-secondary)]">
-                        {new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date())}
-                    </p>
+                    <div className="pl-4 mt-0.5">
+                        <span className="text-[1.7rem] font-black gradient-text leading-none tracking-tight">
+                            {userStore.displayName || 'Hero'}
+                        </span>
+                    </div>
                 </div>
                 <LevelBadge />
             </div>
