@@ -16,12 +16,20 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
 
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 safe-top safe-bottom bg-black/50 backdrop-blur-sm">
+            <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+                style={{
+                    paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))',
+                    paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+                    paddingLeft: 'calc(1rem + env(safe-area-inset-left, 0px))',
+                    paddingRight: 'calc(1rem + env(safe-area-inset-right, 0px))'
+                }}
+            >
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="card-surface w-full max-w-md rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col max-h-[90vh]"
+                    className="card-surface w-full max-w-md rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col max-h-[100%]"
                 >
                     <div className="p-6 border-b border-white/10 flex items-center justify-between">
                         <div>
