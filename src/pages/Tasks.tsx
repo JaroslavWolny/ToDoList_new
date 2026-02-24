@@ -88,9 +88,12 @@ export function Tasks() {
         const currentMissions = missionStore.getMissionsForToday();
         currentMissions.forEach((m) => {
             if (!m.completed && m.progress >= m.target) {
-                const bonusXP = missionStore.completeMission(m.id);
+                const { xp: bonusXP, coins: bonusCoins } = missionStore.completeMission(m.id);
                 if (bonusXP > 0) {
                     userStore.addXP(bonusXP);
+                }
+                if (bonusCoins > 0) {
+                    userStore.addCoins(bonusCoins);
                 }
             }
         });

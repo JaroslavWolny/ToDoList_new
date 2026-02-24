@@ -8,6 +8,9 @@ const MAX_FREEZE_TOKENS = 3;
 interface UserStore extends UserState {
     addXP: (amount: number) => void;
     removeXP: (amount: number) => void;
+    addCoins: (amount: number) => void;
+    buyAvatar: (avatarId: string, cost: number) => boolean;
+    equipAvatar: (avatarId: string) => void;
     updateStreak: () => void;
     breakStreak: () => void;
     loseHealth: () => void;
@@ -36,6 +39,7 @@ const initialState: UserState = {
     displayName: '',
     level: 0,
     xp: 0,
+    coins: 0,
     health: 5,
     maxHealth: 5,
     streakCurrent: 0,
@@ -47,6 +51,8 @@ const initialState: UserState = {
     createdAt: new Date().toISOString(),
     totalTasksCompleted: 0,
     totalXPEarned: 0,
+    equippedAvatar: 'default',
+    unlockedAvatars: ['default'],
 };
 
 export const useUserStore = create<UserStore>()(
@@ -75,6 +81,31 @@ export const useUserStore = create<UserStore>()(
                 set((state) => ({
                     xp: Math.max(0, state.xp - amount),
                 }));
+            },
+
+            addCoins: (amount: number) => {
+                set((state) => ({
+                    coins: state.coins + amount,
+                }));
+            },
+
+            buyAvatar: (avatarId: string, cost: number) => {
+                const state = get();
+                if (state.coins >= cost && !state.unlockedAvatars.includes(avatarId)) {
+                    set({
+                        coins: state.coins - cost,
+                        unlockedAvatars: [...state.unlockedAvatars, avatarId],
+                    });
+                    return true;
+                }
+                return false;
+            },
+
+            equipAvatar: (avatarId: string) => {
+                const state = get();
+                if (state.unlockedAvatars.includes(avatarId)) {
+                    set({ equippedAvatar: avatarId });
+                }
             },
 
             updateStreak: () => {

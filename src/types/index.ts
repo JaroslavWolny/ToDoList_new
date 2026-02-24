@@ -44,6 +44,7 @@ export interface DailyMission {
     target: number;
     progress: number;
     rewardXP: number;
+    rewardCoins: number;
     type: 'complete_tasks' | 'complete_critical' | 'early_bird' | 'complete_high';
     completed: boolean;
 }
@@ -73,6 +74,7 @@ export interface UserState {
     displayName: string;
     level: number;
     xp: number;
+    coins: number;
     health: number;
     maxHealth: number;
     streakCurrent: number;
@@ -84,4 +86,14 @@ export interface UserState {
     createdAt: string;
     totalTasksCompleted: number;
     totalXPEarned: number;
+    equippedAvatar: string | null;
+    unlockedAvatars: string[];
+}
+
+export interface Avatar {
+    id: string;
+    name: string;
+    cost: number;
+    icon: string;
+    color: string;
 }

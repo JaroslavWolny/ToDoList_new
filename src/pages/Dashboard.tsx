@@ -74,9 +74,12 @@ export function Dashboard() {
         const currentMissions = missionStore.getMissionsForToday();
         currentMissions.forEach((m) => {
             if (!m.completed && m.progress >= m.target) {
-                const bonusXP = missionStore.completeMission(m.id);
+                const { xp: bonusXP, coins: bonusCoins } = missionStore.completeMission(m.id);
                 if (bonusXP > 0) {
                     userStore.addXP(bonusXP);
+                }
+                if (bonusCoins > 0) {
+                    userStore.addCoins(bonusCoins);
                 }
             }
         });
@@ -132,7 +135,9 @@ export function Dashboard() {
                         </span>
                     </div>
                 </div>
-                <LevelBadge />
+                <div className="flex flex-col items-end gap-2">
+                    <LevelBadge />
+                </div>
             </div>
 
             {/* XP Bar */}
@@ -196,7 +201,7 @@ export function Dashboard() {
                                         {mission.title}
                                     </p>
                                     <p className="text-[10px] text-[var(--color-text-secondary)]">
-                                        {mission.description} • +{mission.rewardXP} XP
+                                        {mission.description} • +{mission.rewardXP} XP • +{mission.rewardCoins} 🪙
                                     </p>
                                 </div>
                                 <span className="text-xs font-bold text-[var(--color-text-secondary)]">

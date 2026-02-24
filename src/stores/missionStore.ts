@@ -8,7 +8,7 @@ interface MissionStore {
     lastGeneratedDate: string | null;
     generateDailyMissions: () => void;
     updateMissionProgress: (type: DailyMission['type'], progress: number) => void;
-    completeMission: (id: string) => number;
+    completeMission: (id: string) => { xp: number; coins: number };
     getMissionsForToday: () => DailyMission[];
 }
 
@@ -18,6 +18,7 @@ const missionTemplates: Array<{
     description: string;
     target: number;
     rewardXP: number;
+    rewardCoins: number;
 }> = [
         {
             type: 'complete_tasks',
@@ -25,6 +26,7 @@ const missionTemplates: Array<{
             description: 'Complete 3 tasks today',
             target: 3,
             rewardXP: 30,
+            rewardCoins: 15,
         },
         {
             type: 'complete_critical',
@@ -32,6 +34,7 @@ const missionTemplates: Array<{
             description: 'Complete 1 critical task',
             target: 1,
             rewardXP: 50,
+            rewardCoins: 25,
         },
         {
             type: 'early_bird',
@@ -39,6 +42,7 @@ const missionTemplates: Array<{
             description: 'Complete a task before 10:00 AM',
             target: 1,
             rewardXP: 25,
+            rewardCoins: 10,
         },
         {
             type: 'complete_high',
@@ -46,6 +50,7 @@ const missionTemplates: Array<{
             description: 'Complete 2 high-priority tasks',
             target: 2,
             rewardXP: 40,
+            rewardCoins: 20,
         },
         {
             type: 'complete_tasks',
@@ -53,6 +58,7 @@ const missionTemplates: Array<{
             description: 'Complete 5 tasks today',
             target: 5,
             rewardXP: 60,
+            rewardCoins: 30,
         },
     ];
 
@@ -97,7 +103,7 @@ export const useMissionStore = create<MissionStore>()(
 
             completeMission: (id) => {
                 const mission = get().missions.find((m) => m.id === id);
-                if (!mission || mission.completed) return 0;
+                if (!mission || mission.completed) return { xp: 0, coins: 0 };
 
                 set((state) => ({
                     missions: state.missions.map((m) =>
@@ -105,7 +111,7 @@ export const useMissionStore = create<MissionStore>()(
                     ),
                 }));
 
-                return mission.rewardXP;
+                return { xp: mission.rewardXP, coins: mission.rewardCoins };
             },
 
             getMissionsForToday: () => {
