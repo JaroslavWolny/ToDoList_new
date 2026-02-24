@@ -11,9 +11,10 @@ import { LevelBadge } from '../components/gamification/LevelBadge';
 import { HealthBar } from '../components/gamification/HealthBar';
 import { ComboIndicator } from '../components/gamification/ComboIndicator';
 import { LevelUpOverlay } from '../components/gamification/LevelUpOverlay';
+import { RandomRewardModal } from '../components/gamification/RandomRewardModal';
 import { TaskList } from '../components/tasks/TaskList';
 import { TaskForm } from '../components/tasks/TaskForm';
-import { Task } from '../types';
+import { Task, RandomReward } from '../types';
 import { calculateComboMultiplier, calculateLevel } from '../lib/gamification';
 
 export function Dashboard() {
@@ -21,6 +22,7 @@ export function Dashboard() {
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [showLevelUp, setShowLevelUp] = useState(false);
     const [newLevel, setNewLevel] = useState(0);
+    const [rewardDrop, setRewardDrop] = useState<RandomReward | null>(null);
 
     const userStore = useUserStore();
     const taskStore = useTaskStore();
@@ -44,22 +46,41 @@ export function Dashboard() {
         const result = taskStore.completeTask(id);
         if (!result) return;
 
-        userStore.addXP(result.xpEarned);
+        const { xpEarned, comboMultiplier, reward } = result;
+
+        userStore.addXP(xpEarned);
         userStore.updateStreak();
         userStore.incrementTasksCompleted();
         userStore.gainHealth();
 
+        if (reward) {
+            if (reward.currency === 'XP') {
+                userStore.addXP(reward.amount);
+            } else {
+                userStore.addCoins(reward.amount);
+            }
+            setRewardDrop(reward);
+        }
+
         // Update missions
         const completionsNow = taskStore.getCompletionsToday();
         missionStore.updateMissionProgress('complete_tasks', completionsNow.length);
+        missionStore.updateMissionProgress('marathon', completionsNow.length);
 
         const task = taskStore.tasks.find((t) => t.id === id);
         if (task?.priority === 'CRITICAL') {
             missionStore.updateMissionProgress('complete_critical', 1);
         }
+        if (task?.priority === 'LOW') {
+            const lowPriorityCount = completionsNow.filter(c => {
+                const t = taskStore.tasks.find(tk => tk.id === c.taskId);
+                return t?.priority === 'LOW';
+            }).length;
+            missionStore.updateMissionProgress('no_sweat', lowPriorityCount);
+        }
         if (task?.priority === 'HIGH') {
             const highPriorityCount = completionsNow.filter(c => {
-                const t = taskStore.tasks.find(t => t.id === c.taskId);
+                const t = taskStore.tasks.find(tk => tk.id === c.taskId);
                 return t?.priority === 'HIGH' || t?.priority === 'CRITICAL';
             }).length;
             missionStore.updateMissionProgress('complete_high', highPriorityCount);
@@ -68,6 +89,9 @@ export function Dashboard() {
         const hour = new Date().getHours();
         if (hour < 10) {
             missionStore.updateMissionProgress('early_bird', 1);
+        }
+        if (hour >= 20) {
+            missionStore.updateMissionProgress('night_owl', 1);
         }
 
         // Check for completed missions
@@ -201,7 +225,7 @@ export function Dashboard() {
                                         {mission.title}
                                     </p>
                                     <p className="text-[10px] text-[var(--color-text-secondary)]">
-                                        {mission.description} • +{mission.rewardXP} XP • +{mission.rewardCoins} 🪙
+                                        {mission.description} • +{mission.rewardXP} XP
                                     </p>
                                 </div>
                                 <span className="text-xs font-bold text-[var(--color-text-secondary)]">
@@ -256,6 +280,12 @@ export function Dashboard() {
                 show={showLevelUp}
                 newLevel={newLevel}
                 onDismiss={() => setShowLevelUp(false)}
+            />
+
+            {/* Random Reward Modal */}
+            <RandomRewardModal
+                reward={rewardDrop}
+                onClose={() => setRewardDrop(null)}
             />
         </div>
     );

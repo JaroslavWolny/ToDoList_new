@@ -45,7 +45,7 @@ export interface DailyMission {
     progress: number;
     rewardXP: number;
     rewardCoins: number;
-    type: 'complete_tasks' | 'complete_critical' | 'early_bird' | 'complete_high';
+    type: 'complete_tasks' | 'complete_critical' | 'early_bird' | 'complete_high' | 'night_owl' | 'no_sweat' | 'marathon';
     completed: boolean;
 }
 
@@ -96,4 +96,10 @@ export interface Avatar {
     cost: number;
     icon: string;
     color: string;
+}
+
+export interface RandomReward {
+    type: 'CHEST' | 'POUCH';
+    amount: number;
+    currency: 'XP' | 'COINS';
 }

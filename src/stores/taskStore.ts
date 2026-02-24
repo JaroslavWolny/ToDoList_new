@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
-import { Task, Completion, Penalty, Priority, Recurrence, TaskStatus } from '../types';
+import { Task, Completion, Penalty, Priority, Recurrence, TaskStatus, RandomReward } from '../types';
 import { calculateXP, calculateComboMultiplier, calculatePenalty } from '../lib/gamification';
 
 interface TaskStore {
@@ -11,7 +11,7 @@ interface TaskStore {
     addTask: (task: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate'>) => Task;
     updateTask: (id: string, updates: Partial<Task>) => void;
     deleteTask: (id: string) => void;
-    completeTask: (id: string) => { xpEarned: number; comboMultiplier: number } | null;
+    completeTask: (id: string) => { xpEarned: number; comboMultiplier: number; reward: RandomReward | null } | null;
     failTask: (id: string) => void;
     processOverdueTasks: (gamificationLevel: 'CASUAL' | 'STANDARD' | 'HARDCORE') => Penalty[];
     resetRecurringTasks: () => void;
@@ -84,7 +84,28 @@ export const useTaskStore = create<TaskStore>()(
                     completions: [...state.completions, completion],
                 }));
 
-                return { xpEarned, comboMultiplier };
+                // 12% chance to drop a random reward (rarer)
+                let reward: RandomReward | null = null;
+                if (Math.random() < 0.12) {
+                    const isChest = Math.random() < 0.2; // 20% chance of chest (rare, bigger reward), 80% pouch
+                    const isCoins = Math.random() < 0.6; // 60% chance for coins, 40% for XP
+
+                    if (isChest) {
+                        reward = {
+                            type: 'CHEST',
+                            currency: isCoins ? 'COINS' : 'XP',
+                            amount: isCoins ? Math.floor(Math.random() * 150) + 100 : Math.floor(Math.random() * 200) + 150,
+                        };
+                    } else {
+                        reward = {
+                            type: 'POUCH',
+                            currency: isCoins ? 'COINS' : 'XP',
+                            amount: isCoins ? Math.floor(Math.random() * 40) + 30 : Math.floor(Math.random() * 60) + 40,
+                        };
+                    }
+                }
+
+                return { xpEarned, comboMultiplier, reward };
             },
 
             failTask: (id) => {

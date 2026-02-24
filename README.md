@@ -30,6 +30,9 @@ Every task is a quest. Earn **XP** for completing your to-dos, fill up your XP b
 ### 🪙 Coin Economy & Avatar Customization
 Complete Daily Missions (e.g., "Complete 3 Critical Tasks") to earn **Coins**. Spend these newly-earned coins in the Avatar Shop to unlock premium, custom avatars (swords, shields, skulls, and more) to personalize your Level Badge and flex your progress.
 
+### 🎁 Random Loot Drops
+Every task you complete gives you a chance to discover hidden treasure! You might uncover a common **Lucky Pouch** or a rare, highly valuable **Chest** overflowing with extra Coins and XP. Stay productive and let the RNG reward your hard work!
+
 ### 🛡️ Guard Your Health
 Missed a deadline? Procrastinated too long? You'll take damage! **Keep your Health Bar (HP) high** by staying on top of your responsibilities. If you drop to zero... you'll face the consequences of broken discipline.
 
