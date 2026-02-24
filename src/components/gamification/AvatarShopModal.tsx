@@ -20,13 +20,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center"
-                style={{
-                    paddingTop: 'env(safe-area-inset-top, 0px)',
-                    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-                    paddingLeft: 'env(safe-area-inset-left, 0px)',
-                    paddingRight: 'env(safe-area-inset-right, 0px)'
-                }}
+                className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0"
                 onClick={onClose}
             >
                 <motion.div
@@ -58,7 +52,10 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                         </div>
                     </div>
 
-                    <div className="p-6 overflow-y-auto space-y-4">
+                    <div
+                        className="p-6 overflow-y-auto space-y-4"
+                        style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
+                    >
                         {AVAILABLE_AVATARS.map((avatar) => {
                             const isUnlocked = avatar.cost === 0 || unlockedAvatars.includes(avatar.id);
                             const isEquipped = equippedAvatar === avatar.id || (equippedAvatar === null && avatar.id === 'default');
