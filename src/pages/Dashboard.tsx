@@ -123,11 +123,11 @@ export function Dashboard() {
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold">
+                    <h1 className="text-2xl font-bold mb-1">
                         {getGreeting()}, <span className="gradient-text">{userStore.displayName || 'Hero'}</span>
                     </h1>
-                    <p className="text-sm text-[var(--color-text-secondary)]">
-                        {completedTodayCount}/{dailyGoal} tasks completed today
+                    <p className="text-sm font-medium text-[var(--color-text-secondary)]">
+                        {new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date())}
                     </p>
                 </div>
                 <LevelBadge />
