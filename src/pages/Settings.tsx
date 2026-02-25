@@ -114,25 +114,6 @@ export function Settings() {
                 </div>
             </Section>
 
-            {/* Daily Goal */}
-            <Section title="Daily Goal">
-                <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm">Tasks per day for streak</span>
-                    <span className="text-lg font-bold text-primary-500">{settings.dailyGoal}</span>
-                </div>
-                <input
-                    type="range"
-                    min={1}
-                    max={10}
-                    value={settings.dailyGoal}
-                    onChange={(e) => updateSettings({ dailyGoal: parseInt(e.target.value) })}
-                    className="w-full h-2 rounded-full appearance-none bg-[var(--color-surface-hover)] accent-primary-500"
-                />
-                <div className="flex justify-between mt-1">
-                    <span className="text-[10px] text-[var(--color-text-secondary)]">1</span>
-                    <span className="text-[10px] text-[var(--color-text-secondary)]">10</span>
-                </div>
-            </Section>
 
             {/* Gamification Level */}
             <Section title="Gamification">

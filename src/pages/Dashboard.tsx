@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Zap, Target } from 'lucide-react';
+import { Plus, Zap } from 'lucide-react';
 import { useUserStore } from '../stores/userStore';
 import { useTaskStore } from '../stores/taskStore';
 import { useAchievementStore } from '../stores/achievementStore';
@@ -141,9 +141,6 @@ export function Dashboard() {
         }
     }, [editingTask, taskStore]);
 
-    const completedTodayCount = completionsToday.length;
-    const dailyGoal = userStore.settings.dailyGoal;
-    const dailyProgress = Math.min((completedTodayCount / dailyGoal) * 100, 100);
 
     return (
         <div className="page-container">
@@ -180,25 +177,6 @@ export function Dashboard() {
                 <StreakCounter />
             </div>
 
-            {/* Daily Progress */}
-            <div className="card-surface rounded-2xl p-4 mb-4">
-                <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                        <Target className="w-4 h-4 text-primary-500" />
-                        <span className="text-sm font-semibold">Daily Goal</span>
-                    </div>
-                    <span className="text-sm font-bold text-primary-500">
-                        {completedTodayCount}/{dailyGoal}
-                    </span>
-                </div>
-                <div className="relative h-2 rounded-full bg-[var(--color-surface-hover)] overflow-hidden">
-                    <motion.div
-                        className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-primary-400 to-primary-600"
-                        animate={{ width: `${dailyProgress}%` }}
-                        transition={{ duration: 0.5 }}
-                    />
-                </div>
-            </div>
 
             {/* Daily Missions */}
             {userStore.settings.dailyMissionsEnabled && missions.length > 0 && (
