@@ -1,0 +1,8 @@
+export default {
+    "crons": [
+        {
+            "path": "/api/cron/notifications",
+            "schedule": "0 * * * *"
+        }
+    ]
+}

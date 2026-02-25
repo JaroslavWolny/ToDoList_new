@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getFirestore, doc, setDoc, deleteDoc } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -45,6 +46,43 @@ export const requestFirebaseNotificationPermission = async () => {
     } catch (error) {
         console.error('Error requesting notification permission or getting token:', error);
         return null;
+    }
+};
+
+// Initialize Firestore
+export const db = getFirestore(app);
+
+export const saveTokenToFirestore = async (token: string, morningTime: string, eveningTime: string) => {
+    try {
+        let deviceId = localStorage.getItem('todolist_device_id');
+        if (!deviceId) {
+            deviceId = crypto.randomUUID();
+            localStorage.setItem('todolist_device_id', deviceId);
+        }
+
+        // Attempt to save to Firestore
+        await setDoc(doc(db, "notification_tokens", deviceId), {
+            token,
+            morningTime,
+            eveningTime,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            updatedAt: new Date().toISOString()
+        });
+        console.log('Token saved to Firestore');
+    } catch (error) {
+        console.error('Failed to save token to Firestore:', error);
+    }
+};
+
+export const removeTokenFromFirestore = async () => {
+    try {
+        const deviceId = localStorage.getItem('todolist_device_id');
+        if (deviceId) {
+            await deleteDoc(doc(db, "notification_tokens", deviceId));
+            console.log('Token removed from Firestore');
+        }
+    } catch (error) {
+        console.error('Failed to remove token from Firestore:', error);
     }
 };
 

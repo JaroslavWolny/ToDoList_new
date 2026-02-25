@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useUserStore } from '../stores/userStore';
-import { requestFirebaseNotificationPermission } from '../lib/firebase';
+import { requestFirebaseNotificationPermission, saveTokenToFirestore, removeTokenFromFirestore } from '../lib/firebase';
 import { Moon, Sun, Smartphone, Download, Trash2, Shield, Snowflake, Bell, BellOff, Upload } from 'lucide-react';
 import { GamificationLevel, ThemeMode } from '../types';
 import { useTaskStore } from '../stores/taskStore';
@@ -184,6 +184,7 @@ export function Settings() {
                             if (token) {
                                 // Save settings and the token if granted
                                 updateSettings({ notificationsEnabled: true });
+                                await saveTokenToFirestore(token, settings.notificationMorning, settings.notificationEvening);
                             } else {
                                 // If denied or error, don't enable
                                 alert('Please allow notifications in your browser settings to use this feature.');
@@ -191,6 +192,7 @@ export function Settings() {
                             }
                         } else {
                             updateSettings({ notificationsEnabled: false });
+                            await removeTokenFromFirestore();
                         }
                     }}
                     icon={settings.notificationsEnabled ? <Bell className="w-4 h-4 text-primary-500" /> : <BellOff className="w-4 h-4 text-[var(--color-text-secondary)]" />}
@@ -206,7 +208,12 @@ export function Settings() {
                             <input
                                 type="time"
                                 value={settings.notificationMorning}
-                                onChange={(e) => updateSettings({ notificationMorning: e.target.value })}
+                                onChange={async (e) => {
+                                    const val = e.target.value;
+                                    updateSettings({ notificationMorning: val });
+                                    const token = await requestFirebaseNotificationPermission();
+                                    if (token) await saveTokenToFirestore(token, val, settings.notificationEvening);
+                                }}
                                 className="px-3 py-1.5 rounded-lg border-none bg-[var(--color-surface-hover)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-sm"
                             />
                         </div>
@@ -215,7 +222,12 @@ export function Settings() {
                             <input
                                 type="time"
                                 value={settings.notificationEvening}
-                                onChange={(e) => updateSettings({ notificationEvening: e.target.value })}
+                                onChange={async (e) => {
+                                    const val = e.target.value;
+                                    updateSettings({ notificationEvening: val });
+                                    const token = await requestFirebaseNotificationPermission();
+                                    if (token) await saveTokenToFirestore(token, settings.notificationMorning, val);
+                                }}
                                 className="px-3 py-1.5 rounded-lg border-none bg-[var(--color-surface-hover)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-sm"
                             />
                         </div>
