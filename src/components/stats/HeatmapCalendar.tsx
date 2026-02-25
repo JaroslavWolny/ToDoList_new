@@ -22,7 +22,7 @@ export function HeatmapCalendar({ months = 5 }: HeatmapCalendarProps) {
 
         const cells: Array<{ date: string; count: number; dayOfWeek: number; weekIndex: number }> = [];
         const monthLabels: Array<{ label: string; weekIndex: number }> = [];
-        let currentDate = new Date(startDate);
+        const currentDate = new Date(startDate);
         let weekIndex = 0;
         let lastMonth = -1;
 

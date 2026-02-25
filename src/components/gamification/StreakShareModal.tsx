@@ -111,36 +111,83 @@ export function StreakShareModal({ isOpen, onClose, currentStreak, bestStreak }:
                                     borderRadius: isGenerating ? '0px' : '' // prevent rounded corners glitch in html2canvas if needed
                                 }}
                             >
-                                {/* Decorative elements */}
-                                <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-pink-500/20 blur-[100px] rounded-full" />
-                                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-500/30 blur-[80px] rounded-full" />
+                                {/* Decorative elements - Using radial gradients instead of blur for html2canvas compatibility */}
+                                <div
+                                    className="absolute top-[-30%] left-[-30%] w-[100%] h-[100%] rounded-full pointer-events-none"
+                                    style={{
+                                        background: 'radial-gradient(circle, rgba(236,72,153,0.3) 0%, rgba(236,72,153,0) 60%)',
+                                        filter: isGenerating ? 'none' : 'blur(40px)'
+                                    }}
+                                />
+                                <div
+                                    className="absolute bottom-[-20%] right-[-20%] w-[100%] h-[100%] rounded-full pointer-events-none"
+                                    style={{
+                                        background: 'radial-gradient(circle, rgba(99,102,241,0.3) 0%, rgba(99,102,241,0) 60%)',
+                                        filter: isGenerating ? 'none' : 'blur(40px)'
+                                    }}
+                                />
 
                                 {/* Inner Card content */}
-                                <div className="z-10 flex flex-col items-center text-center">
-                                    <h2 className="text-white/80 font-medium tracking-widest uppercase text-sm mb-6 flex items-center gap-2">
-                                        <Calendar className="w-4 h-4" />
+                                <div className="z-10 flex flex-col items-center text-center w-full relative">
+                                    <h2 className="text-white/90 font-medium tracking-widest uppercase text-sm mb-8 flex items-center justify-center gap-2">
+                                        <Calendar className="w-5 h-5" />
                                         Current Streak
                                     </h2>
 
                                     {/* Flame / Streak Number */}
-                                    <div className="relative mb-8">
-                                        <div className="absolute inset-0 streak-gradient blur-2xl opacity-50 rounded-full" />
-                                        <div className="w-40 h-40 bg-white/5 backdrop-blur-md border border-white/10 rounded-full flex flex-col items-center justify-center relative z-10">
-                                            <Flame className="w-12 h-12 text-orange-400 mb-2 drop-shadow-[0_0_15px_rgba(251,146,60,0.8)]" />
-                                            <span className="text-6xl font-black text-white tracking-tighter drop-shadow-md">
+                                    <div className="relative mb-10 mt-4 flex justify-center items-center w-full">
+                                        {/* Orange glow behind the circle */}
+                                        <div
+                                            className="absolute w-[250px] h-[250px] rounded-full pointer-events-none z-0"
+                                            style={{
+                                                background: 'radial-gradient(circle, rgba(249,115,22,0.4) 0%, rgba(249,115,22,0) 65%)',
+                                                top: '50%',
+                                                left: '50%',
+                                                transform: 'translate(-50%, -50%)',
+                                                filter: isGenerating ? 'none' : 'blur(20px)'
+                                            }}
+                                        />
+
+                                        <div
+                                            className="w-48 h-48 rounded-full flex flex-col items-center justify-center relative z-10"
+                                            style={{
+                                                background: isGenerating ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                                                backdropFilter: isGenerating ? 'none' : 'blur(16px)',
+                                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                                boxShadow: isGenerating ? '0 8px 32px rgba(0,0,0,0.2)' : 'none'
+                                            }}
+                                        >
+                                            <Flame
+                                                className="w-14 h-14 text-orange-400 mb-2"
+                                                style={{
+                                                    filter: isGenerating ? 'none' : 'drop-shadow(0 0 15px rgba(251,146,60,0.8))'
+                                                }}
+                                            />
+                                            <span
+                                                className="text-7xl font-black text-white tracking-tighter"
+                                                style={{ textShadow: '0 4px 12px rgba(0,0,0,0.4)' }}
+                                            >
                                                 {currentStreak}
                                             </span>
                                         </div>
                                     </div>
 
                                     {/* Best Streak Badge */}
-                                    <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl px-5 py-3 flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                                            <Crown className="w-5 h-5 text-yellow-400" />
+                                    <div
+                                        className="rounded-2xl px-6 py-4 flex items-center justify-start gap-4 mx-auto w-[90%] max-w-[260px] relative z-20"
+                                        style={{
+                                            background: isGenerating ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255,255,255,0.08)',
+                                            backdropFilter: isGenerating ? 'none' : 'blur(12px)',
+                                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                                            boxShadow: isGenerating ? '0 4px 20px rgba(0,0,0,0.15)' : 'none'
+                                        }}
+                                    >
+                                        <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                                            <Crown className="w-6 h-6 text-yellow-400" />
                                         </div>
-                                        <div className="text-left">
-                                            <p className="text-yellow-400/80 text-[10px] font-bold uppercase tracking-wider">All-Time Best</p>
-                                            <p className="text-white font-bold text-sm">{bestStreak} Days</p>
+                                        <div className="text-left flex-1">
+                                            <p className="text-yellow-400/90 text-[11px] font-bold uppercase tracking-wider mb-0.5" style={{ margin: 0 }}>All-Time Best</p>
+                                            <p className="text-white font-bold text-base" style={{ margin: 0 }}>{bestStreak} Days</p>
                                         </div>
                                     </div>
 
