@@ -48,8 +48,9 @@ Visualize your productivity journey:
 - **Dynamic XP & Growth Charts** 📈 Track your growth over the last 7 days.
 - **Achievement Showcase Grid** 🌟 Show off all the badges you've earned.
 
-### 🔔 Web Push Notifications (Firebase)
-- **Background Reminders** 📲 The app requests system permissions to deliver morning and evening summary reminders directly to your device (including iOS 16.4+ standalone PWAs).
+### 🔔 Web Push Notifications (Firebase & Vercel)
+- **Background Reminders:** 📲 The app uses Firebase Cloud Messaging (FCM) to deliver morning and evening summaries directly to your device (supports iOS 16.4+ standalone PWAs).
+- **Vercel Cron Jobs:** ⚙️ A custom Vercel Serverless Function runs automatically every day, securely reading your timezone preferences from Firestore via the Firebase Admin SDK to ping you at exactly the right time.
 
 ### 📱 Perfect PWA Experience
 Install **QuestDo** directly to your phone or desktop.
@@ -73,6 +74,8 @@ We forged QuestDo using the most modern web technologies:
 | 🎞️ **Framer Motion**| Buttery-smooth, captivating animations |
 | 📈 **Recharts** | Interactive data visualization |
 | 📱 **Vite PWA** | Native app capabilities & offline mode |
+| 🔥 **Firebase** | Cloud Messaging (FCM) & Firestore Database |
+| ▲ **Vercel** | Serverless API Functions & Daily Cron Jobs |
 
 ---
 
