@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useUserStore } from '../stores/userStore';
+import { requestFirebaseNotificationPermission } from '../lib/firebase';
 import { Moon, Sun, Smartphone, Download, Trash2, Shield, Snowflake, Bell, BellOff, Upload } from 'lucide-react';
 import { GamificationLevel, ThemeMode } from '../types';
 import { useTaskStore } from '../stores/taskStore';
@@ -177,7 +178,21 @@ export function Settings() {
                     label="Enable Notifications"
                     description="Receive morning and evening reminders"
                     checked={settings.notificationsEnabled}
-                    onChange={(v) => updateSettings({ notificationsEnabled: v })}
+                    onChange={async (v) => {
+                        if (v) {
+                            const token = await requestFirebaseNotificationPermission();
+                            if (token) {
+                                // Save settings and the token if granted
+                                updateSettings({ notificationsEnabled: true });
+                            } else {
+                                // If denied or error, don't enable
+                                alert('Please allow notifications in your browser settings to use this feature.');
+                                updateSettings({ notificationsEnabled: false });
+                            }
+                        } else {
+                            updateSettings({ notificationsEnabled: false });
+                        }
+                    }}
                     icon={settings.notificationsEnabled ? <Bell className="w-4 h-4 text-primary-500" /> : <BellOff className="w-4 h-4 text-[var(--color-text-secondary)]" />}
                 />
                 {settings.notificationsEnabled && (

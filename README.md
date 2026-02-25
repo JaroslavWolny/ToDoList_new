@@ -48,6 +48,9 @@ Visualize your productivity journey:
 - **Dynamic XP & Growth Charts** 📈 Track your growth over the last 7 days.
 - **Achievement Showcase Grid** 🌟 Show off all the badges you've earned.
 
+### 🔔 Web Push Notifications (Firebase)
+- **Background Reminders** 📲 The app requests system permissions to deliver morning and evening summary reminders directly to your device (including iOS 16.4+ standalone PWAs).
+
 ### 📱 Perfect PWA Experience
 Install **QuestDo** directly to your phone or desktop.
 - **Offline-First:** Works anywhere, anytime. Your data stays completely private in LocalStorage.
