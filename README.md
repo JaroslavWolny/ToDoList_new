@@ -38,6 +38,10 @@ Missed a deadline? Procrastinated too long? You'll take damage! **Keep your Heal
 
 ### ⚡ Unbreakable Streaks & Combos
 Consistency is king. Build daily **Streaks** to unlock powerful XP multipliers. Chain tasks together in quick succession to activate **Combo Multipliers** and sky-rocket your productivity stats!
+- **Shareable Streak Cards:** Flex your consistency! Generate a gorgeous, dynamically styled image of your current streak and share it directly to your Instagram story or download it to your device to show everyone you mean business.
+
+### 📅 Task Scheduling
+Not ready for a task yet? Lock it away! Set a **Start Date** for your tasks, and they will remain locked and perfectly visible but unclickable until the precise time arrives. Plan your entire week without the anxiety of a cluttered dashboard.
 
 ### 🏆 Unlock Achievements
 Collect beautiful badges and unlock unique **Achievements** as you hit major milestones. From "First Blood" (creating your first task) to "Unstoppable" (reaching a legendary streak), there's always a new goal to strive for.
