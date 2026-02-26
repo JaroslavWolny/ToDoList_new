@@ -45,3 +45,24 @@ self.addEventListener('notificationclick', function (event) {
         })
     );
 });
+
+self.addEventListener('install', (event) => {
+    // Force the new service worker to activate immediately, skipping the waiting lifecycle phase.
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+    // Take control of all pages immediately and clean up old caches from previous PWA strategies
+    event.waitUntil(
+        clients.claim().then(() => {
+            return caches.keys().then((cacheNames) => {
+                return Promise.all(
+                    cacheNames.map((cacheName) => {
+                        console.log('[Service Worker] Deleting old cache:', cacheName);
+                        return caches.delete(cacheName);
+                    })
+                );
+            });
+        })
+    );
+});
