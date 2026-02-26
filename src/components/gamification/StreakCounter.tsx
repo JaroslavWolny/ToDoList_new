@@ -2,12 +2,10 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Flame } from 'lucide-react';
 import { useUserStore } from '../../stores/userStore';
-import { getStreakMilestone } from '../../lib/gamification';
 import { StreakShareModal } from './StreakShareModal';
 
 export function StreakCounter() {
     const { streakCurrent, streakLongest } = useUserStore();
-    const milestone = getStreakMilestone(streakCurrent);
     const isOnFire = streakCurrent >= 3;
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
@@ -34,15 +32,6 @@ export function StreakCounter() {
                             <Flame className="w-6 h-6 text-white" />
                         </div>
                     </motion.div>
-                    {milestone && (
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center"
-                        >
-                            <span className="text-[10px]">⭐</span>
-                        </motion.div>
-                    )}
                 </div>
                 <div className="flex-1">
                     <div className="flex items-baseline gap-1">
@@ -62,16 +51,18 @@ export function StreakCounter() {
                         Best: {streakLongest} days
                     </p>
                 </div>
-                {isOnFire && (
-                    <motion.span
-                        animate={{ opacity: [0.5, 1, 0.5] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="text-2xl"
-                    >
-                        🔥
-                    </motion.span>
-                )}
-            </motion.div>
+                {
+                    isOnFire && (
+                        <motion.span
+                            animate={{ opacity: [0.5, 1, 0.5] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                            className="text-2xl"
+                        >
+                            🔥
+                        </motion.span>
+                    )
+                }
+            </motion.div >
 
             <StreakShareModal
                 isOpen={isShareModalOpen}
