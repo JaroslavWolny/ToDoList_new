@@ -2,6 +2,7 @@
     "compilerOptions": {
         "target": "ES2020",
         "module": "CommonJS",
+        "jsx": "react-jsx",
         "lib": [
             "ES2020",
             "DOM"
@@ -15,6 +16,7 @@
         "outDir": "../dist-api"
     },
     "include": [
-        "**/*.ts"
+        "**/*.ts",
+        "**/*.tsx"
     ]
 }
