@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Flame } from 'lucide-react';
 import { useUserStore } from '../../stores/userStore';
+import { getLevelTitle } from '../../lib/gamification';
 import { StreakShareModal } from './StreakShareModal';
 
 export function StreakCounter() {
@@ -69,6 +70,8 @@ export function StreakCounter() {
                 onClose={() => setIsShareModalOpen(false)}
                 currentStreak={streakCurrent}
                 bestStreak={streakLongest}
+                username={useUserStore.getState().displayName || 'Hero'}
+                rank={getLevelTitle(Math.floor(Math.sqrt(useUserStore.getState().xp / 100)))}
             />
         </>
     );
