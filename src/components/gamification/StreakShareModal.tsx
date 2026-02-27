@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flame, X, Download, Share2, Crown, Sparkles, TrendingUp, Target } from 'lucide-react';
+import { Flame, X, Download, Share2, Sparkles, TrendingUp, Target } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
 interface StreakShareModalProps {
@@ -21,6 +21,11 @@ export function StreakShareModal({ isOpen, onClose, currentStreak, bestStreak }:
     const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const nextMilestone = getNextMilestone(currentStreak);
     const milestoneProgress = Math.min(100, Math.max(0, (currentStreak / nextMilestone) * 100));
+    const primaryTextColor = isGenerating ? '#f8fafc' : 'var(--color-text)';
+    const secondaryTextColor = isGenerating ? '#94a3b8' : 'var(--color-text-secondary)';
+    const surfaceColor = isGenerating ? '#0f172a' : 'var(--color-surface)';
+    const borderColor = isGenerating ? '#1e293b' : 'var(--color-border)';
+    const surfaceMutedColor = isGenerating ? '#1e293b' : 'var(--color-surface-hover)';
 
     const generateImage = async () => {
         if (!cardRef.current) return null;
@@ -114,56 +119,82 @@ export function StreakShareModal({ isOpen, onClose, currentStreak, bestStreak }:
 
                             <div
                                 ref={cardRef}
-                                className="relative mx-4 mt-4 aspect-[9/16] overflow-hidden rounded-3xl bg-[var(--color-bg)] border border-[var(--color-border)] shadow-xl"
+                                className={`relative mx-4 mt-4 aspect-[9/16] overflow-hidden shadow-xl ${isGenerating
+                                    ? 'rounded-none border-0 bg-[#120a16]'
+                                    : 'rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg)]'
+                                    }`}
                                 style={{
                                     width: isGenerating ? 1080 : undefined,
                                     maxWidth: isGenerating ? 1080 : undefined,
+                                    height: isGenerating ? 1920 : undefined,
                                     borderRadius: isGenerating ? 0 : undefined,
                                 }}
                             >
-                                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-red-500/10 dark:from-orange-500/15 dark:to-red-500/15" />
+                                <div className={`absolute inset-0 ${isGenerating
+                                    ? 'bg-gradient-to-b from-[#271023] via-[#1a0f1e] to-[#120a16]'
+                                    : 'bg-gradient-to-br from-orange-500/10 via-transparent to-red-500/10 dark:from-orange-500/15 dark:to-red-500/15'
+                                    }`} />
 
-                                <div className="relative z-10 grid h-full grid-rows-[auto_auto_1fr_auto_auto] text-[var(--color-text)]">
+                                <div className="relative z-10 grid h-full grid-rows-[auto_auto_1fr_auto_auto]" style={{ color: primaryTextColor }}>
                                     <div className="flex items-center justify-between px-7 pt-6">
-                                        <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] shadow-sm">
+                                        <div
+                                            className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] shadow-sm"
+                                            style={{ border: `1px solid ${borderColor}`, backgroundColor: surfaceColor }}
+                                        >
                                             <Sparkles className="h-3.5 w-3.5 text-orange-500" />
                                             QuestDo
                                         </div>
-                                        <span className="text-xs font-medium text-[var(--color-text-secondary)]">{today}</span>
+                                        <span className="text-xs font-medium" style={{ color: secondaryTextColor }}>{today}</span>
                                     </div>
 
                                     <div className="px-7 pt-4">
-                                        <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--color-text-secondary)]">Streak Report</p>
+                                        <p className="text-[11px] uppercase tracking-[0.22em]" style={{ color: secondaryTextColor }}>Streak Report</p>
                                         <p className="mt-1 text-sm font-medium">You are building real momentum.</p>
                                     </div>
 
-                                    <div className="flex items-center justify-center px-7 py-3 text-center">
+                                    <div className="flex items-center justify-center px-7 py-10 text-center">
                                         <div className="relative">
                                             <div className="absolute -inset-7 rounded-full bg-orange-400/20 blur-3xl" />
-                                            <div className="relative flex h-48 w-48 flex-col items-center justify-center rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg backdrop-blur-sm">
-                                                <Flame className="mb-2 h-14 w-14 text-orange-500" strokeWidth={2.8} />
-                                                <span className="text-8xl font-black leading-[0.92] tracking-tighter gradient-text streak-gradient" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent' }}>{currentStreak}</span>
-                                                <span className="mt-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[var(--color-text-secondary)]">Day Streak</span>
+                                            <div
+                                                className={`relative flex flex-col items-center justify-center rounded-3xl border shadow-lg ${isGenerating ? 'h-72 w-72' : 'h-48 w-48'}`}
+                                                style={{ borderColor, backgroundColor: surfaceColor }}
+                                            >
+                                                <Flame className={`${isGenerating ? 'mb-3 h-16 w-16' : 'mb-2 h-14 w-14'} text-orange-500`} strokeWidth={2.8} />
+                                                <span
+                                                    className={`${isGenerating ? 'text-9xl' : 'text-8xl'} font-black leading-[0.92] tracking-tighter`}
+                                                    style={isGenerating ? { color: '#f8fafc', textShadow: '0 10px 30px rgba(249,115,22,0.45)' } : { backgroundImage: 'linear-gradient(135deg, #f59e0b, #ef4444, #f97316)', backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent' }}
+                                                >
+                                                    {currentStreak}
+                                                </span>
+                                                <span className="mt-2 text-[11px] font-bold uppercase tracking-[0.25em]" style={{ color: secondaryTextColor }}>
+                                                    Day Streak
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div className="px-7">
-                                        <div className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 text-left shadow-sm">
+                                        <div
+                                            className="w-full rounded-2xl p-3.5 text-left shadow-sm"
+                                            style={{ border: `1px solid ${borderColor}`, backgroundColor: surfaceColor }}
+                                        >
                                             <div className="mb-3 flex items-center justify-between">
-                                                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-secondary)]">
+                                                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em]" style={{ color: secondaryTextColor }}>
                                                     <Target className="h-3.5 w-3.5" />
                                                     Next milestone
                                                 </div>
                                                 <p className="text-xs font-bold text-orange-500">{nextMilestone} {nextMilestone === 1 ? 'day' : 'days'}</p>
                                             </div>
-                                            <div className="h-1.5 overflow-hidden rounded-full bg-[var(--color-surface-hover)]">
-                                                <div className="h-full rounded-full streak-gradient" style={{ width: `${milestoneProgress}%` }} />
+                                            <div className="h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: surfaceMutedColor }}>
+                                                <div className="h-full rounded-full" style={{ width: `${milestoneProgress}%`, backgroundImage: 'linear-gradient(135deg, #f59e0b, #ef4444, #f97316)' }} />
                                             </div>
-                                            <div className="mt-4 flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+                                            <div
+                                                className="mt-4 flex items-center justify-between rounded-xl p-3"
+                                                style={{ border: `1px solid ${borderColor}`, backgroundColor: isGenerating ? '#0b1120' : 'var(--color-bg)' }}
+                                            >
                                                 <div className="flex items-center gap-2">
                                                     <div>
-                                                        <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-secondary)]">All-time best</p>
+                                                        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: secondaryTextColor }}>All-time best</p>
                                                         <p className="text-lg font-bold">{bestStreak} {bestStreak === 1 ? 'Day' : 'Days'}</p>
                                                     </div>
                                                 </div>
@@ -174,7 +205,7 @@ export function StreakShareModal({ isOpen, onClose, currentStreak, bestStreak }:
 
                                     <div className="px-7 pb-6 pt-3 text-center">
                                         <p className="text-base font-semibold leading-tight">Consistency compounds. Keep shipping small wins.</p>
-                                        <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-secondary)]">Made with QuestDo</p>
+                                        <p className="mt-2 text-[10px] uppercase tracking-[0.2em]" style={{ color: secondaryTextColor }}>Made with QuestDo</p>
                                     </div>
                                 </div>
                             </div>
