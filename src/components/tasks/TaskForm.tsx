@@ -58,7 +58,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center"
+                className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center safe-top safe-bottom safe-x"
                 onClick={onClose}
             >
                 <motion.div
@@ -68,6 +68,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                     transition={{ type: 'spring', damping: 25 }}
                     onClick={(e) => e.stopPropagation()}
                     className="w-full max-w-lg card-surface rounded-t-3xl sm:rounded-3xl p-6 max-h-[85vh] overflow-y-auto"
+                    style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
                 >
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-xl font-bold">

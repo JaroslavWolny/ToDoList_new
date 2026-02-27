@@ -81,7 +81,7 @@ export function StreakShareModal({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={onClose}
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm sm:p-6"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm sm:p-6 safe-top safe-bottom safe-x"
                 >
                     <motion.div
                         initial={{ scale: 0.92, opacity: 0, y: 20 }}
@@ -111,7 +111,10 @@ export function StreakShareModal({
                         </div>
 
                         {/* Actions */}
-                        <div className="mt-2 grid w-full grid-cols-2 gap-3 p-4 pb-5">
+                        <div
+                            className="mt-2 grid w-full grid-cols-2 gap-3 p-4"
+                            style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' }}
+                        >
                             <motion.button
                                 whileTap={{ scale: 0.98 }}
                                 onClick={handleDownload}
