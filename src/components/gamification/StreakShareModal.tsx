@@ -102,11 +102,11 @@ export function StreakShareModal({
                         </div>
 
                         {/* High-res Image Preview */}
-                        <div className="relative flex min-h-0 flex-1 shrink items-center justify-center p-4">
+                        <div className="relative flex min-h-0 flex-1 items-center justify-center bg-black">
                             <img
                                 src={imageUrl}
                                 alt="QuestDo RPG Card"
-                                className="h-full max-h-full w-auto max-w-full object-contain overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-opacity duration-300"
+                                className="h-full w-full object-contain"
                                 loading="eager"
                             />
                         </div>
