@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { useUserStore } from '../stores/userStore';
-import { useTaskStore } from '../stores/taskStore';
 import { useAchievementStore } from '../stores/achievementStore';
 import { HeatmapCalendar } from '../components/stats/HeatmapCalendar';
 import { XPChart } from '../components/stats/XPChart';
@@ -8,7 +7,7 @@ import { AchievementGrid } from '../components/stats/AchievementGrid';
 import { Flame, Zap, CheckCircle2, Trophy } from 'lucide-react';
 
 export function Stats() {
-    const { xp, level, streakCurrent, streakLongest, totalTasksCompleted, totalXPEarned } = useUserStore();
+    const { streakLongest, totalTasksCompleted, totalXPEarned } = useUserStore();
     const achievementStore = useAchievementStore();
     const unlockedCount = achievementStore.getUnlockedCount();
     const totalAchievements = achievementStore.achievements.length;

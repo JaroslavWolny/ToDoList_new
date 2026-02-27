@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
-import { Task, Completion, Penalty, Priority, Recurrence, TaskStatus, RandomReward } from '../types';
+import { Task, Completion, Penalty, TaskStatus, RandomReward } from '../types';
 import { calculateXP, calculateComboMultiplier, calculatePenalty } from '../lib/gamification';
 
 interface TaskStore {

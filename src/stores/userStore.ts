@@ -1,9 +1,39 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { UserState, UserSettings, GamificationLevel } from '../types';
-import { calculateLevel, calculateStreakBreakPenalty, isStreakDay } from '../lib/gamification';
+import { UserState, UserSettings } from '../types';
+import { calculateLevel, calculateStreakBreakPenalty } from '../lib/gamification';
 
 const MAX_FREEZE_TOKENS = 3;
+const STREAK_GRACE_HOUR = 3;
+const MAX_WORKDAY_LOOKBACK = 14;
+
+const toDateOnlyString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const getPreviousWorkDay = (
+    fromDate: Date,
+    workDays: number[],
+    steps = 1
+): Date | null => {
+    const cursor = new Date(fromDate);
+    let found = 0;
+
+    for (let i = 0; i < MAX_WORKDAY_LOOKBACK; i += 1) {
+        cursor.setDate(cursor.getDate() - 1);
+        if (workDays.includes(cursor.getDay())) {
+            found += 1;
+            if (found === steps) {
+                return new Date(cursor);
+            }
+        }
+    }
+
+    return null;
+};
 
 interface UserStore extends UserState {
     addXP: (amount: number) => void;
@@ -110,31 +140,30 @@ export const useUserStore = create<UserStore>()(
 
             updateStreak: () => {
                 set((state) => {
-                    const today = new Date().toISOString().split('T')[0];
+                    const now = new Date();
+                    if (!state.settings.workDays.includes(now.getDay())) {
+                        return {};
+                    }
+
+                    const today = toDateOnlyString(now);
                     const lastDate = state.lastCompletedDate?.split('T')[0];
 
                     if (lastDate === today) return {};
 
-                    const yesterday = new Date();
-                    yesterday.setDate(yesterday.getDate() - 1);
-                    const yesterdayStr = yesterday.toISOString().split('T')[0];
+                    const previousWorkDay = getPreviousWorkDay(now, state.settings.workDays);
+                    const previousWorkDayStr = previousWorkDay ? toDateOnlyString(previousWorkDay) : null;
 
                     let newStreak = state.streakCurrent;
 
-                    if (lastDate === yesterdayStr || !lastDate) {
+                    if (!lastDate || lastDate === previousWorkDayStr) {
                         newStreak = state.streakCurrent + 1;
                     } else {
-                        // Check grace period (before 3 AM)
-                        const now = new Date();
-                        if (now.getHours() < 3) {
-                            const twoDaysAgo = new Date();
-                            twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-                            const twoDaysAgoStr = twoDaysAgo.toISOString().split('T')[0];
-                            if (lastDate === twoDaysAgoStr) {
-                                newStreak = state.streakCurrent + 1;
-                            } else {
-                                newStreak = 1;
-                            }
+                        if (now.getHours() < STREAK_GRACE_HOUR) {
+                            const graceWorkDay = getPreviousWorkDay(now, state.settings.workDays, 2);
+                            const graceWorkDayStr = graceWorkDay ? toDateOnlyString(graceWorkDay) : null;
+                            newStreak = lastDate === graceWorkDayStr
+                                ? state.streakCurrent + 1
+                                : 1;
                         } else {
                             newStreak = 1;
                         }
@@ -143,7 +172,7 @@ export const useUserStore = create<UserStore>()(
                     return {
                         streakCurrent: newStreak,
                         streakLongest: Math.max(state.streakLongest, newStreak),
-                        lastCompletedDate: new Date().toISOString(),
+                        lastCompletedDate: today,
                     };
                 });
             },
@@ -201,20 +230,34 @@ export const useUserStore = create<UserStore>()(
                 if (!state.onboardingComplete) return;
                 if (!state.lastCompletedDate) return;
 
-                const streakStatus = isStreakDay(state.lastCompletedDate);
+                const now = new Date();
+                if (!state.settings.workDays.includes(now.getDay())) return;
 
-                if (streakStatus === 'broken' && state.streakCurrent > 0) {
+                const lastDate = state.lastCompletedDate.split('T')[0];
+                const today = toDateOnlyString(now);
+                const previousWorkDay = getPreviousWorkDay(now, state.settings.workDays);
+                const previousWorkDayStr = previousWorkDay ? toDateOnlyString(previousWorkDay) : null;
+                const graceWorkDay = now.getHours() < STREAK_GRACE_HOUR
+                    ? getPreviousWorkDay(now, state.settings.workDays, 2)
+                    : null;
+                const graceWorkDayStr = graceWorkDay ? toDateOnlyString(graceWorkDay) : null;
+                const streakBroken = !(
+                    lastDate === today ||
+                    lastDate === previousWorkDayStr ||
+                    (graceWorkDayStr !== null && lastDate === graceWorkDayStr)
+                );
+
+                if (streakBroken && state.streakCurrent > 0) {
                     // Try to auto-use a freeze token (not available in HARDCORE)
                     if (
                         state.streakFreezeTokens > 0 &&
                         state.settings.gamificationLevel !== 'HARDCORE'
                     ) {
-                        // Freeze protects the streak — set lastCompletedDate to yesterday
-                        const yesterday = new Date();
-                        yesterday.setDate(yesterday.getDate() - 1);
+                        // Freeze protects the streak by anchoring to previous configured work day.
+                        const protectedDate = previousWorkDayStr ?? today;
                         set({
                             streakFreezeTokens: state.streakFreezeTokens - 1,
-                            lastCompletedDate: yesterday.toISOString(),
+                            lastCompletedDate: protectedDate,
                         });
                         return;
                     }

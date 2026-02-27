@@ -1,8 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUserStore } from '../../stores/userStore';
 import { getLevelTitle } from '../../lib/gamification';
-import { Star, Sparkles } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Sparkles } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface LevelUpOverlayProps {
     show: boolean;
@@ -12,21 +11,20 @@ interface LevelUpOverlayProps {
 
 export function LevelUpOverlay({ show, newLevel, onDismiss }: LevelUpOverlayProps) {
     const title = getLevelTitle(newLevel);
-    const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; color: string }>>([]);
+    const particles = Array.from({ length: 20 }, (_, i) => ({
+        id: i,
+        x: (i * 37 + newLevel * 7) % 100,
+        y: (i * 29 + newLevel * 11) % 100,
+        delay: (i % 5) * 0.1,
+        color: ['#7c3aed', '#a855f7', '#c084fc', '#f59e0b', '#fbbf24'][i % 5],
+    }));
 
     useEffect(() => {
         if (show) {
-            const newParticles = Array.from({ length: 20 }, (_, i) => ({
-                id: i,
-                x: Math.random() * 100,
-                y: Math.random() * 100,
-                color: ['#7c3aed', '#a855f7', '#c084fc', '#f59e0b', '#fbbf24'][Math.floor(Math.random() * 5)],
-            }));
-            setParticles(newParticles);
             const timer = setTimeout(onDismiss, 4000);
             return () => clearTimeout(timer);
         }
-    }, [show, onDismiss]);
+    }, [onDismiss, show]);
 
     return (
         <AnimatePresence>
@@ -48,7 +46,7 @@ export function LevelUpOverlay({ show, newLevel, onDismiss }: LevelUpOverlayProp
                                 scale: [0, 1, 0],
                                 opacity: [0, 1, 0],
                             }}
-                            transition={{ duration: 2, delay: Math.random() * 0.5 }}
+                            transition={{ duration: 2, delay: p.delay }}
                             className="absolute w-3 h-3 rounded-full"
                             style={{ backgroundColor: p.color }}
                         />

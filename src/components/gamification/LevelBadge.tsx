@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import * as Icons from 'lucide-react';
+import { icons } from 'lucide-react';
 import { useUserStore } from '../../stores/userStore';
 import { getLevelTitle } from '../../lib/gamification';
 import { AVAILABLE_AVATARS } from '../../lib/avatars';
@@ -20,7 +20,7 @@ export function LevelBadge() {
     };
 
     const currentAvatar = AVAILABLE_AVATARS.find(f => f.id === equippedAvatar) || AVAILABLE_AVATARS[0];
-    const IconComponent = (Icons as any)[currentAvatar.icon];
+    const IconComponent = icons[currentAvatar.icon as keyof typeof icons];
 
     return (
         <>

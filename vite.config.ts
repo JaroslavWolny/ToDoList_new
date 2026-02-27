@@ -5,14 +5,31 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig({
   plugins: [
     react(),
+    {
+      name: 'local-vercel-og',
+      configureServer(server) {
+        server.middlewares.use(async (req, res, next) => {
+          if (req.url && req.url.startsWith('/api/og')) {
+            try {
+              const { generateOGImage } = await server.ssrLoadModule('/vite-og-plugin.ts');
+              const pngBuffer = await generateOGImage(req.url);
+              res.setHeader('Content-Type', 'image/png');
+              res.end(pngBuffer);
+            } catch (err) {
+              console.error('OG Image Generation Error:', err);
+              res.statusCode = 500;
+              res.end((err as Error).message);
+            }
+          } else {
+            next();
+          }
+        });
+      }
+    },
     VitePWA({
-      strategies: 'injectManifest',
-      srcDir: 'public',
-      filename: 'firebase-messaging-sw.js',
+      strategies: 'generateSW',
       registerType: 'autoUpdate',
-      injectManifest: {
-        injectionPoint: undefined
-      },
+      injectRegister: 'auto',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'QuestDo - Gamified Tasks',
@@ -43,6 +60,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
     }),
   ],

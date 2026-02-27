@@ -1,4 +1,4 @@
-import { Achievement, UserState, Completion } from '../types';
+import { UserState, Completion } from '../types';
 import { calculateComboMultiplier } from './gamification';
 
 export interface AchievementDef {
@@ -212,4 +212,3 @@ export function checkAchievements(
         (def) => !unlockedKeys.has(def.key) && def.check(user, completions)
     );
 }
-

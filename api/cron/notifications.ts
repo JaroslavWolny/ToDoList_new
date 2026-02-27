@@ -1,6 +1,15 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import * as admin from 'firebase-admin';
 
+type FirebaseMessagingError = { code?: string; message?: string };
+
+const getErrorDetails = (error: unknown): FirebaseMessagingError => {
+    if (typeof error === 'object' && error !== null) {
+        return error as FirebaseMessagingError;
+    }
+    return {};
+};
+
 if (!admin.apps.length) {
     try {
         admin.initializeApp({
@@ -16,8 +25,8 @@ if (!admin.apps.length) {
     }
 }
 
-const db = admin.firestore();
-const messaging = admin.messaging();
+const db = admin.apps.length ? admin.firestore() : null;
+const messaging = admin.apps.length ? admin.messaging() : null;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Only allow GET requests (Vercel Cron natively uses GET)
@@ -32,6 +41,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
+        if (!db || !messaging) {
+            return res.status(500).json({ message: 'Firebase Admin is not configured' });
+        }
+
         const tokensSnapshot = await db.collection('notification_tokens').get();
         let sentCount = 0;
 
@@ -79,10 +92,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             try {
                 await messaging.send(message);
                 sentCount++;
-            } catch (err: any) {
+            } catch (err: unknown) {
+                const details = getErrorDetails(err);
                 console.error(`Failed to send to ${doc.id}:`, err);
                 // If token is invalid/unregistered, remove it to keep DB clean
-                if (err.code === 'messaging/registration-token-not-registered') {
+                if (details.code === 'messaging/registration-token-not-registered') {
                     await doc.ref.delete();
                 }
             }
@@ -92,8 +106,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         res.status(200).json({ success: true, sent: sentCount });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const details = getErrorDetails(error);
         console.error("Cron Error: ", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: details.message ?? 'Internal Server Error' });
     }
 }

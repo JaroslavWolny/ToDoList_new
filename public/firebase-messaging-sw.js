@@ -20,8 +20,8 @@ messaging.onBackgroundMessage((payload) => {
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
-        icon: '/icon-192x192.png',
-        badge: '/icon-192x192.png',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
         data: payload.data
     };
 
@@ -42,27 +42,6 @@ self.addEventListener('notificationclick', function (event) {
                 return client.focus();
             }
             return clients.openWindow('/');
-        })
-    );
-});
-
-self.addEventListener('install', (event) => {
-    // Force the new service worker to activate immediately, skipping the waiting lifecycle phase.
-    self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-    // Take control of all pages immediately and clean up old caches from previous PWA strategies
-    event.waitUntil(
-        clients.claim().then(() => {
-            return caches.keys().then((cacheNames) => {
-                return Promise.all(
-                    cacheNames.map((cacheName) => {
-                        console.log('[Service Worker] Deleting old cache:', cacheName);
-                        return caches.delete(cacheName);
-                    })
-                );
-            });
         })
     );
 });

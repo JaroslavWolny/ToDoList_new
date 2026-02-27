@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Zap } from 'lucide-react';
 import { useUserStore } from '../stores/userStore';
@@ -16,6 +16,7 @@ import { TaskList } from '../components/tasks/TaskList';
 import { TaskForm } from '../components/tasks/TaskForm';
 import { Task, RandomReward } from '../types';
 import { calculateComboMultiplier, calculateLevel } from '../lib/gamification';
+import { getMissionProgressUpdates } from '../lib/missions';
 
 export function Dashboard() {
     const [showTaskForm, setShowTaskForm] = useState(false);
@@ -23,6 +24,7 @@ export function Dashboard() {
     const [showLevelUp, setShowLevelUp] = useState(false);
     const [newLevel, setNewLevel] = useState(0);
     const [rewardDrop, setRewardDrop] = useState<RandomReward | null>(null);
+    const hasInitializedRef = useRef(false);
 
     const userStore = useUserStore();
     const taskStore = useTaskStore();
@@ -35,18 +37,21 @@ export function Dashboard() {
     const missions = missionStore.getMissionsForToday();
 
     useEffect(() => {
+        if (hasInitializedRef.current) return;
+        hasInitializedRef.current = true;
+
         taskStore.resetRecurringTasks();
         missionStore.generateDailyMissions();
         achievementStore.initAchievements();
         achievementStore.checkAndUnlock();
-    }, []);
+    }, [achievementStore, missionStore, taskStore]);
 
     const handleCompleteTask = useCallback((id: string) => {
         const prevLevel = userStore.level;
         const result = taskStore.completeTask(id);
         if (!result) return;
 
-        const { xpEarned, comboMultiplier, reward } = result;
+        const { xpEarned, reward } = result;
 
         userStore.addXP(xpEarned);
         userStore.updateStreak();
@@ -62,36 +67,29 @@ export function Dashboard() {
             setRewardDrop(reward);
         }
 
-        // Update missions
         const completionsNow = taskStore.getCompletionsToday();
-        missionStore.updateMissionProgress('complete_tasks', completionsNow.length);
-        missionStore.updateMissionProgress('marathon', completionsNow.length);
-
         const task = taskStore.tasks.find((t) => t.id === id);
-        if (task?.priority === 'CRITICAL') {
-            missionStore.updateMissionProgress('complete_critical', 1);
+        const missionUpdates = getMissionProgressUpdates(task, completionsNow, taskStore.tasks);
+        if (missionUpdates.complete_tasks !== undefined) {
+            missionStore.updateMissionProgress('complete_tasks', missionUpdates.complete_tasks);
         }
-        if (task?.priority === 'LOW') {
-            const lowPriorityCount = completionsNow.filter(c => {
-                const t = taskStore.tasks.find(tk => tk.id === c.taskId);
-                return t?.priority === 'LOW';
-            }).length;
-            missionStore.updateMissionProgress('no_sweat', lowPriorityCount);
+        if (missionUpdates.marathon !== undefined) {
+            missionStore.updateMissionProgress('marathon', missionUpdates.marathon);
         }
-        if (task?.priority === 'HIGH') {
-            const highPriorityCount = completionsNow.filter(c => {
-                const t = taskStore.tasks.find(tk => tk.id === c.taskId);
-                return t?.priority === 'HIGH' || t?.priority === 'CRITICAL';
-            }).length;
-            missionStore.updateMissionProgress('complete_high', highPriorityCount);
+        if (missionUpdates.complete_critical !== undefined) {
+            missionStore.updateMissionProgress('complete_critical', missionUpdates.complete_critical);
         }
-
-        const hour = new Date().getHours();
-        if (hour < 10) {
-            missionStore.updateMissionProgress('early_bird', 1);
+        if (missionUpdates.no_sweat !== undefined) {
+            missionStore.updateMissionProgress('no_sweat', missionUpdates.no_sweat);
         }
-        if (hour >= 20) {
-            missionStore.updateMissionProgress('night_owl', 1);
+        if (missionUpdates.complete_high !== undefined) {
+            missionStore.updateMissionProgress('complete_high', missionUpdates.complete_high);
+        }
+        if (missionUpdates.early_bird !== undefined) {
+            missionStore.updateMissionProgress('early_bird', missionUpdates.early_bird);
+        }
+        if (missionUpdates.night_owl !== undefined) {
+            missionStore.updateMissionProgress('night_owl', missionUpdates.night_owl);
         }
 
         // Check for completed missions

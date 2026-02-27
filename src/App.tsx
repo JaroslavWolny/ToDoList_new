@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { Dashboard } from './pages/Dashboard';
@@ -13,9 +13,13 @@ function App() {
   const { onboardingComplete, settings } = useUserStore();
   const { resetRecurringTasks, processOverdueTasks } = useTaskStore();
   const { checkStreakOnLoad, removeXP, loseHealth } = useUserStore();
+  const hasInitializedRef = useRef(false);
 
   // Reset recurring tasks, check streak, and process overdue on app load
   useEffect(() => {
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+
     resetRecurringTasks();
 
     // Check for broken streak
@@ -27,7 +31,7 @@ function App() {
       removeXP(p.xpLost);
       loseHealth();
     });
-  }, []);
+  }, [checkStreakOnLoad, loseHealth, processOverdueTasks, removeXP, resetRecurringTasks, settings.gamificationLevel]);
 
   // Apply theme
   useEffect(() => {

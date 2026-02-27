@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Clock, AlertTriangle, Trash2, Edit3, Lock } from 'lucide-react';
 import { Task } from '../../types';
@@ -18,14 +18,14 @@ export function TaskCard({ task, onComplete, onDelete, onEdit }: TaskCardProps) 
     const isOverdue = task.deadline && isPast(parseISO(task.deadline)) && task.status === 'ACTIVE';
     const isLocked = task.startDate && isFuture(parseISO(task.startDate)) && task.status === 'ACTIVE';
 
-    const handleComplete = useCallback(() => {
+    const handleComplete = () => {
         if (task.status !== 'ACTIVE' || isLocked) return;
         setIsCompleting(true);
         setShowXP(true);
         setTimeout(() => {
             onComplete(task.id);
         }, 600);
-    }, [task, onComplete]);
+    };
 
     return (
         <motion.div

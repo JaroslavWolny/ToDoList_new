@@ -30,7 +30,18 @@ export const requestFirebaseNotificationPermission = async () => {
 
         if (permission === 'granted') {
             console.log('Notification permission granted.');
-            const currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
+            let swRegistration: ServiceWorkerRegistration | undefined;
+
+            if ('serviceWorker' in navigator) {
+                swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                    scope: '/firebase-cloud-messaging-push-scope',
+                });
+            }
+
+            const currentToken = await getToken(messaging, {
+                vapidKey: VAPID_KEY,
+                serviceWorkerRegistration: swRegistration,
+            });
             if (currentToken) {
                 console.log('Firebase Cloud Messaging Token:', currentToken);
                 // Here we could send this token to our backend

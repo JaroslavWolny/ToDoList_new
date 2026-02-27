@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Tag, AlertCircle, Clock } from 'lucide-react';
+import { X, Calendar, Tag, Clock } from 'lucide-react';
 import { Task, Priority, Recurrence } from '../../types';
 
 interface TaskFormProps {

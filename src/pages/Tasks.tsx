@@ -10,6 +10,7 @@ import { Task, Priority, TaskStatus } from '../types';
 import { calculateLevel } from '../lib/gamification';
 import { LevelUpOverlay } from '../components/gamification/LevelUpOverlay';
 import { useMissionStore } from '../stores/missionStore';
+import { getMissionProgressUpdates } from '../lib/missions';
 
 type SortOption = 'deadline' | 'priority' | 'created';
 type FilterStatus = 'ALL' | TaskStatus;
@@ -58,30 +59,43 @@ export function Tasks() {
         const prevLevel = userStore.level;
         const result = taskStore.completeTask(id);
         if (!result) return;
+
         userStore.addXP(result.xpEarned);
         userStore.updateStreak();
         userStore.incrementTasksCompleted();
         userStore.gainHealth();
 
-        // Update all mission types (synced with Dashboard)
+        if (result.reward) {
+            if (result.reward.currency === 'XP') {
+                userStore.addXP(result.reward.amount);
+            } else {
+                userStore.addCoins(result.reward.amount);
+            }
+        }
+
         const completionsNow = taskStore.getCompletionsToday();
-        missionStore.updateMissionProgress('complete_tasks', completionsNow.length);
-
         const task = taskStore.tasks.find((t) => t.id === id);
-        if (task?.priority === 'CRITICAL') {
-            missionStore.updateMissionProgress('complete_critical', 1);
+        const missionUpdates = getMissionProgressUpdates(task, completionsNow, taskStore.tasks);
+        if (missionUpdates.complete_tasks !== undefined) {
+            missionStore.updateMissionProgress('complete_tasks', missionUpdates.complete_tasks);
         }
-        if (task?.priority === 'HIGH' || task?.priority === 'CRITICAL') {
-            const highPriorityCount = completionsNow.filter(c => {
-                const t = taskStore.tasks.find(t => t.id === c.taskId);
-                return t?.priority === 'HIGH' || t?.priority === 'CRITICAL';
-            }).length;
-            missionStore.updateMissionProgress('complete_high', highPriorityCount);
+        if (missionUpdates.marathon !== undefined) {
+            missionStore.updateMissionProgress('marathon', missionUpdates.marathon);
         }
-
-        const hour = new Date().getHours();
-        if (hour < 10) {
-            missionStore.updateMissionProgress('early_bird', 1);
+        if (missionUpdates.complete_critical !== undefined) {
+            missionStore.updateMissionProgress('complete_critical', missionUpdates.complete_critical);
+        }
+        if (missionUpdates.no_sweat !== undefined) {
+            missionStore.updateMissionProgress('no_sweat', missionUpdates.no_sweat);
+        }
+        if (missionUpdates.complete_high !== undefined) {
+            missionStore.updateMissionProgress('complete_high', missionUpdates.complete_high);
+        }
+        if (missionUpdates.early_bird !== undefined) {
+            missionStore.updateMissionProgress('early_bird', missionUpdates.early_bird);
+        }
+        if (missionUpdates.night_owl !== undefined) {
+            missionStore.updateMissionProgress('night_owl', missionUpdates.night_owl);
         }
 
         // Check for completed missions

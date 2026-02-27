@@ -3,7 +3,14 @@ import { useAchievementStore } from '../../stores/achievementStore';
 import { useUserStore } from '../../stores/userStore';
 import { useTaskStore } from '../../stores/taskStore';
 import { ACHIEVEMENT_DEFS } from '../../lib/achievements';
+import { Achievement } from '../../types';
 import { Lock, Target } from 'lucide-react';
+
+type AchievementProgress = { current: number; max: number };
+type EnhancedAchievement = Achievement & {
+    progress: AchievementProgress | null;
+    progressRatio: number;
+};
 
 export function AchievementGrid() {
     const { achievements } = useAchievementStore();
@@ -48,7 +55,7 @@ export function AchievementGrid() {
     // Remove the closest achievement from the categories display to avoid duplication
     const gridAchievements = enhancedAchievements.filter(a => a.key !== closestAchievement?.key);
 
-    const renderProgressBar = (progress: { current: number; max: number }) => {
+    const renderProgressBar = (progress: AchievementProgress) => {
         const pct = Math.min(100, Math.max(0, (progress.current / progress.max) * 100));
         return (
             <div className="mt-2.5">
@@ -68,7 +75,7 @@ export function AchievementGrid() {
         );
     };
 
-    const renderAchievementCard = (achievement: any, isHighlight = false) => {
+    const renderAchievementCard = (achievement: EnhancedAchievement, isHighlight = false) => {
         const isLocked = !achievement.unlockedAt;
 
         return (
