@@ -17,7 +17,7 @@ export function StreakShareModal({
     currentStreak,
     bestStreak,
     username = 'Quester',
-    rank = 'Zbloudilý nováček'
+    rank = 'Novice Voyager'
 }: StreakShareModalProps) {
     const [isGenerating, setIsGenerating] = useState(false);
 
@@ -61,7 +61,7 @@ export function StreakShareModal({
             try {
                 await navigator.share({
                     title: 'QuestDo RPG Card',
-                    text: `Jedu nekompromisní ${currentStreak}-day streak v QuestDo! 🔥 Můj all-time best je ${bestStreak} dní.`,
+                    text: `I'm on an unrelenting ${currentStreak}-day streak in QuestDo! 🔥 My all-time best is ${bestStreak} days.`,
                     files: [file],
                 });
             } catch (error) {
@@ -88,9 +88,10 @@ export function StreakShareModal({
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         exit={{ scale: 0.92, opacity: 0, y: 20 }}
                         onClick={(event) => event.stopPropagation()}
-                        className="w-full max-w-sm overflow-hidden rounded-[2rem] border border-white/10 bg-[var(--color-surface)] shadow-2xl flex flex-col items-center"
+                        className="flex w-full max-w-sm flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[var(--color-surface)] shadow-2xl"
+                        style={{ maxHeight: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 3rem)' }}
                     >
-                        <div className="flex w-full items-center justify-between border-b border-white/10 p-4">
+                        <div className="flex w-full shrink-0 items-center justify-between border-b border-white/10 p-4">
                             <p className="text-sm font-bold">RPG Share Card</p>
                             <button
                                 onClick={onClose}
@@ -101,18 +102,20 @@ export function StreakShareModal({
                         </div>
 
                         {/* High-res Image Preview */}
-                        <div className="relative mx-4 mt-6 aspect-[9/16] w-[calc(100%-2rem)] overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
-                            <img
-                                src={imageUrl}
-                                alt="QuestDo RPG Card"
-                                className="h-full w-full object-cover transition-opacity duration-300"
-                                loading="eager"
-                            />
+                        <div className="relative flex min-h-0 flex-1 shrink items-center justify-center overflow-hidden p-4">
+                            <div className="relative aspect-[9/16] h-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
+                                <img
+                                    src={imageUrl}
+                                    alt="QuestDo RPG Card"
+                                    className="h-full w-full object-cover transition-opacity duration-300"
+                                    loading="eager"
+                                />
+                            </div>
                         </div>
 
                         {/* Actions */}
                         <div
-                            className="mt-2 grid w-full grid-cols-2 gap-3 p-4"
+                            className="grid w-full shrink-0 grid-cols-2 gap-3 p-4"
                             style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' }}
                         >
                             <motion.button

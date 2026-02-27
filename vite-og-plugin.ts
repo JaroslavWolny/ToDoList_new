@@ -22,7 +22,7 @@ export async function generateOGImage(url: string) {
     const username = searchParams.get('username') || 'Quester';
     const currentStreak = parseInt(searchParams.get('streak') || '0', 10);
     const bestStreak = parseInt(searchParams.get('best') || '0', 10);
-    const rank = searchParams.get('rank') || 'Zbloudilý nováček';
+    const rank = searchParams.get('rank') || 'Novice Voyager';
 
     let tierName = 'Wood';
     let bgGradient = 'linear-gradient(to bottom right, #5c4033, #3e2723, #1b0000)';
