@@ -22,20 +22,10 @@ export function StreakShareModal({
     const [isGenerating, setIsGenerating] = useState(false);
 
     const { imageWidth, imageHeight } = useMemo(() => {
-        if (typeof window === 'undefined') {
-            return { imageWidth: 1080, imageHeight: 1920 };
-        }
-
-        const dpr = Math.min(window.devicePixelRatio || 1, 3);
-        const viewportWidth = Math.round(window.innerWidth * dpr);
-        const viewportHeight = Math.round(window.innerHeight * dpr);
-
-        const portraitWidth = Math.min(viewportWidth, viewportHeight);
-        const portraitHeight = Math.max(viewportWidth, viewportHeight);
-
+        // Pevně nastaveno na Instagram Stories doporučené rozlišení: 1080x1920 (poměr 9:16)
         return {
-            imageWidth: Math.max(720, portraitWidth),
-            imageHeight: Math.max(1280, portraitHeight),
+            imageWidth: 1080,
+            imageHeight: 1920,
         };
     }, []);
 
