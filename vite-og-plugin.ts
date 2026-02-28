@@ -24,6 +24,12 @@ export async function generateOGImage(url: string) {
     const bestStreak = parseInt(searchParams.get('best') || '0', 10);
     const rank = searchParams.get('rank') || 'Novice Voyager';
 
+    const requestedWidth = parseInt(searchParams.get('w') || '1080', 10);
+    const requestedHeight = parseInt(searchParams.get('h') || '1920', 10);
+    const imageWidth = Number.isFinite(requestedWidth) ? Math.min(Math.max(requestedWidth, 720), 1440) : 1080;
+    const imageHeight = Number.isFinite(requestedHeight) ? Math.min(Math.max(requestedHeight, 1280), 3200) : 1920;
+    const unit = (value: number) => `${Math.round((value * imageWidth) / 1080)}px`;
+
     let tierName = 'Wood';
     let bgGradient = 'linear-gradient(to bottom right, #5c4033, #3e2723, #1b0000)';
     let frameColor = '#8d6e63';
@@ -50,11 +56,11 @@ export async function generateOGImage(url: string) {
         style: {
             display: 'flex',
             flexDirection: 'column',
-            width: '1080px',
-            height: '1920px',
+            width: `${imageWidth}px`,
+            height: `${imageHeight}px`,
             background: bgGradient,
             position: 'relative',
-            padding: '60px',
+            padding: unit(60),
             color: 'white',
             boxSizing: 'border-box',
         }
@@ -62,34 +68,34 @@ export async function generateOGImage(url: string) {
         h('div', {
             style: {
                 position: 'absolute',
-                top: '40px', left: '40px', right: '40px', bottom: '40px',
-                border: `12px solid ${frameColor}`,
-                borderRadius: '60px',
+                top: unit(40), left: unit(40), right: unit(40), bottom: unit(40),
+                border: `${unit(12)} solid ${frameColor}`,
+                borderRadius: unit(60),
                 display: 'flex',
             }
         }),
         h('div', {
             style: {
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
-                height: '100%', width: '100%', padding: '80px 40px',
+                height: '100%', width: '100%', padding: `${unit(80)} ${unit(40)}`,
             }
         },
             h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' } },
-                h('div', { style: { display: 'flex', fontSize: '64px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '4px', marginBottom: '16px' } }, username),
-                h('div', { style: { display: 'flex', fontSize: '42px', fontWeight: '600', color: frameColor, textTransform: 'uppercase', letterSpacing: '8px', backgroundColor: 'rgba(0,0,0,0.4)', padding: '12px 40px', borderRadius: '100px', border: `2px solid ${frameColor}` } }, rank)
+                h('div', { style: { display: 'flex', fontSize: unit(64), fontWeight: '800', textTransform: 'uppercase', letterSpacing: unit(4), marginBottom: unit(16) } }, username),
+                h('div', { style: { display: 'flex', fontSize: unit(42), fontWeight: '600', color: frameColor, textTransform: 'uppercase', letterSpacing: unit(8), backgroundColor: 'rgba(0,0,0,0.4)', padding: `${unit(12)} ${unit(40)}`, borderRadius: unit(100), border: `${unit(2)} solid ${frameColor}` } }, rank)
             ),
-            h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', width: '800px', height: '800px' } },
-                h('div', { style: { display: 'flex', fontSize: '80px', fontWeight: '700', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: '12px', marginBottom: '20px' } }, 'Day Streak'),
-                h('div', { style: { display: 'flex', fontSize: '380px', fontWeight: '900', lineHeight: '1' } }, String(currentStreak))
+            h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', width: unit(800), height: unit(800) } },
+                h('div', { style: { display: 'flex', fontSize: unit(80), fontWeight: '700', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: unit(12), marginBottom: unit(20) } }, 'Day Streak'),
+                h('div', { style: { display: 'flex', fontSize: unit(380), fontWeight: '900', lineHeight: '1' } }, String(currentStreak))
             ),
-            h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '60px' } },
-                h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '40px 60px', backgroundColor: 'rgba(0, 0, 0, 0.5)', border: `4px solid ${frameColor}`, borderRadius: '40px' } },
-                    h('div', { style: { display: 'flex', fontSize: '52px', fontWeight: 'bold', color: 'rgba(255,255,255,0.7)' } }, 'All-Time Best'),
-                    h('div', { style: { display: 'flex', fontSize: '72px', fontWeight: '900', color: frameColor } }, String(bestStreak))
+            h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: unit(60) } },
+                h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: `${unit(40)} ${unit(60)}`, backgroundColor: 'rgba(0, 0, 0, 0.5)', border: `${unit(4)} solid ${frameColor}`, borderRadius: unit(40) } },
+                    h('div', { style: { display: 'flex', fontSize: unit(52), fontWeight: 'bold', color: 'rgba(255,255,255,0.7)' } }, 'All-Time Best'),
+                    h('div', { style: { display: 'flex', fontSize: unit(72), fontWeight: '900', color: frameColor } }, String(bestStreak))
                 ),
                 h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: 0.6 } },
-                    h('div', { style: { display: 'flex', fontSize: '48px', fontWeight: '900', letterSpacing: '6px' } }, 'QuestDo'),
-                    h('div', { style: { display: 'flex', fontSize: '32px', marginTop: '10px' } }, 'LEVEL UP YOUR LIFE')
+                    h('div', { style: { display: 'flex', fontSize: unit(48), fontWeight: '900', letterSpacing: unit(6) } }, 'QuestDo'),
+                    h('div', { style: { display: 'flex', fontSize: unit(32), marginTop: unit(10) } }, 'LEVEL UP YOUR LIFE')
                 )
             )
         )
@@ -102,8 +108,8 @@ export async function generateOGImage(url: string) {
     const fontBuffer = await fontResponse.arrayBuffer();
 
     const svg = await satori(element as any, {
-        width: 1080,
-        height: 1920,
+        width: imageWidth,
+        height: imageHeight,
         fonts: [
             {
                 name: 'Inter',

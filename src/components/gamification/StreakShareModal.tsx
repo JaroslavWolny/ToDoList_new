@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Share2, Loader2 } from 'lucide-react';
 
@@ -21,8 +21,26 @@ export function StreakShareModal({
 }: StreakShareModalProps) {
     const [isGenerating, setIsGenerating] = useState(false);
 
+    const { imageWidth, imageHeight } = useMemo(() => {
+        if (typeof window === 'undefined') {
+            return { imageWidth: 1080, imageHeight: 1920 };
+        }
+
+        const dpr = Math.min(window.devicePixelRatio || 1, 3);
+        const viewportWidth = Math.round(window.innerWidth * dpr);
+        const viewportHeight = Math.round(window.innerHeight * dpr);
+
+        const portraitWidth = Math.min(viewportWidth, viewportHeight);
+        const portraitHeight = Math.max(viewportWidth, viewportHeight);
+
+        return {
+            imageWidth: Math.max(720, portraitWidth),
+            imageHeight: Math.max(1280, portraitHeight),
+        };
+    }, []);
+
     // Build the dynamic URL
-    const imageUrl = `/api/og?username=${encodeURIComponent(username)}&streak=${currentStreak}&best=${bestStreak}&rank=${encodeURIComponent(rank)}`;
+    const imageUrl = `/api/og?username=${encodeURIComponent(username)}&streak=${currentStreak}&best=${bestStreak}&rank=${encodeURIComponent(rank)}&w=${imageWidth}&h=${imageHeight}`;
 
     const fetchImageBlob = async () => {
         setIsGenerating(true);
@@ -102,8 +120,11 @@ export function StreakShareModal({
                         </div>
 
                         {/* High-res Image Preview */}
-                        <div className="relative flex min-h-[min(300px,45vh)] flex-1 shrink items-center justify-center p-6">
-                            <div className="relative flex h-full aspect-[9/16] overflow-hidden rounded-2xl border border-white/10 bg-black shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+                        <div className="relative flex min-h-[min(280px,42vh)] flex-1 shrink items-center justify-center p-4 sm:p-6">
+                            <div
+                                className="relative flex h-full max-w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
+                                style={{ aspectRatio: `${imageWidth} / ${imageHeight}` }}
+                            >
                                 <img
                                     src={imageUrl}
                                     alt="QuestDo RPG Card"

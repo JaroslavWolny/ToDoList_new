@@ -16,6 +16,12 @@ export default function (req: Request) {
         const bestStreak = parseInt(searchParams.get('best') || '0', 10);
         const rank = searchParams.get('rank') || 'Novice Voyager';
 
+        const requestedWidth = parseInt(searchParams.get('w') || '1080', 10);
+        const requestedHeight = parseInt(searchParams.get('h') || '1920', 10);
+        const imageWidth = Number.isFinite(requestedWidth) ? Math.min(Math.max(requestedWidth, 720), 1440) : 1080;
+        const imageHeight = Number.isFinite(requestedHeight) ? Math.min(Math.max(requestedHeight, 1280), 3200) : 1920;
+        const unit = (value: number) => `${Math.round((value * imageWidth) / 1080)}px`;
+
         // Tier Logic
         let tierName = 'Wood';
         let bgGradient = 'linear-gradient(to bottom right, #5c4033, #3e2723, #1b0000)'; // Wood
@@ -45,11 +51,11 @@ export default function (req: Request) {
                     style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        width: '1080px',
-                        height: '1920px',
+                        width: `${imageWidth}px`,
+                        height: `${imageHeight}px`,
                         background: bgGradient,
                         position: 'relative',
-                        padding: '60px',
+                        padding: unit(60),
                         color: 'white',
                         boxSizing: 'border-box',
                     }}
@@ -58,12 +64,12 @@ export default function (req: Request) {
                     <div
                         style={{
                             position: 'absolute',
-                            top: '40px',
-                            left: '40px',
-                            right: '40px',
-                            bottom: '40px',
-                            border: `12px solid ${frameColor}`,
-                            borderRadius: '60px',
+                            top: unit(40),
+                            left: unit(40),
+                            right: unit(40),
+                            bottom: unit(40),
+                            border: `${unit(12)} solid ${frameColor}`,
+                            borderRadius: unit(60),
                             display: 'flex',
                             boxShadow: `inset 0 0 100px ${iconGlow}, 0 0 60px ${iconGlow}`,
                             pointerEvents: 'none',
@@ -79,7 +85,7 @@ export default function (req: Request) {
                             justifyContent: 'space-between',
                             height: '100%',
                             width: '100%',
-                            padding: '80px 40px',
+                            padding: `${unit(80)} ${unit(40)}`,
                             zIndex: 10,
                         }}
                     >
@@ -95,12 +101,12 @@ export default function (req: Request) {
                             <div
                                 style={{
                                     display: 'flex',
-                                    fontSize: '64px',
+                                    fontSize: unit(64),
                                     fontWeight: '800',
                                     textTransform: 'uppercase',
-                                    letterSpacing: '4px',
+                                    letterSpacing: unit(4),
                                     textShadow: `0 4px 20px ${iconGlow}`,
-                                    marginBottom: '16px',
+                                    marginBottom: unit(16),
                                 }}
                             >
                                 {username}
@@ -108,15 +114,15 @@ export default function (req: Request) {
                             <div
                                 style={{
                                     display: 'flex',
-                                    fontSize: '42px',
+                                    fontSize: unit(42),
                                     fontWeight: '600',
                                     color: frameColor,
                                     textTransform: 'uppercase',
-                                    letterSpacing: '8px',
+                                    letterSpacing: unit(8),
                                     backgroundColor: 'rgba(0,0,0,0.4)',
-                                    padding: '12px 40px',
-                                    borderRadius: '100px',
-                                    border: `2px solid ${frameColor}`,
+                                    padding: `${unit(12)} ${unit(40)}`,
+                                    borderRadius: unit(100),
+                                    border: `${unit(2)} solid ${frameColor}`,
                                 }}
                             >
                                 {rank}
@@ -131,8 +137,8 @@ export default function (req: Request) {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 position: 'relative',
-                                width: '800px',
-                                height: '800px',
+                                width: unit(800),
+                                height: unit(800),
                             }}
                         >
                             {/* Glowing Aura Circle behind number */}
@@ -142,11 +148,11 @@ export default function (req: Request) {
                                     top: '50%',
                                     left: '50%',
                                     transform: 'translate(-50%, -50%)',
-                                    width: '600px',
-                                    height: '600px',
+                                    width: unit(600),
+                                    height: unit(600),
                                     backgroundColor: frameColor,
                                     borderRadius: '50%',
-                                    filter: 'blur(100px)',
+                                    filter: `blur(${unit(100)})`,
                                     opacity: 0.3,
                                 }}
                             />
@@ -154,12 +160,12 @@ export default function (req: Request) {
                             <div
                                 style={{
                                     display: 'flex',
-                                    fontSize: '80px',
+                                    fontSize: unit(80),
                                     fontWeight: '700',
                                     color: 'rgba(255,255,255,0.8)',
                                     textTransform: 'uppercase',
-                                    letterSpacing: '12px',
-                                    marginBottom: '20px',
+                                    letterSpacing: unit(12),
+                                    marginBottom: unit(20),
                                 }}
                             >
                                 Day Streak
@@ -167,7 +173,7 @@ export default function (req: Request) {
                             <div
                                 style={{
                                     display: 'flex',
-                                    fontSize: '380px',
+                                    fontSize: unit(380),
                                     fontWeight: '900',
                                     lineHeight: '1',
                                     textShadow: `0 20px 60px ${iconGlow}`,
@@ -184,7 +190,7 @@ export default function (req: Request) {
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 width: '100%',
-                                gap: '60px',
+                            gap: unit(60),
                             }}
                         >
                             <div
@@ -193,17 +199,17 @@ export default function (req: Request) {
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
                                     width: '100%',
-                                    padding: '40px 60px',
+                                    padding: `${unit(40)} ${unit(60)}`,
                                     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                                    border: `4px solid ${frameColor}`,
-                                    borderRadius: '40px',
+                                    border: `${unit(4)} solid ${frameColor}`,
+                                    borderRadius: unit(40),
                                     boxShadow: `0 10px 40px rgba(0,0,0,0.5)`,
                                 }}
                             >
-                                <div style={{ display: 'flex', fontSize: '52px', fontWeight: 'bold', color: 'rgba(255,255,255,0.7)' }}>
+                                <div style={{ display: 'flex', fontSize: unit(52), fontWeight: 'bold', color: 'rgba(255,255,255,0.7)' }}>
                                     All-Time Best
                                 </div>
-                                <div style={{ display: 'flex', fontSize: '72px', fontWeight: '900', color: frameColor }}>
+                                <div style={{ display: 'flex', fontSize: unit(72), fontWeight: '900', color: frameColor }}>
                                     {bestStreak}
                                 </div>
                             </div>
@@ -216,16 +222,16 @@ export default function (req: Request) {
                                     opacity: 0.6,
                                 }}
                             >
-                                <div style={{ display: 'flex', fontSize: '48px', fontWeight: '900', letterSpacing: '6px' }}> QuestDo </div>
-                                <div style={{ display: 'flex', fontSize: '32px', marginTop: '10px' }}> LEVEL UP YOUR LIFE </div>
+                                <div style={{ display: 'flex', fontSize: unit(48), fontWeight: '900', letterSpacing: unit(6) }}> QuestDo </div>
+                                <div style={{ display: 'flex', fontSize: unit(32), marginTop: unit(10) }}> LEVEL UP YOUR LIFE </div>
                             </div>
                         </div>
                     </div>
                 </div>
             ),
             {
-                width: 1080,
-                height: 1920,
+                width: imageWidth,
+                height: imageHeight,
             }
         );
     } catch (e: any) {
