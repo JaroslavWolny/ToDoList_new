@@ -1,0 +1,29 @@
+name: Hourly Notifications Ping
+
+on:
+  schedule:
+    # Běží každou hodinu (vždy v celou)
+    - cron: '0 * * * *'
+  workflow_dispatch: # Dovolí manuální spuštění tlačítkem v GitHub UI
+
+jobs:
+  ping-vercel-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping API Endpoint
+        run: |
+          echo "Pinging Vercel API endpoint for Notifications..."
+          RESPONSE=$(curl -s -w "%{http_code}" -X GET "${{ secrets.CRON_URL }}" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          
+          # Extrahujeme HTTP kód a tělo odpovědi pro přehledný log v GitHub Actions
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -c 4)
+          BODY=$(echo "$RESPONSE" | head -c -4)
+          
+          echo "Response Body: $BODY"
+          echo "HTTP Status: $HTTP_STATUS"
+          
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "Failed with status $HTTP_STATUS"
+            exit 1
+          fi
+          echo "Success!"
