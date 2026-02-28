@@ -10,6 +10,16 @@ const getErrorDetails = (error: unknown): FirebaseMessagingError => {
     return {};
 };
 
+const getHourInTimeZone = (date: Date, timeZone: string): string => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        hour12: false,
+        hour: '2-digit',
+    }).formatToParts(date);
+
+    return parts.find((part) => part.type === 'hour')?.value ?? '';
+};
+
 if (!admin.apps.length) {
     try {
         admin.initializeApp({
@@ -54,16 +64,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             if (!token || !timezone) return;
 
-            // Get current hour in the user's timezone.
-            // E.g., if it's 08:15 in Europe/Prague currently, this will be "08:15"
-            const userDateStr = new Date().toLocaleString("en-US", { timeZone: timezone, hour12: false, hour: '2-digit', minute: '2-digit' });
-
             let title = "";
             let body = "";
 
-            // We check if the current hour matches the setting
-            // Since Cron runs hourly at minute 00, checking the hour prefix is usually sufficient
-            const currentHour = userDateStr.split(':')[0];
+            // Cron runs hourly; matching by hour triggers once per selected hour.
+            const currentHour = getHourInTimeZone(new Date(), timezone);
 
             if (morningTime && morningTime.startsWith(currentHour)) {
                 title = "🌅 Good Morning, Hero!";

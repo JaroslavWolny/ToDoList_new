@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useTaskStore } from '../../stores/taskStore';
+import { toLocalDateKey } from '../../lib/dates';
 
 interface HeatmapCalendarProps {
     months?: number;
@@ -16,7 +17,7 @@ export function HeatmapCalendar({ months = 5 }: HeatmapCalendarProps) {
 
         const completionMap = new Map<string, number>();
         completions.forEach((c) => {
-            const date = c.completedAt.split('T')[0];
+            const date = toLocalDateKey(c.completedAt);
             completionMap.set(date, (completionMap.get(date) || 0) + 1);
         });
 
@@ -27,7 +28,7 @@ export function HeatmapCalendar({ months = 5 }: HeatmapCalendarProps) {
         let lastMonth = -1;
 
         while (currentDate <= today) {
-            const dateStr = currentDate.toISOString().split('T')[0];
+            const dateStr = toLocalDateKey(currentDate);
             const dayOfWeek = currentDate.getDay();
 
             if (dayOfWeek === 0 && cells.length > 0) weekIndex++;

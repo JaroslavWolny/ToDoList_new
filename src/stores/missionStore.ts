@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DailyMission } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { toLocalDateKey } from '../lib/dates';
 
 interface MissionStore {
     missions: DailyMission[];
@@ -104,7 +105,7 @@ export const useMissionStore = create<MissionStore>()(
             lastGeneratedDate: null,
 
             generateDailyMissions: () => {
-                const today = new Date().toISOString().split('T')[0];
+                const today = toLocalDateKey(new Date());
                 const { lastGeneratedDate } = get();
                 if (lastGeneratedDate === today) return;
 
@@ -140,7 +141,7 @@ export const useMissionStore = create<MissionStore>()(
 
             getMissionsForToday: () => {
                 const { missions, lastGeneratedDate } = get();
-                const today = new Date().toISOString().split('T')[0];
+                const today = toLocalDateKey(new Date());
                 if (lastGeneratedDate !== today) return [];
                 return missions;
             },

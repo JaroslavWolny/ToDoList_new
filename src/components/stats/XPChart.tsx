@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTaskStore } from '../../stores/taskStore';
 import { subDays, format } from 'date-fns';
+import { toLocalDateKey } from '../../lib/dates';
 
 interface XPChartProps {
     days?: number;
@@ -17,7 +18,7 @@ export function XPChart({ days = 14 }: XPChartProps) {
             const date = subDays(today, i);
             const dateStr = format(date, 'yyyy-MM-dd');
             const dayCompletions = completions.filter(
-                (c) => c.completedAt.split('T')[0] === dateStr
+                (c) => toLocalDateKey(c.completedAt) === dateStr
             );
             const xp = dayCompletions.reduce((sum, c) => sum + c.xpEarned, 0);
             result.push({

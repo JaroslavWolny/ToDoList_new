@@ -6,7 +6,7 @@ export const config = {
 
 // Vercel OG API Endpoint
 // Generates a 1080x1920 (9:16) collectible RPG card
-export default function (req: Request) {
+export default function handler(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
 
@@ -127,6 +127,18 @@ export default function (req: Request) {
                             >
                                 {rank}
                             </div>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    marginTop: unit(14),
+                                    fontSize: unit(26),
+                                    fontWeight: '700',
+                                    color: 'rgba(255,255,255,0.7)',
+                                    letterSpacing: unit(3),
+                                }}
+                            >
+                                Tier: {tierName}
+                            </div>
                         </div>
 
                         {/* Middle Section: Main Streak Hero */}
@@ -190,7 +202,7 @@ export default function (req: Request) {
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 width: '100%',
-                            gap: unit(60),
+                                gap: unit(60),
                             }}
                         >
                             <div
@@ -234,8 +246,9 @@ export default function (req: Request) {
                 height: imageHeight,
             }
         );
-    } catch (e: any) {
-        console.error(`${e.message}`);
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.error(message);
         return new Response(`Failed to generate the image`, {
             status: 500,
         });

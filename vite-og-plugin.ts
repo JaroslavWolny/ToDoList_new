@@ -1,13 +1,18 @@
-import fs from 'fs';
-import path from 'path';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
+import type { ReactNode } from 'react';
 
-// Dummy implementation of React elements for Satori without importing React
-// Satori accepts objects with type, props, children
-// But actually, we can just compile JSX or use plain objects
-// To make it simple, we construct the object tree directly or use a helper
-function h(type: string, props: any, ...children: any[]) {
+type SatoriChild = SatoriNode | string;
+
+interface SatoriNode {
+    type: string;
+    props: {
+        children?: SatoriChild | SatoriChild[];
+        [key: string]: unknown;
+    };
+}
+
+function h(type: string, props: Record<string, unknown> = {}, ...children: SatoriChild[]): SatoriNode {
     return {
         type,
         props: {
@@ -72,6 +77,7 @@ export async function generateOGImage(url: string) {
                 border: `${unit(12)} solid ${frameColor}`,
                 borderRadius: unit(60),
                 display: 'flex',
+                boxShadow: `inset 0 0 100px ${iconGlow}, 0 0 60px ${iconGlow}`,
             }
         }),
         h('div', {
@@ -81,12 +87,13 @@ export async function generateOGImage(url: string) {
             }
         },
             h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' } },
-                h('div', { style: { display: 'flex', fontSize: unit(64), fontWeight: '800', textTransform: 'uppercase', letterSpacing: unit(4), marginBottom: unit(16) } }, username),
-                h('div', { style: { display: 'flex', fontSize: unit(42), fontWeight: '600', color: frameColor, textTransform: 'uppercase', letterSpacing: unit(8), backgroundColor: 'rgba(0,0,0,0.4)', padding: `${unit(12)} ${unit(40)}`, borderRadius: unit(100), border: `${unit(2)} solid ${frameColor}` } }, rank)
+                h('div', { style: { display: 'flex', fontSize: unit(64), fontWeight: '800', textTransform: 'uppercase', letterSpacing: unit(4), marginBottom: unit(16), textShadow: `0 4px 20px ${iconGlow}` } }, username),
+                h('div', { style: { display: 'flex', fontSize: unit(42), fontWeight: '600', color: frameColor, textTransform: 'uppercase', letterSpacing: unit(8), backgroundColor: 'rgba(0,0,0,0.4)', padding: `${unit(12)} ${unit(40)}`, borderRadius: unit(100), border: `${unit(2)} solid ${frameColor}` } }, rank),
+                h('div', { style: { display: 'flex', marginTop: unit(14), fontSize: unit(26), fontWeight: '700', color: 'rgba(255,255,255,0.7)', letterSpacing: unit(3) } }, `Tier: ${tierName}`)
             ),
             h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', width: unit(800), height: unit(800) } },
                 h('div', { style: { display: 'flex', fontSize: unit(80), fontWeight: '700', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: unit(12), marginBottom: unit(20) } }, 'Day Streak'),
-                h('div', { style: { display: 'flex', fontSize: unit(380), fontWeight: '900', lineHeight: '1' } }, String(currentStreak))
+                h('div', { style: { display: 'flex', fontSize: unit(380), fontWeight: '900', lineHeight: '1', textShadow: `0 20px 60px ${iconGlow}` } }, String(currentStreak))
             ),
             h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: unit(60) } },
                 h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: `${unit(40)} ${unit(60)}`, backgroundColor: 'rgba(0, 0, 0, 0.5)', border: `${unit(4)} solid ${frameColor}`, borderRadius: unit(40) } },
@@ -101,13 +108,10 @@ export async function generateOGImage(url: string) {
         )
     );
 
-    // We must supply a font buffer for Satori
-    // Since we don't have Inter TTF locally, we'll fetch it on runtime inside the Vite plugin, or load a system font.
-    // Let's fetch it from google fonts or unpkg.
     const fontResponse = await fetch('https://unpkg.com/inter-ui/Inter%20(web)/fonts/Inter-Bold.woff');
     const fontBuffer = await fontResponse.arrayBuffer();
 
-    const svg = await satori(element as any, {
+    const svg = await satori(element as unknown as ReactNode, {
         width: imageWidth,
         height: imageHeight,
         fonts: [

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, Tag, Clock } from 'lucide-react';
 import { Task, Priority, Recurrence } from '../../types';
+import { toDateTimeLocalInputValue } from '../../lib/dates';
 
 interface TaskFormProps {
     onSubmit: (task: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate'>) => void;
@@ -20,11 +21,20 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
     const [title, setTitle] = useState(editTask?.title || '');
     const [description, setDescription] = useState(editTask?.description || '');
     const [priority, setPriority] = useState<Priority>(editTask?.priority || 'MEDIUM');
-    const [deadline, setDeadline] = useState(editTask?.deadline?.slice(0, 16) || '');
-    const [startDate, setStartDate] = useState(editTask?.startDate?.slice(0, 16) || '');
+    const [deadline, setDeadline] = useState(toDateTimeLocalInputValue(editTask?.deadline ?? null));
+    const [startDate, setStartDate] = useState(toDateTimeLocalInputValue(editTask?.startDate ?? null));
     const [recurrence, setRecurrence] = useState<Recurrence>(editTask?.recurrence || 'NONE');
     const [tagInput, setTagInput] = useState('');
     const [tags, setTags] = useState<string[]>(editTask?.tags || []);
+
+    const toISOOrNull = (value: string): string | null => {
+        if (!value) return null;
+
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return null;
+
+        return parsed.toISOString();
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,8 +43,8 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
             title: title.trim(),
             description: description.trim(),
             priority,
-            deadline: deadline ? new Date(deadline).toISOString() : null,
-            startDate: startDate ? new Date(startDate).toISOString() : null,
+            deadline: toISOOrNull(deadline),
+            startDate: toISOOrNull(startDate),
             recurrence,
             tags,
         });

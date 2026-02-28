@@ -1,5 +1,6 @@
 import { UserState, Completion } from '../types';
 import { calculateComboMultiplier } from './gamification';
+import { toLocalDateKey } from './dates';
 
 export interface AchievementDef {
     key: string;
@@ -165,7 +166,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         check: (_u, completions) => {
             const byDate = new Map<string, number>();
             completions.forEach(c => {
-                const date = c.completedAt.split('T')[0];
+                const date = toLocalDateKey(c.completedAt);
                 byDate.set(date, (byDate.get(date) || 0) + 1);
             });
             const maxPerDay = Math.max(0, ...Array.from(byDate.values()));
@@ -174,7 +175,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         getProgress: (_u, completions) => {
             const byDate = new Map<string, number>();
             completions.forEach(c => {
-                const date = c.completedAt.split('T')[0];
+                const date = toLocalDateKey(c.completedAt);
                 byDate.set(date, (byDate.get(date) || 0) + 1);
             });
             const maxPerDay = Math.max(0, ...Array.from(byDate.values()));

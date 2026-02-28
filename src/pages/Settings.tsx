@@ -5,6 +5,7 @@ import { requestFirebaseNotificationPermission, saveTokenToFirestore, removeToke
 import { Moon, Sun, Smartphone, Download, Trash2, Shield, Snowflake, Bell, BellOff, Upload } from 'lucide-react';
 import { GamificationLevel, ThemeMode } from '../types';
 import { useTaskStore } from '../stores/taskStore';
+import { toLocalDateKey } from '../lib/dates';
 
 export function Settings() {
     const { settings, updateSettings, streakFreezeTokens, resetUser } = useUserStore();
@@ -41,12 +42,13 @@ export function Settings() {
             user: useUserStore.getState(),
             tasks: taskStore.tasks,
             completions: taskStore.completions,
+            penalties: taskStore.penalties,
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `todolist-export-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `todolist-export-${toLocalDateKey(new Date())}.json`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -62,8 +64,15 @@ export function Settings() {
             reader.onload = () => {
                 try {
                     const data = JSON.parse(reader.result as string);
-                    if (data.tasks && data.user) {
-                        localStorage.setItem('todolist-task-store', JSON.stringify({ state: { tasks: data.tasks, completions: data.completions || [] }, version: 0 }));
+                    if (Array.isArray(data.tasks) && data.user && typeof data.user === 'object') {
+                        localStorage.setItem('todolist-task-store', JSON.stringify({
+                            state: {
+                                tasks: data.tasks,
+                                completions: Array.isArray(data.completions) ? data.completions : [],
+                                penalties: Array.isArray(data.penalties) ? data.penalties : [],
+                            },
+                            version: 0
+                        }));
                         localStorage.setItem('todolist-user-store', JSON.stringify({ state: data.user, version: 0 }));
                         window.location.reload();
                     } else {

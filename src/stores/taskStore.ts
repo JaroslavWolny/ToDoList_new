@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 import { Task, Completion, Penalty, TaskStatus, RandomReward } from '../types';
 import { calculateXP, calculateComboMultiplier, calculatePenalty } from '../lib/gamification';
+import { toLocalDateKey } from '../lib/dates';
 
 interface TaskStore {
     tasks: Task[];
@@ -126,7 +127,9 @@ export const useTaskStore = create<TaskStore>()(
                 );
 
                 // Only penalize tasks that are overdue by more than 24h
-                const penalizedTaskIds = new Set(state.penalties.map(p => p.taskId));
+                const penalizedTaskIds = new Set(
+                    (Array.isArray(state.penalties) ? state.penalties : []).map((p) => p.taskId)
+                );
 
                 overdueTasks.forEach((task) => {
                     if (penalizedTaskIds.has(task.id)) return; // already penalized
@@ -147,7 +150,7 @@ export const useTaskStore = create<TaskStore>()(
 
                 if (newPenalties.length > 0) {
                     set((state) => ({
-                        penalties: [...state.penalties, ...newPenalties],
+                        penalties: [...(Array.isArray(state.penalties) ? state.penalties : []), ...newPenalties],
                     }));
                 }
 
@@ -156,7 +159,7 @@ export const useTaskStore = create<TaskStore>()(
 
             resetRecurringTasks: () => {
                 const today = new Date();
-                const todayStr = today.toISOString().split('T')[0];
+                const todayStr = toLocalDateKey(today);
 
                 set((state) => ({
                     tasks: state.tasks.map((task) => {
@@ -167,7 +170,7 @@ export const useTaskStore = create<TaskStore>()(
 
                         // Determine the reference date (last reset or completion date)
                         const referenceDate = task.lastResetDate || task.completedAt || task.createdAt;
-                        const refDateStr = referenceDate.split('T')[0];
+                        const refDateStr = toLocalDateKey(referenceDate);
 
                         if (task.recurrence === 'DAILY') {
                             // Reset if the reference date is before today
@@ -202,13 +205,13 @@ export const useTaskStore = create<TaskStore>()(
 
             getTasksForToday: () => {
                 const { tasks } = get();
-                const today = new Date().toISOString().split('T')[0];
+                const today = toLocalDateKey(new Date());
                 return tasks.filter((t) => {
                     if (t.status !== 'ACTIVE') return false;
 
                     // Exclude tasks scheduled for the future
                     if (t.startDate) {
-                        const startDate = t.startDate.split('T')[0];
+                        const startDate = toLocalDateKey(t.startDate);
                         if (startDate > today) return false;
                     }
 
@@ -217,7 +220,7 @@ export const useTaskStore = create<TaskStore>()(
 
                     // Tasks with deadline today or past
                     if (t.deadline) {
-                        const deadlineDate = t.deadline.split('T')[0];
+                        const deadlineDate = toLocalDateKey(t.deadline);
                         return deadlineDate <= today;
                     }
 
@@ -237,24 +240,24 @@ export const useTaskStore = create<TaskStore>()(
 
             getOverdueTasks: () => {
                 const { tasks } = get();
-                const now = new Date().toISOString();
+                const now = new Date().getTime();
                 return tasks.filter(
-                    (t) => t.status === 'ACTIVE' && t.deadline && t.deadline < now
+                    (t) => t.status === 'ACTIVE' && t.deadline !== null && new Date(t.deadline).getTime() < now
                 );
             },
 
             getCompletionsToday: () => {
                 const { completions } = get();
-                const today = new Date().toISOString().split('T')[0];
+                const today = toLocalDateKey(new Date());
                 return completions.filter(
-                    (c) => c.completedAt.split('T')[0] === today
+                    (c) => toLocalDateKey(c.completedAt) === today
                 );
             },
 
             getCompletionsForDate: (date: string) => {
                 const { completions } = get();
                 return completions.filter(
-                    (c) => c.completedAt.split('T')[0] === date
+                    (c) => toLocalDateKey(c.completedAt) === date
                 );
             },
 
