@@ -9,8 +9,6 @@ if (typeof window !== 'undefined') {
   (window as any).seedDemo = seedData;
   if (window.location.search.includes('seed=true')) {
     seedData();
-    // Redirect to base path to avoid continuous seeding
-    window.history.replaceState({}, document.title, window.location.pathname);
   }
 }
 

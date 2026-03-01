@@ -233,6 +233,5 @@ export function seedData() {
     });
     useAchievementStore.setState({ achievements: updatedAchievements, lastUnlocked: null, showUnlockAnimation: false });
 
-    alert('App seeded successfully! The page will now reload.');
-    window.location.reload();
+    window.location.href = window.location.pathname;
 }
