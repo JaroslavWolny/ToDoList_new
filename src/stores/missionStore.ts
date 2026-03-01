@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { DailyMission } from '../types';
+import { DailyMission, MainMotivation } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { toLocalDateKey } from '../lib/dates';
+import { useUserStore } from './userStore';
 
 interface MissionStore {
     missions: DailyMission[];
@@ -87,12 +88,59 @@ const missionTemplates: Array<{
         },
     ];
 
-function pickRandomMissions(count: number): DailyMission[] {
-    const shuffled = [...missionTemplates].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, count);
-    return selected.map((template) => ({
+function getMotivationWeights(motivation: MainMotivation, type: DailyMission['type']): number {
+    switch (motivation) {
+        case 'FOCUS':
+            return ['complete_critical', 'complete_high'].includes(type) ? 4 : 1;
+        case 'DECLUTTER':
+            return ['complete_tasks', 'no_sweat', 'marathon'].includes(type) ? 3 : 1;
+        case 'HABITS':
+            return ['early_bird', 'night_owl'].includes(type) ? 4 : 1;
+        default:
+            return 1;
+    }
+}
+
+function pickMissionsForMotivation(motivation: MainMotivation, count: number): DailyMission[] {
+    let templates = [...missionTemplates];
+
+    if (motivation === 'REWARDS') {
+        templates.sort((a, b) => b.rewardXP - a.rewardXP);
+        const topMissions = templates.slice(0, 5).sort(() => Math.random() - 0.5);
+        templates = [
+            ...topMissions,
+            ...templates.slice(5).sort(() => Math.random() - 0.5)
+        ];
+    } else {
+        const weightedPool: typeof missionTemplates = [];
+        for (const t of templates) {
+            const weight = getMotivationWeights(motivation, t.type);
+            for (let i = 0; i < weight; i++) {
+                weightedPool.push(t);
+            }
+        }
+
+        const picked = new Set<string>();
+        const result: typeof missionTemplates = [];
+
+        weightedPool.sort(() => Math.random() - 0.5);
+
+        for (const t of weightedPool) {
+            if (!picked.has(t.title)) {
+                picked.add(t.title);
+                result.push(t);
+            }
+            if (result.length === count) break;
+        }
+
+        templates = result;
+    }
+
+    return templates.slice(0, count).map((template) => ({
         id: uuidv4(),
         ...template,
+        rewardXP: motivation === 'REWARDS' ? Math.floor(template.rewardXP * 1.5) : template.rewardXP,
+        rewardCoins: motivation === 'REWARDS' ? Math.floor(template.rewardCoins * 1.5) : template.rewardCoins,
         progress: 0,
         completed: false,
     }));
@@ -109,7 +157,8 @@ export const useMissionStore = create<MissionStore>()(
                 const { lastGeneratedDate } = get();
                 if (lastGeneratedDate === today) return;
 
-                const newMissions = pickRandomMissions(3);
+                const motivation = useUserStore.getState().settings.mainMotivation || 'FOCUS';
+                const newMissions = pickMissionsForMotivation(motivation, 3);
                 set({
                     missions: newMissions,
                     lastGeneratedDate: today,

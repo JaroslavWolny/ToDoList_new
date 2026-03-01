@@ -53,6 +53,7 @@ interface UserStore extends UserState {
 }
 
 const defaultSettings: UserSettings = {
+    mainMotivation: 'FOCUS',
     dailyGoal: 3,
     gamificationLevel: 'STANDARD',
     theme: 'DARK',

@@ -202,6 +202,86 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         check: (u) => u.health === u.maxHealth && u.streakCurrent >= 7,
         getProgress: (u) => ({ current: u.health === u.maxHealth ? u.streakCurrent : 0, max: 7 }),
     },
+    {
+        key: 'vampire_hunter',
+        title: 'Vampire Hunter',
+        description: 'Complete a task between 1:00 AM and 4:00 AM',
+        icon: '🦇',
+        category: 'special',
+        check: (_u, completions) => completions.some(c => {
+            const h = new Date(c.completedAt).getHours();
+            return h >= 1 && h < 4;
+        }),
+        getProgress: (_u, completions) => ({
+            current: completions.some(c => {
+                const h = new Date(c.completedAt).getHours();
+                return h >= 1 && h < 4;
+            }) ? 1 : 0, max: 1
+        }),
+    },
+    {
+        key: 'weekend_warrior',
+        title: 'Weekend Warrior',
+        description: 'Complete 20 tasks during weekends',
+        icon: '🍻',
+        category: 'tasks',
+        check: (_u, completions) => completions.filter(c => [0, 6].includes(new Date(c.completedAt).getDay())).length >= 20,
+        getProgress: (_u, completions) => ({
+            current: completions.filter(c => [0, 6].includes(new Date(c.completedAt).getDay())).length,
+            max: 20
+        }),
+    },
+    {
+        key: 'dragon_hoarder',
+        title: 'Dragon Hoarder',
+        description: 'Accumulate 1,000 coins in your purse at once',
+        icon: '🐉',
+        category: 'xp',
+        check: (u) => u.coins >= 1000,
+        getProgress: (u) => ({ current: u.coins, max: 1000 }),
+    },
+    {
+        key: 'fashionista',
+        title: 'Fashionista',
+        description: 'Unlock 5 different avatars',
+        icon: '👗',
+        category: 'special',
+        check: (u) => u.unlockedAvatars.length >= 5,
+        getProgress: (u) => ({ current: u.unlockedAvatars.length, max: 5 }),
+    },
+    {
+        key: 'ice_wizard',
+        title: 'Ice Wizard',
+        description: 'Stockpile 3 Streak Freeze tokens at the same time',
+        icon: '🧊',
+        category: 'special',
+        check: (u) => u.streakFreezeTokens >= 3,
+        getProgress: (u) => ({ current: u.streakFreezeTokens, max: 3 }),
+    },
+    {
+        key: 'berserker',
+        title: 'Berserker',
+        description: 'Complete 15 tasks in a single day',
+        icon: '😡',
+        category: 'tasks',
+        check: (_u, completions) => {
+            const byDate = new Map<string, number>();
+            completions.forEach(c => {
+                const date = toLocalDateKey(c.completedAt);
+                byDate.set(date, (byDate.get(date) || 0) + 1);
+            });
+            return Math.max(0, ...Array.from(byDate.values())) >= 15;
+        },
+        getProgress: (_u, completions) => {
+            const byDate = new Map<string, number>();
+            completions.forEach(c => {
+                const date = toLocalDateKey(c.completedAt);
+                byDate.set(date, (byDate.get(date) || 0) + 1);
+            });
+            const maxPerDay = Math.max(0, ...Array.from(byDate.values()));
+            return { current: maxPerDay, max: 15 };
+        },
+    },
 ];
 
 export function checkAchievements(

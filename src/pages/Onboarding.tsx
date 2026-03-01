@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../stores/userStore';
-import { WorkStyle, GamificationLevel, ThemeMode } from '../types';
+import { WorkStyle, GamificationLevel, ThemeMode, MainMotivation } from '../types';
 import { Sun, Moon, Smartphone, ChevronRight, ChevronLeft, Rocket } from 'lucide-react';
 
 const TOTAL_STEPS = 5;
@@ -11,6 +11,7 @@ export function Onboarding() {
     const [step, setStep] = useState(0);
     const [name, setName] = useState('');
     const [workStyle, setWorkStyle] = useState<WorkStyle>('FLEXIBLE');
+    const [mainMotivation, setMainMotivation] = useState<MainMotivation>('FOCUS');
     const [dailyGoal, setDailyGoal] = useState(3);
     const [gamificationLevel, setGamificationLevel] = useState<GamificationLevel>('STANDARD');
     const [theme, setTheme] = useState<ThemeMode>('DARK');
@@ -39,6 +40,7 @@ export function Onboarding() {
         completeOnboarding({
             displayName: name || 'Hero',
             workStyle,
+            mainMotivation,
             dailyGoal,
             gamificationLevel,
             theme,
@@ -140,33 +142,42 @@ export function Onboarding() {
 
                         {step === 1 && (
                             <div className="text-center space-y-6">
-                                <div className="text-5xl mb-4">🎯</div>
-                                <h2 className="text-2xl font-bold">Daily Goal</h2>
+                                <div className="text-5xl mb-4">🌟</div>
+                                <h2 className="text-2xl font-bold">Main Motivation</h2>
                                 <p className="text-sm text-[var(--color-text-secondary)]">
-                                    How many tasks do you want to complete per day?
+                                    Why are you here? This shapes your daily quests.
                                 </p>
-                                <div className="py-4">
-                                    <motion.div
-                                        key={dailyGoal}
-                                        initial={{ scale: 0.8 }}
-                                        animate={{ scale: 1 }}
-                                        className="text-6xl font-black gradient-text mb-2"
-                                    >
-                                        {dailyGoal}
-                                    </motion.div>
-                                    <p className="text-sm text-[var(--color-text-secondary)]">tasks per day</p>
-                                </div>
-                                <input
-                                    type="range"
-                                    min={1}
-                                    max={10}
-                                    value={dailyGoal}
-                                    onChange={(e) => setDailyGoal(parseInt(e.target.value))}
-                                    className="w-full h-2 rounded-full appearance-none bg-[var(--color-surface-hover)] accent-primary-500"
-                                />
-                                <div className="flex justify-between">
-                                    <span className="text-xs text-[var(--color-text-secondary)]">Easy (1)</span>
-                                    <span className="text-xs text-[var(--color-text-secondary)]">Ambitious (10)</span>
+                                <div className="space-y-3 mt-4">
+                                    {([
+                                        { value: 'FOCUS', emoji: '🎯', label: 'Find focus', desc: 'Stop procrastinating & prioritize.' },
+                                        { value: 'DECLUTTER', emoji: '🧘‍♂️', label: 'Declutter mind', desc: 'Clear your head from tasks chaos.' },
+                                        { value: 'HABITS', emoji: '📈', label: 'Build habits', desc: 'Develop healthy daily routines.' },
+                                        { value: 'REWARDS', emoji: '🚀', label: 'Get rewarded', desc: 'Feel achievement for your work.' },
+                                    ] as { value: MainMotivation; emoji: string; label: string; desc: string }[]).map((opt) => (
+                                        <motion.button
+                                            key={opt.value}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={() => {
+                                                setMainMotivation(opt.value);
+                                                if (opt.value === 'FOCUS') setDailyGoal(3);
+                                                if (opt.value === 'DECLUTTER') setDailyGoal(6);
+                                                if (opt.value === 'HABITS') setDailyGoal(4);
+                                                if (opt.value === 'REWARDS') setDailyGoal(5);
+                                            }}
+                                            className={`w-full text-left p-4 rounded-xl transition-all ${mainMotivation === opt.value
+                                                ? 'bg-primary-500/10 border-2 border-primary-500'
+                                                : 'card-surface'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-2xl">{opt.emoji}</span>
+                                                <div>
+                                                    <p className="text-sm font-bold">{opt.label}</p>
+                                                    <p className="text-xs text-[var(--color-text-secondary)]">{opt.desc}</p>
+                                                </div>
+                                            </div>
+                                        </motion.button>
+                                    ))}
                                 </div>
                             </div>
                         )}
