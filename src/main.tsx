@@ -3,14 +3,6 @@ import ReactDOM from 'react-dom/client'
 import { registerSW } from 'virtual:pwa-register'
 import App from './App'
 import './index.css'
-import { seedData } from './seed'
-
-if (typeof window !== 'undefined') {
-  (window as any).seedDemo = seedData;
-  if (window.location.search.includes('seed=true')) {
-    seedData();
-  }
-}
 
 const SW_MIGRATION_KEY = 'questdo_sw_migration_v2_done'
 
