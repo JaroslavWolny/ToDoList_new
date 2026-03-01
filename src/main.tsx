@@ -4,6 +4,17 @@ import { registerSW } from 'virtual:pwa-register'
 import App from './App'
 import './index.css'
 
+// Jednorázový reset aplikace pro zobrazení úvodní obrazovky
+const CANCEL_SIMULATION_KEY = 'questdo_cancel_simulation_v2_done';
+
+if (window.location.search.includes('reset=true')) {
+  localStorage.clear();
+  window.location.href = window.location.pathname; // Remove query params after reset
+} else if (!localStorage.getItem(CANCEL_SIMULATION_KEY)) {
+  localStorage.clear();
+  localStorage.setItem(CANCEL_SIMULATION_KEY, 'true');
+  window.location.reload();
+}
 const SW_MIGRATION_KEY = 'questdo_sw_migration_v2_done'
 
 const cleanupLegacyRootServiceWorker = async () => {
