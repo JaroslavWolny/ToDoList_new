@@ -10,9 +10,10 @@ interface TaskCardProps {
     onComplete: (id: string) => void;
     onDelete: (id: string) => void;
     onEdit: (task: Task) => void;
+    onTagClick?: (tag: string) => void;
 }
 
-export function TaskCard({ task, onComplete, onDelete, onEdit }: TaskCardProps) {
+export function TaskCard({ task, onComplete, onDelete, onEdit, onTagClick }: TaskCardProps) {
     const [showXP, setShowXP] = useState(false);
     const [isCompleting, setIsCompleting] = useState(false);
     const isOverdue = task.deadline && isPast(parseISO(task.deadline)) && task.status === 'ACTIVE';
@@ -111,7 +112,17 @@ export function TaskCard({ task, onComplete, onDelete, onEdit }: TaskCardProps) 
                         {task.tags.length > 0 && (
                             <div className="flex gap-1">
                                 {task.tags.slice(0, 2).map((tag) => (
-                                    <span key={tag} className="px-1.5 py-0.5 rounded-md text-[10px] bg-primary-100/50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
+                                    <span
+                                        key={tag}
+                                        onClick={(e) => {
+                                            if (onTagClick) {
+                                                e.stopPropagation();
+                                                e.preventDefault();
+                                                onTagClick(tag);
+                                            }
+                                        }}
+                                        className={`px-1.5 py-0.5 rounded-md text-[10px] bg-primary-100/50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400 transition-colors ${onTagClick ? 'cursor-pointer hover:bg-primary-200/60 dark:hover:bg-primary-800/50' : ''}`}
+                                    >
                                         {tag}
                                     </span>
                                 ))}

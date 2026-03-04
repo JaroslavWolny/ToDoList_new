@@ -22,6 +22,7 @@ export function Tasks() {
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [filterStatus, setFilterStatus] = useState<FilterStatus>('ACTIVE');
     const [filterPriority, setFilterPriority] = useState<Priority | 'ALL'>('ALL');
+    const [filterTag, setFilterTag] = useState<string | null>(null);
     const [sortBy, setSortBy] = useState<SortOption>('created');
     const [showFilters, setShowFilters] = useState(false);
     const [showLevelUp, setShowLevelUp] = useState(false);
@@ -32,6 +33,17 @@ export function Tasks() {
     const achievementStore = useAchievementStore();
     const missionStore = useMissionStore();
 
+    const availableTags = useMemo(() => {
+        const tags = new Set<string>();
+        taskStore.tasks.forEach((t) => {
+            // Only show tags from tasks that match the current status filter
+            if (filterStatus === 'ALL' || t.status === filterStatus) {
+                t.tags.forEach(tag => tags.add(tag));
+            }
+        });
+        return Array.from(tags).sort();
+    }, [taskStore.tasks, filterStatus]);
+
     const filteredTasks = useMemo(() => {
         let result = [...taskStore.tasks];
 
@@ -40,6 +52,9 @@ export function Tasks() {
         }
         if (filterPriority !== 'ALL') {
             result = result.filter((t) => t.priority === filterPriority);
+        }
+        if (filterTag) {
+            result = result.filter((t) => t.tags.includes(filterTag));
         }
 
         result.sort((a, b) => {
@@ -53,7 +68,7 @@ export function Tasks() {
         });
 
         return result;
-    }, [taskStore.tasks, filterStatus, filterPriority, sortBy]);
+    }, [taskStore.tasks, filterStatus, filterPriority, filterTag, sortBy]);
 
     const handleCompleteTask = useCallback((id: string) => {
         const prevLevel = userStore.level;
@@ -128,7 +143,7 @@ export function Tasks() {
 
     return (
         <div className="page-container">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
                 <div>
                     <h1 className="text-2xl font-bold">Tasks</h1>
                     <p className="text-sm text-[var(--color-text-secondary)]">
@@ -139,12 +154,39 @@ export function Tasks() {
                     <motion.button
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setShowFilters(!showFilters)}
-                        className={`p-2.5 rounded-xl ${showFilters ? 'bg-primary-500 text-white' : 'card-surface'}`}
+                        className={`p-2.5 rounded-xl ${showFilters ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20' : 'card-surface'}`}
                     >
                         <Filter className="w-4 h-4" />
                     </motion.button>
                 </div>
             </div>
+
+            {/* Tag Filters (Quick Filters) */}
+            {availableTags.length > 0 && (
+                <div className="mb-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide flex gap-2">
+                    <button
+                        onClick={() => setFilterTag(null)}
+                        className={`flex-shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-xs font-semibold transition-all ${filterTag === null
+                                ? 'bg-[var(--color-text)] text-[var(--color-bg)]'
+                                : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)]'
+                            }`}
+                    >
+                        All
+                    </button>
+                    {availableTags.map(tag => (
+                        <button
+                            key={tag}
+                            onClick={() => setFilterTag(tag === filterTag ? null : tag)}
+                            className={`flex-shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-xs font-semibold transition-all ${filterTag === tag
+                                    ? 'bg-primary-500 text-white shadow-md shadow-primary-500/30'
+                                    : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)]'
+                                }`}
+                        >
+                            #{tag}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {/* Filters */}
             {showFilters && (
@@ -225,7 +267,10 @@ export function Tasks() {
                     setEditingTask(task);
                     setShowTaskForm(true);
                 }}
-                emptyMessage="No tasks found. Create one with the + button!"
+                onTagClick={(tag) => {
+                    setFilterTag(tag === filterTag ? null : tag);
+                }}
+                emptyMessage="No tasks found."
             />
 
             {/* FAB */}
