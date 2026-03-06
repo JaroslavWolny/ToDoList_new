@@ -53,7 +53,8 @@ Visualize your productivity journey:
 
 ### 🔔 Web Push Notifications (Firebase & Vercel)
 - **Background Reminders:** 📲 The app uses Firebase Cloud Messaging (FCM) to deliver morning and evening summaries directly to your device (supports iOS 16.4+ standalone PWAs).
-- **Vercel Cron Jobs:** ⚙️ A custom Vercel Serverless Function runs automatically every day, securely reading your timezone preferences from Firestore via the Firebase Admin SDK to ping you at exactly the right time.
+- **Hourly Reminder Slots:** 🕐 Reminder selection is normalized to the start of the selected hour so the UI matches the hourly cron delivery model.
+- **Vercel Cron Jobs:** ⚙️ A custom Vercel Serverless Function runs automatically every hour, securely reading your timezone preferences from Firestore via the Firebase Admin SDK to ping you at the correct local reminder slot.
 
 ### 📱 Perfect PWA Experience
 Install **QuestDo** directly to your phone or desktop.
@@ -127,6 +128,24 @@ npm run dev
 npm run build
 npm run preview
 ```
+
+### Quality Checks
+```bash
+npm run lint
+npm run build
+```
+
+---
+
+## Maintenance Notes
+
+Recent audit fixes included:
+
+- Replaced broad `localStorage.clear()` startup behavior with targeted app-storage cleanup to avoid accidental data loss.
+- Added day-rollover maintenance so recurring tasks, streak checks, and overdue penalties update even if the app stays open overnight.
+- Made export/import restore the full persisted app state, with backward compatibility for the older JSON backup format.
+- Extended reset behavior to remove saved notification tokens and local device identifiers.
+- Aligned notification settings and backend scheduling to explicit hourly reminder slots.
 
 ---
 

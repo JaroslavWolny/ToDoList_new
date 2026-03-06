@@ -1,16 +1,60 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useUserStore } from '../stores/userStore';
 import { requestFirebaseNotificationPermission, saveTokenToFirestore, removeTokenFromFirestore } from '../lib/firebase';
 import { Moon, Sun, Smartphone, Download, Trash2, Shield, Snowflake, Bell, BellOff, Upload } from 'lucide-react';
 import { GamificationLevel, ThemeMode } from '../types';
-import { useTaskStore } from '../stores/taskStore';
 import { toLocalDateKey } from '../lib/dates';
+import {
+    ACHIEVEMENT_STORE_KEY,
+    APP_STORAGE_KEYS,
+    DEVICE_ID_KEY,
+    MISSION_STORE_KEY,
+    TASK_STORE_KEY,
+    USER_STORE_KEY,
+    clearAppStorage,
+} from '../lib/storage';
+
+type StorageBackup = {
+    version: 2;
+    exportedAt: string;
+    stores: Partial<Record<(typeof APP_STORAGE_KEYS)[number], string>>;
+};
+
+const normalizeReminderHour = (value: string) => `${value.slice(0, 2)}:00`;
+
+const isStorageBackup = (value: unknown): value is StorageBackup => {
+    return typeof value === 'object'
+        && value !== null
+        && 'version' in value
+        && value.version === 2
+        && 'stores' in value
+        && typeof value.stores === 'object'
+        && value.stores !== null;
+};
 
 export function Settings() {
     const { settings, updateSettings, streakFreezeTokens, resetUser } = useUserStore();
-    const taskStore = useTaskStore();
     const [importError, setImportError] = useState('');
+
+    useEffect(() => {
+        const normalizedMorning = normalizeReminderHour(settings.notificationMorning);
+        const normalizedEvening = normalizeReminderHour(settings.notificationEvening);
+
+        if (
+            normalizedMorning !== settings.notificationMorning
+            || normalizedEvening !== settings.notificationEvening
+        ) {
+            updateSettings({
+                notificationMorning: normalizedMorning,
+                notificationEvening: normalizedEvening,
+            });
+        }
+    }, [
+        settings.notificationEvening,
+        settings.notificationMorning,
+        updateSettings,
+    ]);
 
     const themeOptions: { value: ThemeMode; icon: React.ReactNode; label: string }[] = [
         { value: 'LIGHT', icon: <Sun className="w-4 h-4" />, label: 'Light' },
@@ -38,12 +82,19 @@ export function Settings() {
 
 
     const handleExportData = () => {
-        const data = {
-            user: useUserStore.getState(),
-            tasks: taskStore.tasks,
-            completions: taskStore.completions,
-            penalties: taskStore.penalties,
+        const stores = Object.fromEntries(
+            APP_STORAGE_KEYS
+                .filter((key) => key !== DEVICE_ID_KEY)
+                .map((key) => [key, localStorage.getItem(key) ?? ''])
+                .filter(([, value]) => value !== '')
+        ) as StorageBackup['stores'];
+
+        const data: StorageBackup = {
+            version: 2,
+            exportedAt: new Date().toISOString(),
+            stores,
         };
+
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -63,22 +114,49 @@ export function Settings() {
             const reader = new FileReader();
             reader.onload = () => {
                 try {
-                    const data = JSON.parse(reader.result as string);
-                    if (Array.isArray(data.tasks) && data.user && typeof data.user === 'object') {
-                        localStorage.setItem('todolist-task-store', JSON.stringify({
+                    const data = JSON.parse(reader.result as string) as unknown;
+
+                    if (isStorageBackup(data)) {
+                        clearAppStorage();
+                        APP_STORAGE_KEYS
+                            .filter((key) => key !== DEVICE_ID_KEY)
+                            .forEach((key) => {
+                                const value = data.stores[key];
+                                if (typeof value === 'string' && value.length > 0) {
+                                    localStorage.setItem(key, value);
+                                }
+                            });
+                        window.location.reload();
+                        return;
+                    }
+
+                    if (
+                        typeof data === 'object'
+                        && data !== null
+                        && 'tasks' in data
+                        && Array.isArray(data.tasks)
+                        && 'user' in data
+                        && data.user
+                        && typeof data.user === 'object'
+                    ) {
+                        clearAppStorage();
+                        localStorage.setItem(TASK_STORE_KEY, JSON.stringify({
                             state: {
                                 tasks: data.tasks,
-                                completions: Array.isArray(data.completions) ? data.completions : [],
-                                penalties: Array.isArray(data.penalties) ? data.penalties : [],
+                                completions: 'completions' in data && Array.isArray(data.completions) ? data.completions : [],
+                                penalties: 'penalties' in data && Array.isArray(data.penalties) ? data.penalties : [],
                             },
-                            version: 0
+                            version: 0,
                         }));
-                        localStorage.setItem('todolist-user-store', JSON.stringify({ state: data.user, version: 0 }));
+                        localStorage.setItem(USER_STORE_KEY, JSON.stringify({ state: data.user, version: 0 }));
+                        localStorage.removeItem(ACHIEVEMENT_STORE_KEY);
+                        localStorage.removeItem(MISSION_STORE_KEY);
                         window.location.reload();
-                    } else {
-                        setImportError('Invalid file format');
-                        setTimeout(() => setImportError(''), 3000);
+                        return;
                     }
+
+                    setImportError('Invalid file format');
+                    setTimeout(() => setImportError(''), 3000);
                 } catch {
                     setImportError('Failed to parse file');
                     setTimeout(() => setImportError(''), 3000);
@@ -89,12 +167,11 @@ export function Settings() {
         input.click();
     };
 
-    const handleReset = () => {
+    const handleReset = async () => {
         if (window.confirm('Are you sure? This will delete all your data, tasks, and progress. This cannot be undone.')) {
+            await removeTokenFromFirestore();
             resetUser();
-            localStorage.removeItem('todolist-task-store');
-            localStorage.removeItem('todolist-achievement-store');
-            localStorage.removeItem('todolist-mission-store');
+            clearAppStorage();
             window.location.reload();
         }
     };
@@ -185,7 +262,7 @@ export function Settings() {
             <Section title="Notifications">
                 <Toggle
                     label="Enable Notifications"
-                    description="Receive morning and evening reminders"
+                    description="Receive morning and evening reminders at the start of the selected hour"
                     checked={settings.notificationsEnabled}
                     onChange={async (v) => {
                         if (v) {
@@ -213,30 +290,38 @@ export function Settings() {
                         className="space-y-3 mt-3"
                     >
                         <div className="flex items-center justify-between">
-                            <span className="text-sm">Morning Reminder</span>
+                            <div>
+                                <span className="text-sm block">Morning Reminder</span>
+                                <span className="text-xs text-[var(--color-text-secondary)]">Sent near the top of the selected hour</span>
+                            </div>
                             <input
                                 type="time"
                                 value={settings.notificationMorning}
                                 onChange={async (e) => {
-                                    const val = e.target.value;
+                                    const val = normalizeReminderHour(e.target.value);
                                     updateSettings({ notificationMorning: val });
                                     const token = await requestFirebaseNotificationPermission();
                                     if (token) await saveTokenToFirestore(token, val, settings.notificationEvening);
                                 }}
+                                step={3600}
                                 className="px-3 py-1.5 rounded-lg border-none bg-[var(--color-surface-hover)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-sm"
                             />
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-sm">Evening Summary</span>
+                            <div>
+                                <span className="text-sm block">Evening Summary</span>
+                                <span className="text-xs text-[var(--color-text-secondary)]">Sent near the top of the selected hour</span>
+                            </div>
                             <input
                                 type="time"
                                 value={settings.notificationEvening}
                                 onChange={async (e) => {
-                                    const val = e.target.value;
+                                    const val = normalizeReminderHour(e.target.value);
                                     updateSettings({ notificationEvening: val });
                                     const token = await requestFirebaseNotificationPermission();
                                     if (token) await saveTokenToFirestore(token, settings.notificationMorning, val);
                                 }}
+                                step={3600}
                                 className="px-3 py-1.5 rounded-lg border-none bg-[var(--color-surface-hover)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-sm"
                             />
                         </div>

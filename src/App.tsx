@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { Dashboard } from './pages/Dashboard';
@@ -14,24 +14,39 @@ function App() {
   const { resetRecurringTasks, processOverdueTasks } = useTaskStore();
   const { checkStreakOnLoad, removeXP, loseHealth } = useUserStore();
   const hasInitializedRef = useRef(false);
+  const lastMaintenanceDateRef = useRef<string>('');
 
-  // Reset recurring tasks, check streak, and process overdue on app load
-  useEffect(() => {
-    if (hasInitializedRef.current) return;
-    hasInitializedRef.current = true;
-
+  const runDailyMaintenance = useCallback(() => {
     resetRecurringTasks();
-
-    // Check for broken streak
     checkStreakOnLoad();
 
-    // Process overdue task penalties
     const penalties = processOverdueTasks(settings.gamificationLevel);
     penalties.forEach((p) => {
       removeXP(p.xpLost);
       loseHealth();
     });
   }, [checkStreakOnLoad, loseHealth, processOverdueTasks, removeXP, resetRecurringTasks, settings.gamificationLevel]);
+
+  // Reset recurring tasks, check streak, and process overdue on app load
+  useEffect(() => {
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+    lastMaintenanceDateRef.current = new Date().toDateString();
+
+    runDailyMaintenance();
+  }, [runDailyMaintenance]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      const today = new Date().toDateString();
+      if (today === lastMaintenanceDateRef.current) return;
+
+      lastMaintenanceDateRef.current = today;
+      runDailyMaintenance();
+    }, 60 * 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [runDailyMaintenance]);
 
   // Apply theme
   useEffect(() => {

@@ -10,14 +10,15 @@ const getErrorDetails = (error: unknown): FirebaseMessagingError => {
     return {};
 };
 
-const getHourInTimeZone = (date: Date, timeZone: string): string => {
+const getHourlySlotInTimeZone = (date: Date, timeZone: string): string => {
     const parts = new Intl.DateTimeFormat('en-US', {
         timeZone,
         hour12: false,
         hour: '2-digit',
     }).formatToParts(date);
 
-    return parts.find((part) => part.type === 'hour')?.value ?? '';
+    const hour = parts.find((part) => part.type === 'hour')?.value ?? '';
+    return hour ? `${hour}:00` : '';
 };
 
 if (!admin.apps.length) {
@@ -67,13 +68,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             let title = "";
             let body = "";
 
-            // Cron runs hourly; matching by hour triggers once per selected hour.
-            const currentHour = getHourInTimeZone(new Date(), timezone);
+            // Cron runs hourly, so reminders are stored and matched as hourly slots.
+            const currentHourlySlot = getHourlySlotInTimeZone(new Date(), timezone);
 
-            if (morningTime && morningTime.startsWith(currentHour)) {
+            if (morningTime === currentHourlySlot) {
                 title = "🌅 Good Morning, Hero!";
                 body = "A new day, a new quest. Check your daily missions and crush your goals!";
-            } else if (eveningTime && eveningTime.startsWith(currentHour)) {
+            } else if (eveningTime === currentHourlySlot) {
                 title = "🌙 Evening Summary";
                 body = "Did you complete all your quests today? Open the app to check your streak!";
             } else {

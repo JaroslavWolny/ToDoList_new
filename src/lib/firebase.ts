@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { getFirestore, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { DEVICE_ID_KEY } from "./storage";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -65,10 +66,10 @@ export const db = getFirestore(app);
 
 export const saveTokenToFirestore = async (token: string, morningTime: string, eveningTime: string) => {
     try {
-        let deviceId = localStorage.getItem('todolist_device_id');
+        let deviceId = localStorage.getItem(DEVICE_ID_KEY);
         if (!deviceId) {
             deviceId = crypto.randomUUID();
-            localStorage.setItem('todolist_device_id', deviceId);
+            localStorage.setItem(DEVICE_ID_KEY, deviceId);
         }
 
         // Attempt to save to Firestore
@@ -87,10 +88,11 @@ export const saveTokenToFirestore = async (token: string, morningTime: string, e
 
 export const removeTokenFromFirestore = async () => {
     try {
-        const deviceId = localStorage.getItem('todolist_device_id');
+        const deviceId = localStorage.getItem(DEVICE_ID_KEY);
         if (deviceId) {
             await deleteDoc(doc(db, "notification_tokens", deviceId));
             console.log('Token removed from Firestore');
+            localStorage.removeItem(DEVICE_ID_KEY);
         }
     } catch (error) {
         console.error('Failed to remove token from Firestore:', error);
