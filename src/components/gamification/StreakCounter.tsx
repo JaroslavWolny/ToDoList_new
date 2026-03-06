@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Flame } from 'lucide-react';
 import { useUserStore } from '../../stores/userStore';
 import { getLevelTitle } from '../../lib/gamification';
-import { StreakShareModal } from './StreakShareModal';
+
+const StreakShareModal = lazy(() => import('./StreakShareModal').then((module) => ({ default: module.StreakShareModal })));
 
 export function StreakCounter() {
     const { streakCurrent, streakLongest } = useUserStore();
@@ -65,14 +66,18 @@ export function StreakCounter() {
                 }
             </motion.div >
 
-            <StreakShareModal
-                isOpen={isShareModalOpen}
-                onClose={() => setIsShareModalOpen(false)}
-                currentStreak={streakCurrent}
-                bestStreak={streakLongest}
-                username={useUserStore.getState().displayName || 'Hero'}
-                rank={getLevelTitle(Math.floor(Math.sqrt(useUserStore.getState().xp / 100)))}
-            />
+            {isShareModalOpen && (
+                <Suspense fallback={null}>
+                    <StreakShareModal
+                        isOpen={isShareModalOpen}
+                        onClose={() => setIsShareModalOpen(false)}
+                        currentStreak={streakCurrent}
+                        bestStreak={streakLongest}
+                        username={useUserStore.getState().displayName || 'Hero'}
+                        rank={getLevelTitle(Math.floor(Math.sqrt(useUserStore.getState().xp / 100)))}
+                    />
+                </Suspense>
+            )}
         </>
     );
 }

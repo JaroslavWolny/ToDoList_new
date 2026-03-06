@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { motion } from 'framer-motion';
-import { icons } from 'lucide-react';
 import { useUserStore } from '../../stores/userStore';
 import { getLevelTitle } from '../../lib/gamification';
 import { AVAILABLE_AVATARS } from '../../lib/avatars';
-import { AvatarShopModal } from './AvatarShopModal';
+import { avatarIcons } from '../../lib/avatarIcons';
+
+const AvatarShopModal = lazy(() => import('./AvatarShopModal').then((module) => ({ default: module.AvatarShopModal })));
 
 export function LevelBadge() {
     const { level, equippedAvatar } = useUserStore();
@@ -20,7 +21,7 @@ export function LevelBadge() {
     };
 
     const currentAvatar = AVAILABLE_AVATARS.find(f => f.id === equippedAvatar) || AVAILABLE_AVATARS[0];
-    const IconComponent = icons[currentAvatar.icon as keyof typeof icons];
+    const IconComponent = avatarIcons[currentAvatar.icon as keyof typeof avatarIcons];
 
     return (
         <>
@@ -44,10 +45,14 @@ export function LevelBadge() {
                 </div>
             </motion.button>
 
-            <AvatarShopModal
-                isOpen={isShopOpen}
-                onClose={() => setIsShopOpen(false)}
-            />
+            {isShopOpen && (
+                <Suspense fallback={null}>
+                    <AvatarShopModal
+                        isOpen={isShopOpen}
+                        onClose={() => setIsShopOpen(false)}
+                    />
+                </Suspense>
+            )}
         </>
     );
 }

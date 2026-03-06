@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Lock, Check } from 'lucide-react';
-import { icons } from 'lucide-react';
 import { useUserStore } from '../../stores/userStore';
 import { AVAILABLE_AVATARS } from '../../lib/avatars';
+import { avatarIcons } from '../../lib/avatarIcons';
 
 interface AvatarShopModalProps {
     isOpen: boolean;
@@ -60,7 +60,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                             const isUnlocked = avatar.cost === 0 || unlockedAvatars.includes(avatar.id);
                             const isEquipped = equippedAvatar === avatar.id || (equippedAvatar === null && avatar.id === 'default');
                             const canAfford = coins >= avatar.cost;
-                            const IconComponent = icons[avatar.icon as keyof typeof icons];
+                            const IconComponent = avatarIcons[avatar.icon as keyof typeof avatarIcons];
 
                             return (
                                 <div

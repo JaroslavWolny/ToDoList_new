@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { Suspense, lazy, useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Zap } from 'lucide-react';
 import { useUserStore } from '../stores/userStore';
@@ -10,13 +10,14 @@ import { StreakCounter } from '../components/gamification/StreakCounter';
 import { LevelBadge } from '../components/gamification/LevelBadge';
 import { HealthBar } from '../components/gamification/HealthBar';
 import { ComboIndicator } from '../components/gamification/ComboIndicator';
-import { LevelUpOverlay } from '../components/gamification/LevelUpOverlay';
-import { RandomRewardModal } from '../components/gamification/RandomRewardModal';
 import { TaskList } from '../components/tasks/TaskList';
-import { TaskForm } from '../components/tasks/TaskForm';
 import { Task, RandomReward } from '../types';
 import { calculateComboMultiplier, calculateLevel } from '../lib/gamification';
 import { getMissionProgressUpdates } from '../lib/missions';
+
+const LevelUpOverlay = lazy(() => import('../components/gamification/LevelUpOverlay').then((module) => ({ default: module.LevelUpOverlay })));
+const RandomRewardModal = lazy(() => import('../components/gamification/RandomRewardModal').then((module) => ({ default: module.RandomRewardModal })));
+const TaskForm = lazy(() => import('../components/tasks/TaskForm').then((module) => ({ default: module.TaskForm })));
 
 export function Dashboard() {
     const [showTaskForm, setShowTaskForm] = useState(false);
@@ -241,28 +242,38 @@ export function Dashboard() {
 
             {/* Task Form Modal */}
             {showTaskForm && (
-                <TaskForm
-                    onSubmit={editingTask ? handleUpdateTask : handleAddTask}
-                    onClose={() => {
-                        setShowTaskForm(false);
-                        setEditingTask(null);
-                    }}
-                    editTask={editingTask}
-                />
+                <Suspense fallback={null}>
+                    <TaskForm
+                        onSubmit={editingTask ? handleUpdateTask : handleAddTask}
+                        onClose={() => {
+                            setShowTaskForm(false);
+                            setEditingTask(null);
+                        }}
+                        editTask={editingTask}
+                    />
+                </Suspense>
             )}
 
             {/* Level Up Overlay */}
-            <LevelUpOverlay
-                show={showLevelUp}
-                newLevel={newLevel}
-                onDismiss={() => setShowLevelUp(false)}
-            />
+            {showLevelUp && (
+                <Suspense fallback={null}>
+                    <LevelUpOverlay
+                        show={showLevelUp}
+                        newLevel={newLevel}
+                        onDismiss={() => setShowLevelUp(false)}
+                    />
+                </Suspense>
+            )}
 
             {/* Random Reward Modal */}
-            <RandomRewardModal
-                reward={rewardDrop}
-                onClose={() => setRewardDrop(null)}
-            />
+            {rewardDrop && (
+                <Suspense fallback={null}>
+                    <RandomRewardModal
+                        reward={rewardDrop}
+                        onClose={() => setRewardDrop(null)}
+                    />
+                </Suspense>
+            )}
         </div>
     );
 }

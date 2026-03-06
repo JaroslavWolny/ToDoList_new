@@ -1,13 +1,24 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
-import { Dashboard } from './pages/Dashboard';
-import { Tasks } from './pages/Tasks';
-import { Stats } from './pages/Stats';
-import { Settings } from './pages/Settings';
-import { Onboarding } from './pages/Onboarding';
 import { useUserStore } from './stores/userStore';
 import { useTaskStore } from './stores/taskStore';
+
+const Dashboard = lazy(() => import('./pages/Dashboard').then((module) => ({ default: module.Dashboard })));
+const Tasks = lazy(() => import('./pages/Tasks').then((module) => ({ default: module.Tasks })));
+const Stats = lazy(() => import('./pages/Stats').then((module) => ({ default: module.Stats })));
+const Settings = lazy(() => import('./pages/Settings').then((module) => ({ default: module.Settings })));
+const Onboarding = lazy(() => import('./pages/Onboarding').then((module) => ({ default: module.Onboarding })));
+
+function RouteLoader() {
+  return (
+    <div className="page-container">
+      <div className="card-surface rounded-2xl p-5 text-sm text-[var(--color-text-secondary)]">
+        Loading...
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const { onboardingComplete, settings } = useUserStore();
@@ -69,10 +80,12 @@ function App() {
   if (!onboardingComplete) {
     return (
       <BrowserRouter>
-        <Routes>
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="*" element={<Navigate to="/onboarding" replace />} />
-        </Routes>
+        <Suspense fallback={<RouteLoader />}>
+          <Routes>
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="*" element={<Navigate to="/onboarding" replace />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     );
   }
@@ -80,13 +93,15 @@ function App() {
   return (
     <BrowserRouter>
       <AppShell>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/tasks" element={<Tasks />} />
-          <Route path="/stats" element={<Stats />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <Suspense fallback={<RouteLoader />}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/tasks" element={<Tasks />} />
+            <Route path="/stats" element={<Stats />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </AppShell>
     </BrowserRouter>
   );
