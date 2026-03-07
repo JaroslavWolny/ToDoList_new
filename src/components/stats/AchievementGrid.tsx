@@ -162,38 +162,7 @@ export function AchievementGrid() {
                 </div>
             )}
 
-            {unlockedAchievements.length > 0 && (
-                <div className="card-surface rounded-[28px] p-4">
-                    <div className="flex items-center justify-between gap-3 mb-3">
-                        <div>
-                            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-yellow-500">Trophy Shelf</p>
-                            <p className="text-xs text-[var(--color-text-secondary)] mt-1">Latest earned awards, Duolingo style</p>
-                        </div>
-                        <span className="text-sm font-black">{unlockedAchievements.length}</span>
-                    </div>
 
-                    <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                        {unlockedAchievements.slice(0, 8).map((achievement) => (
-                            <button
-                                key={achievement.key}
-                                type="button"
-                                onClick={() => {
-                                    setActiveCategory(achievement.category);
-                                    setSelectedKey(achievement.key);
-                                }}
-                                className="shrink-0 flex flex-col items-center text-center w-16"
-                            >
-                                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-yellow-400/20 to-amber-500/10 border border-yellow-400/20 flex items-center justify-center text-xl">
-                                    {achievement.icon}
-                                </div>
-                                <span className="text-[10px] font-medium mt-2 line-clamp-2 leading-4">
-                                    {achievement.title}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
 
             <div>
                 <div className="flex items-end justify-between gap-3 mb-3">
