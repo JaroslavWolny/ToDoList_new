@@ -12,6 +12,24 @@ export interface AchievementDef {
     getProgress?: (user: UserState, completions: Completion[]) => { current: number; max: number };
 }
 
+function getCompletionCountByDate(completions: Completion[]) {
+    const byDate = new Map<string, number>();
+    completions.forEach((completion) => {
+        const date = toLocalDateKey(completion.completedAt);
+        byDate.set(date, (byDate.get(date) || 0) + 1);
+    });
+    return byDate;
+}
+
+function getMaxCompletionsInSingleDay(completions: Completion[]) {
+    const byDate = getCompletionCountByDate(completions);
+    return Math.max(0, ...Array.from(byDate.values()));
+}
+
+function getUniqueCompletionDays(completions: Completion[]) {
+    return new Set(completions.map((completion) => toLocalDateKey(completion.completedAt))).size;
+}
+
 export const ACHIEVEMENT_DEFS: AchievementDef[] = [
     // Streak achievements
     {
@@ -40,6 +58,15 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         category: 'streak',
         check: (u) => u.streakCurrent >= 30 || u.streakLongest >= 30,
         getProgress: (u) => ({ current: Math.max(u.streakCurrent, u.streakLongest), max: 30 }),
+    },
+    {
+        key: 'streak_champion',
+        title: 'Streak Champion',
+        description: 'Maintain a 45-day streak',
+        icon: '🛡️',
+        category: 'streak',
+        check: (u) => u.streakCurrent >= 45 || u.streakLongest >= 45,
+        getProgress: (u) => ({ current: Math.max(u.streakCurrent, u.streakLongest), max: 45 }),
     },
     {
         key: 'streak_legend',
@@ -98,6 +125,15 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         getProgress: (u) => ({ current: u.totalTasksCompleted, max: 100 }),
     },
     {
+        key: 'momentum_builder',
+        title: 'Momentum Builder',
+        description: 'Complete 250 tasks',
+        icon: '📈',
+        category: 'tasks',
+        check: (u) => u.totalTasksCompleted >= 250,
+        getProgress: (u) => ({ current: u.totalTasksCompleted, max: 250 }),
+    },
+    {
         key: 'taskmaster',
         title: 'Taskmaster',
         description: 'Complete 500 tasks',
@@ -105,6 +141,15 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         category: 'tasks',
         check: (u) => u.totalTasksCompleted >= 500,
         getProgress: (u) => ({ current: u.totalTasksCompleted, max: 500 }),
+    },
+    {
+        key: 'task_titan',
+        title: 'Task Titan',
+        description: 'Complete 1,000 tasks',
+        icon: '🏛️',
+        category: 'tasks',
+        check: (u) => u.totalTasksCompleted >= 1000,
+        getProgress: (u) => ({ current: u.totalTasksCompleted, max: 1000 }),
     },
     {
         key: 'critical_thinker',
@@ -116,6 +161,24 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
             return completions.filter(c => c.xpEarned >= 100).length >= 10;
         },
         getProgress: (_u, completions) => ({ current: completions.filter(c => c.xpEarned >= 100).length, max: 10 }),
+    },
+    {
+        key: 'daily_sprinter',
+        title: 'Daily Sprinter',
+        description: 'Complete 5 tasks in a single day',
+        icon: '🏃',
+        category: 'tasks',
+        check: (_u, completions) => getMaxCompletionsInSingleDay(completions) >= 5,
+        getProgress: (_u, completions) => ({ current: getMaxCompletionsInSingleDay(completions), max: 5 }),
+    },
+    {
+        key: 'consistency_club',
+        title: 'Consistency Club',
+        description: 'Complete tasks on 14 different days',
+        icon: '🗓️',
+        category: 'tasks',
+        check: (_u, completions) => getUniqueCompletionDays(completions) >= 14,
+        getProgress: (_u, completions) => ({ current: getUniqueCompletionDays(completions), max: 14 }),
     },
 
     // XP achievements
@@ -138,6 +201,15 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         getProgress: (u) => ({ current: u.totalXPEarned, max: 10000 }),
     },
     {
+        key: 'xp_tycoon',
+        title: 'XP Tycoon',
+        description: 'Earn 25,000 total XP',
+        icon: '🏦',
+        category: 'xp',
+        check: (u) => u.totalXPEarned >= 25000,
+        getProgress: (u) => ({ current: u.totalXPEarned, max: 25000 }),
+    },
+    {
         key: 'level_5',
         title: 'Rising Star',
         description: 'Reach level 5',
@@ -155,6 +227,24 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         check: (u) => u.level >= 10,
         getProgress: (u) => ({ current: u.level, max: 10 }),
     },
+    {
+        key: 'level_15',
+        title: 'Elite Status',
+        description: 'Reach level 15',
+        icon: '✨',
+        category: 'xp',
+        check: (u) => u.level >= 15,
+        getProgress: (u) => ({ current: u.level, max: 15 }),
+    },
+    {
+        key: 'coin_collector',
+        title: 'Coin Collector',
+        description: 'Accumulate 250 coins in your purse at once',
+        icon: '🪙',
+        category: 'xp',
+        check: (u) => u.coins >= 250,
+        getProgress: (u) => ({ current: u.coins, max: 250 }),
+    },
 
     // Special achievements
     {
@@ -164,21 +254,11 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         icon: '👊',
         category: 'special',
         check: (_u, completions) => {
-            const byDate = new Map<string, number>();
-            completions.forEach(c => {
-                const date = toLocalDateKey(c.completedAt);
-                byDate.set(date, (byDate.get(date) || 0) + 1);
-            });
-            const maxPerDay = Math.max(0, ...Array.from(byDate.values()));
+            const maxPerDay = getMaxCompletionsInSingleDay(completions);
             return completions.some(c => c.comboMultiplier >= 1.5) || maxPerDay >= 8;
         },
         getProgress: (_u, completions) => {
-            const byDate = new Map<string, number>();
-            completions.forEach(c => {
-                const date = toLocalDateKey(c.completedAt);
-                byDate.set(date, (byDate.get(date) || 0) + 1);
-            });
-            const maxPerDay = Math.max(0, ...Array.from(byDate.values()));
+            const maxPerDay = getMaxCompletionsInSingleDay(completions);
             const maxMultiplier = completions.reduce((max, c) => Math.max(max, c.comboMultiplier), 1);
             const calculatedMax = calculateComboMultiplier(maxPerDay);
             return { current: Math.max(maxMultiplier, calculatedMax), max: 1.5 };
@@ -250,6 +330,15 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         getProgress: (u) => ({ current: u.unlockedAvatars.length, max: 5 }),
     },
     {
+        key: 'avatar_archivist',
+        title: 'Avatar Archivist',
+        description: 'Unlock all 8 avatars',
+        icon: '🎭',
+        category: 'special',
+        check: (u) => u.unlockedAvatars.length >= 8,
+        getProgress: (u) => ({ current: u.unlockedAvatars.length, max: 8 }),
+    },
+    {
         key: 'ice_wizard',
         title: 'Ice Wizard',
         description: 'Stockpile 3 Streak Freeze tokens at the same time',
@@ -264,23 +353,8 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         description: 'Complete 15 tasks in a single day',
         icon: '😡',
         category: 'tasks',
-        check: (_u, completions) => {
-            const byDate = new Map<string, number>();
-            completions.forEach(c => {
-                const date = toLocalDateKey(c.completedAt);
-                byDate.set(date, (byDate.get(date) || 0) + 1);
-            });
-            return Math.max(0, ...Array.from(byDate.values())) >= 15;
-        },
-        getProgress: (_u, completions) => {
-            const byDate = new Map<string, number>();
-            completions.forEach(c => {
-                const date = toLocalDateKey(c.completedAt);
-                byDate.set(date, (byDate.get(date) || 0) + 1);
-            });
-            const maxPerDay = Math.max(0, ...Array.from(byDate.values()));
-            return { current: maxPerDay, max: 15 };
-        },
+        check: (_u, completions) => getMaxCompletionsInSingleDay(completions) >= 15,
+        getProgress: (_u, completions) => ({ current: getMaxCompletionsInSingleDay(completions), max: 15 }),
     },
 ];
 
