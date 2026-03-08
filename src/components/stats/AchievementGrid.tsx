@@ -14,10 +14,10 @@ type EnhancedAchievement = Achievement & {
 };
 
 const categories = [
-    { key: 'streak', label: 'Streak', tint: 'from-orange-500/15 to-red-500/5', accent: 'text-orange-500' },
-    { key: 'tasks', label: 'Tasks', tint: 'from-emerald-500/15 to-green-500/5', accent: 'text-emerald-500' },
-    { key: 'xp', label: 'XP', tint: 'from-violet-500/15 to-indigo-500/5', accent: 'text-violet-500' },
-    { key: 'special', label: 'Special', tint: 'from-sky-500/15 to-cyan-500/5', accent: 'text-sky-500' },
+    { key: 'streak', label: 'Streak', tint: 'from-orange-500/15 to-red-500/5', accent: 'text-orange-500', activeBg: 'bg-orange-500 shadow-orange-500/25', activeText: 'text-orange-100' },
+    { key: 'tasks', label: 'Tasks', tint: 'from-emerald-500/15 to-green-500/5', accent: 'text-emerald-500', activeBg: 'bg-emerald-500 shadow-emerald-500/25', activeText: 'text-emerald-100' },
+    { key: 'xp', label: 'XP', tint: 'from-violet-500/15 to-indigo-500/5', accent: 'text-violet-500', activeBg: 'bg-violet-500 shadow-violet-500/25', activeText: 'text-violet-100' },
+    { key: 'special', label: 'Special', tint: 'from-sky-500/15 to-cyan-500/5', accent: 'text-sky-500', activeBg: 'bg-sky-500 shadow-sky-500/25', activeText: 'text-sky-100' },
 ] as const;
 
 export function AchievementGrid() {
@@ -188,13 +188,13 @@ export function AchievementGrid() {
                                 type="button"
                                 onClick={() => setActiveCategory(category.key)}
                                 className={`rounded-2xl px-4 py-3 text-left transition-all border min-w-0 ${active
-                                    ? 'border-transparent bg-[var(--color-text)] text-[var(--color-bg)] shadow-lg'
+                                    ? `border-transparent ${category.activeBg} text-white shadow-lg`
                                     : 'border-[var(--color-border)] bg-[var(--color-surface)]'
                                     }`}
                             >
                                 <div className="flex items-center justify-between gap-2">
-                                    <span className={`text-sm font-bold truncate ${active ? 'text-[var(--color-bg)]' : category.accent}`}>{category.label}</span>
-                                    <span className={`text-[11px] font-semibold shrink-0 ${active ? 'text-[var(--color-bg)]/70' : 'text-[var(--color-text-secondary)]'}`}>
+                                    <span className={`text-sm font-bold truncate ${active ? 'text-white' : category.accent}`}>{category.label}</span>
+                                    <span className={`text-[11px] font-semibold shrink-0 ${active ? category.activeText : 'text-[var(--color-text-secondary)]'}`}>
                                         {count}/{total}
                                     </span>
                                 </div>
