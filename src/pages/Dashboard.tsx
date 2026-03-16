@@ -12,8 +12,8 @@ import { HealthBar } from '../components/gamification/HealthBar';
 import { ComboIndicator } from '../components/gamification/ComboIndicator';
 import { TaskList } from '../components/tasks/TaskList';
 import { Task, RandomReward } from '../types';
-import { calculateComboMultiplier, calculateLevel } from '../lib/gamification';
-import { getMissionProgressUpdates } from '../lib/missions';
+import { calculateComboMultiplier } from '../lib/gamification';
+import { completeTaskTransaction } from '../lib/taskCompletion';
 
 const LevelUpOverlay = lazy(() => import('../components/gamification/LevelUpOverlay').then((module) => ({ default: module.LevelUpOverlay })));
 const RandomRewardModal = lazy(() => import('../components/gamification/RandomRewardModal').then((module) => ({ default: module.RandomRewardModal })));
@@ -48,77 +48,21 @@ export function Dashboard() {
     }, [achievementStore, missionStore, taskStore]);
 
     const handleCompleteTask = useCallback((id: string) => {
-        const prevLevel = userStore.level;
-        const result = taskStore.completeTask(id);
+        const result = completeTaskTransaction(id);
         if (!result) return;
 
-        const { xpEarned, reward } = result;
-
-        userStore.addXP(xpEarned);
-        userStore.updateStreak();
-        userStore.incrementTasksCompleted();
-        userStore.gainHealth();
-
+        const { levelUpTo, reward } = result;
         if (reward) {
-            if (reward.currency === 'XP') {
-                userStore.addXP(reward.amount);
-            } else {
-                userStore.addCoins(reward.amount);
-            }
             setRewardDrop(reward);
         }
 
-        const completionsNow = taskStore.getCompletionsToday();
-        const task = taskStore.tasks.find((t) => t.id === id);
-        const missionUpdates = getMissionProgressUpdates(task, completionsNow, taskStore.tasks);
-        if (missionUpdates.complete_tasks !== undefined) {
-            missionStore.updateMissionProgress('complete_tasks', missionUpdates.complete_tasks);
-        }
-        if (missionUpdates.marathon !== undefined) {
-            missionStore.updateMissionProgress('marathon', missionUpdates.marathon);
-        }
-        if (missionUpdates.complete_critical !== undefined) {
-            missionStore.updateMissionProgress('complete_critical', missionUpdates.complete_critical);
-        }
-        if (missionUpdates.no_sweat !== undefined) {
-            missionStore.updateMissionProgress('no_sweat', missionUpdates.no_sweat);
-        }
-        if (missionUpdates.complete_high !== undefined) {
-            missionStore.updateMissionProgress('complete_high', missionUpdates.complete_high);
-        }
-        if (missionUpdates.early_bird !== undefined) {
-            missionStore.updateMissionProgress('early_bird', missionUpdates.early_bird);
-        }
-        if (missionUpdates.night_owl !== undefined) {
-            missionStore.updateMissionProgress('night_owl', missionUpdates.night_owl);
-        }
-
-        // Check for completed missions
-        const currentMissions = missionStore.getMissionsForToday();
-        currentMissions.forEach((m) => {
-            if (!m.completed && m.progress >= m.target) {
-                const { xp: bonusXP, coins: bonusCoins } = missionStore.completeMission(m.id);
-                if (bonusXP > 0) {
-                    userStore.addXP(bonusXP);
-                }
-                if (bonusCoins > 0) {
-                    userStore.addCoins(bonusCoins);
-                }
-            }
-        });
-
-        // Check level up
-        const currentLevel = calculateLevel(useUserStore.getState().xp);
-        if (currentLevel > prevLevel) {
-            setNewLevel(currentLevel);
+        if (levelUpTo !== null) {
+            setNewLevel(levelUpTo);
             setShowLevelUp(true);
         }
+    }, []);
 
-        // Check achievements
-        achievementStore.checkAndUnlock();
-    }, [userStore, taskStore, achievementStore, missionStore]);
-
-    const handleAddTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate'>) => {
+    const handleAddTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate' | 'lastPenaltyAt'>) => {
         taskStore.addTask(taskData);
     }, [taskStore]);
 
@@ -133,7 +77,7 @@ export function Dashboard() {
         setShowTaskForm(true);
     }, []);
 
-    const handleUpdateTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate'>) => {
+    const handleUpdateTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate' | 'lastPenaltyAt'>) => {
         if (editingTask) {
             taskStore.updateTask(editingTask.id, taskData);
             setEditingTask(null);

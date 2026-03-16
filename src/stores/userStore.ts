@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { UserState, UserSettings } from '../types';
 import { calculateLevel, calculateStreakBreakPenalty } from '../lib/gamification';
+import {
+    DEFAULT_NOTIFICATION_EVENING,
+    DEFAULT_NOTIFICATION_MORNING,
+    normalizeReminderSettings,
+} from '../lib/reminders';
 
 const MAX_FREEZE_TOKENS = 3;
 const STREAK_GRACE_HOUR = 3;
@@ -61,8 +66,8 @@ const defaultSettings: UserSettings = {
     workDays: [1, 2, 3, 4, 5, 6, 0],
     dailyMissionsEnabled: true,
     healthBarEnabled: true,
-    notificationMorning: '08:00',
-    notificationEvening: '21:00',
+    notificationMorning: DEFAULT_NOTIFICATION_MORNING,
+    notificationEvening: DEFAULT_NOTIFICATION_EVENING,
     notificationsEnabled: true,
 };
 
@@ -213,7 +218,10 @@ export const useUserStore = create<UserStore>()(
 
             updateSettings: (newSettings: Partial<UserSettings>) => {
                 set((state) => ({
-                    settings: { ...state.settings, ...newSettings },
+                    settings: normalizeReminderSettings({
+                        ...state.settings,
+                        ...newSettings,
+                    }),
                 }));
             },
 
@@ -222,7 +230,10 @@ export const useUserStore = create<UserStore>()(
                 set((state) => ({
                     onboardingComplete: true,
                     displayName: displayName || state.displayName,
-                    settings: { ...state.settings, ...settingsData },
+                    settings: normalizeReminderSettings({
+                        ...state.settings,
+                        ...settingsData,
+                    }),
                 }));
             },
 
@@ -282,6 +293,18 @@ export const useUserStore = create<UserStore>()(
         }),
         {
             name: 'todolist-user-store',
+            merge: (persistedState, currentState) => {
+                const persisted = (persistedState as Partial<UserStore> | undefined) ?? {};
+
+                return {
+                    ...currentState,
+                    ...persisted,
+                    settings: normalizeReminderSettings({
+                        ...defaultSettings,
+                        ...(persisted.settings ?? {}),
+                    }),
+                };
+            },
         }
     )
 );

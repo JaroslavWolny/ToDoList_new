@@ -1,10 +1,21 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useUserStore } from '../stores/userStore';
-import { requestFirebaseNotificationPermission, saveTokenToFirestore, removeTokenFromFirestore } from '../lib/firebase';
+import {
+    getFirebaseMessagingConfigError,
+    requestFirebaseNotificationPermission,
+    saveTokenToFirestore,
+    removeTokenFromFirestore,
+} from '../lib/firebase';
 import { Moon, Sun, Smartphone, Download, Trash2, Shield, Snowflake, Bell, BellOff, Upload } from 'lucide-react';
 import { GamificationLevel, ThemeMode } from '../types';
 import { toLocalDateKey } from '../lib/dates';
+import {
+    DEFAULT_NOTIFICATION_EVENING,
+    DEFAULT_NOTIFICATION_MORNING,
+    normalizeReminderHour,
+    normalizeReminderSettings,
+} from '../lib/reminders';
 import {
     ACHIEVEMENT_STORE_KEY,
     APP_STORAGE_KEYS,
@@ -21,8 +32,6 @@ type StorageBackup = {
     stores: Partial<Record<(typeof APP_STORAGE_KEYS)[number], string>>;
 };
 
-const normalizeReminderHour = (value: string) => `${value.slice(0, 2)}:00`;
-
 const isStorageBackup = (value: unknown): value is StorageBackup => {
     return typeof value === 'object'
         && value !== null
@@ -36,19 +45,19 @@ const isStorageBackup = (value: unknown): value is StorageBackup => {
 export function Settings() {
     const { settings, updateSettings, streakFreezeTokens, resetUser } = useUserStore();
     const [importError, setImportError] = useState('');
+    const notificationConfigError = getFirebaseMessagingConfigError();
 
     useEffect(() => {
-        const normalizedMorning = normalizeReminderHour(settings.notificationMorning);
-        const normalizedEvening = normalizeReminderHour(settings.notificationEvening);
+        const normalizedSettings = normalizeReminderSettings({
+            notificationMorning: settings.notificationMorning,
+            notificationEvening: settings.notificationEvening,
+        });
 
         if (
-            normalizedMorning !== settings.notificationMorning
-            || normalizedEvening !== settings.notificationEvening
+            normalizedSettings.notificationMorning !== settings.notificationMorning
+            || normalizedSettings.notificationEvening !== settings.notificationEvening
         ) {
-            updateSettings({
-                notificationMorning: normalizedMorning,
-                notificationEvening: normalizedEvening,
-            });
+            updateSettings(normalizedSettings);
         }
     }, [
         settings.notificationEvening,
@@ -169,7 +178,11 @@ export function Settings() {
 
     const handleReset = async () => {
         if (window.confirm('Are you sure? This will delete all your data, tasks, and progress. This cannot be undone.')) {
-            await removeTokenFromFirestore();
+            try {
+                await removeTokenFromFirestore();
+            } catch (error) {
+                console.error(error);
+            }
             resetUser();
             clearAppStorage();
             window.location.reload();
@@ -266,23 +279,43 @@ export function Settings() {
                     checked={settings.notificationsEnabled}
                     onChange={async (v) => {
                         if (v) {
+                            if (notificationConfigError) {
+                                alert(notificationConfigError);
+                                updateSettings({ notificationsEnabled: false });
+                                return;
+                            }
+
                             const token = await requestFirebaseNotificationPermission();
                             if (token) {
-                                // Save settings and the token if granted
-                                updateSettings({ notificationsEnabled: true });
-                                await saveTokenToFirestore(token, settings.notificationMorning, settings.notificationEvening);
+                                try {
+                                    updateSettings({ notificationsEnabled: true });
+                                    await saveTokenToFirestore(token, settings.notificationMorning, settings.notificationEvening);
+                                } catch (error) {
+                                    console.error(error);
+                                    updateSettings({ notificationsEnabled: false });
+                                    alert('Notifications could not be saved. Check backend env/config and try again.');
+                                }
                             } else {
-                                // If denied or error, don't enable
                                 alert('Please allow notifications in your browser settings to use this feature.');
                                 updateSettings({ notificationsEnabled: false });
                             }
                         } else {
                             updateSettings({ notificationsEnabled: false });
-                            await removeTokenFromFirestore();
+                            try {
+                                await removeTokenFromFirestore();
+                            } catch (error) {
+                                console.error(error);
+                                alert('Failed to remove notification token from the backend.');
+                            }
                         }
                     }}
                     icon={settings.notificationsEnabled ? <Bell className="w-4 h-4 text-primary-500" /> : <BellOff className="w-4 h-4 text-[var(--color-text-secondary)]" />}
                 />
+                {notificationConfigError && (
+                    <p className="text-xs text-amber-500 mt-3">
+                        {notificationConfigError}
+                    </p>
+                )}
                 {settings.notificationsEnabled && (
                     <motion.div
                         initial={{ height: 0, opacity: 0 }}
@@ -298,10 +331,22 @@ export function Settings() {
                                 type="time"
                                 value={settings.notificationMorning}
                                 onChange={async (e) => {
-                                    const val = normalizeReminderHour(e.target.value);
+                                    const val = normalizeReminderHour(
+                                        e.target.value,
+                                        DEFAULT_NOTIFICATION_MORNING
+                                    );
                                     updateSettings({ notificationMorning: val });
+                                    if (!settings.notificationsEnabled) return;
+
                                     const token = await requestFirebaseNotificationPermission();
-                                    if (token) await saveTokenToFirestore(token, val, settings.notificationEvening);
+                                    if (!token) return;
+
+                                    try {
+                                        await saveTokenToFirestore(token, val, settings.notificationEvening);
+                                    } catch (error) {
+                                        console.error(error);
+                                        alert('Failed to update morning reminder on the backend.');
+                                    }
                                 }}
                                 step={3600}
                                 className="px-3 py-1.5 rounded-lg border-none bg-[var(--color-surface-hover)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-sm"
@@ -316,10 +361,22 @@ export function Settings() {
                                 type="time"
                                 value={settings.notificationEvening}
                                 onChange={async (e) => {
-                                    const val = normalizeReminderHour(e.target.value);
+                                    const val = normalizeReminderHour(
+                                        e.target.value,
+                                        DEFAULT_NOTIFICATION_EVENING
+                                    );
                                     updateSettings({ notificationEvening: val });
+                                    if (!settings.notificationsEnabled) return;
+
                                     const token = await requestFirebaseNotificationPermission();
-                                    if (token) await saveTokenToFirestore(token, settings.notificationMorning, val);
+                                    if (!token) return;
+
+                                    try {
+                                        await saveTokenToFirestore(token, settings.notificationMorning, val);
+                                    } catch (error) {
+                                        console.error(error);
+                                        alert('Failed to update evening reminder on the backend.');
+                                    }
                                 }}
                                 step={3600}
                                 className="px-3 py-1.5 rounded-lg border-none bg-[var(--color-surface-hover)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-sm"

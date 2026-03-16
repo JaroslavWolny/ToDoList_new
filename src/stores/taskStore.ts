@@ -1,15 +1,72 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
-import { Task, Completion, Penalty, TaskStatus, RandomReward } from '../types';
+import { Task, Completion, Penalty, TaskStatus, RandomReward, Recurrence } from '../types';
 import { calculateXP, calculateComboMultiplier, calculatePenalty } from '../lib/gamification';
 import { toLocalDateKey } from '../lib/dates';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const WEEK_MS = 7 * DAY_MS;
+
+const getPenaltyPeriodMs = (recurrence: Recurrence): number =>
+    recurrence === 'WEEKLY' ? WEEK_MS : DAY_MS;
+
+const shiftRecurringTimestamp = (
+    value: string | null,
+    periods: number,
+    recurrence: Recurrence
+): string | null => {
+    if (!value || periods <= 0) return value;
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+
+    const nextDate = new Date(date);
+    nextDate.setDate(
+        nextDate.getDate() + (recurrence === 'WEEKLY' ? periods * 7 : periods)
+    );
+    return nextDate.toISOString();
+};
+
+const shiftRecurringDateKey = (
+    value: string,
+    periods: number,
+    recurrence: Recurrence
+): string => {
+    const referenceDay = toLocalDateKey(value);
+    if (!referenceDay || periods <= 0) return referenceDay;
+
+    const shifted = shiftRecurringTimestamp(
+        `${referenceDay}T00:00:00`,
+        periods,
+        recurrence
+    );
+
+    return shifted ? toLocalDateKey(shifted) : referenceDay;
+};
+
+const getRecurringResetPeriods = (
+    referenceDate: string,
+    recurrence: Recurrence,
+    today: Date
+): number => {
+    const referenceDay = toLocalDateKey(referenceDate);
+    if (!referenceDay) return 0;
+
+    const todayDay = toLocalDateKey(today);
+    const referenceStart = new Date(`${referenceDay}T00:00:00`);
+    const todayStart = new Date(`${todayDay}T00:00:00`);
+    const daysDiff = Math.floor((todayStart.getTime() - referenceStart.getTime()) / DAY_MS);
+
+    if (daysDiff <= 0) return 0;
+    return recurrence === 'WEEKLY' ? Math.floor(daysDiff / 7) : daysDiff;
+};
 
 interface TaskStore {
     tasks: Task[];
     completions: Completion[];
     penalties: Penalty[];
-    addTask: (task: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate'>) => Task;
+    addTask: (task: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate' | 'lastPenaltyAt'>) => Task;
     updateTask: (id: string, updates: Partial<Task>) => void;
     deleteTask: (id: string) => void;
     completeTask: (id: string) => { xpEarned: number; comboMultiplier: number; reward: RandomReward | null } | null;
@@ -39,6 +96,7 @@ export const useTaskStore = create<TaskStore>()(
                     createdAt: new Date().toISOString(),
                     completedAt: null,
                     lastResetDate: null,
+                    lastPenaltyAt: null,
                 };
                 set((state) => ({ tasks: [...state.tasks, newTask] }));
                 return newTask;
@@ -47,7 +105,15 @@ export const useTaskStore = create<TaskStore>()(
             updateTask: (id, updates) => {
                 set((state) => ({
                     tasks: state.tasks.map((t) =>
-                        t.id === id ? { ...t, ...updates } : t
+                        t.id === id
+                            ? {
+                                ...t,
+                                ...updates,
+                                lastPenaltyAt: updates.deadline !== undefined || updates.recurrence !== undefined
+                                    ? null
+                                    : updates.lastPenaltyAt ?? t.lastPenaltyAt,
+                            }
+                            : t
                     ),
                 }));
             },
@@ -79,7 +145,12 @@ export const useTaskStore = create<TaskStore>()(
                 set((state) => ({
                     tasks: state.tasks.map((t) =>
                         t.id === id
-                            ? { ...t, status: 'COMPLETED' as TaskStatus, completedAt: new Date().toISOString() }
+                            ? {
+                                ...t,
+                                status: 'COMPLETED' as TaskStatus,
+                                completedAt: new Date().toISOString(),
+                                lastPenaltyAt: null,
+                            }
                             : t
                     ),
                     completions: [...state.completions, completion],
@@ -112,7 +183,9 @@ export const useTaskStore = create<TaskStore>()(
             failTask: (id) => {
                 set((state) => ({
                     tasks: state.tasks.map((t) =>
-                        t.id === id ? { ...t, status: 'FAILED' as TaskStatus } : t
+                        t.id === id
+                            ? { ...t, status: 'FAILED' as TaskStatus, lastPenaltyAt: null }
+                            : t
                     ),
                 }));
             },
@@ -121,35 +194,57 @@ export const useTaskStore = create<TaskStore>()(
                 const state = get();
                 const now = new Date();
                 const newPenalties: Penalty[] = [];
+                const latestPenaltyByTaskId = new Map<string, string>();
 
                 const overdueTasks = state.tasks.filter(
                     (t) => t.status === 'ACTIVE' && t.deadline && new Date(t.deadline) < now
                 );
 
-                // Only penalize tasks that are overdue by more than 24h
-                const penalizedTaskIds = new Set(
-                    (Array.isArray(state.penalties) ? state.penalties : []).map((p) => p.taskId)
-                );
-
                 overdueTasks.forEach((task) => {
-                    if (penalizedTaskIds.has(task.id)) return; // already penalized
+                    const deadlineTime = new Date(task.deadline!).getTime();
+                    if (Number.isNaN(deadlineTime)) return;
 
-                    const overdueDuration = now.getTime() - new Date(task.deadline!).getTime();
-                    if (overdueDuration > 24 * 60 * 60 * 1000) {
-                        const xpLost = calculatePenalty(task.priority, gamificationLevel);
-                        const penalty: Penalty = {
+                    const periodMs = getPenaltyPeriodMs(task.recurrence);
+                    const elapsedPeriods = Math.floor((now.getTime() - deadlineTime) / periodMs);
+                    if (elapsedPeriods < 1) return;
+
+                    const lastPenaltyTime = task.lastPenaltyAt
+                        ? new Date(task.lastPenaltyAt).getTime()
+                        : Number.NaN;
+                    const appliedPeriods = Number.isNaN(lastPenaltyTime) || lastPenaltyTime < deadlineTime
+                        ? 0
+                        : Math.floor((lastPenaltyTime - deadlineTime) / periodMs);
+
+                    if (elapsedPeriods <= appliedPeriods) return;
+
+                    const xpLost = calculatePenalty(task.priority, gamificationLevel);
+
+                    for (
+                        let periodIndex = appliedPeriods + 1;
+                        periodIndex <= elapsedPeriods;
+                        periodIndex += 1
+                    ) {
+                        newPenalties.push({
                             id: uuidv4(),
                             taskId: task.id,
                             xpLost,
                             reason: `Overdue: ${task.title}`,
-                            createdAt: now.toISOString(),
-                        };
-                        newPenalties.push(penalty);
+                            createdAt: new Date(deadlineTime + periodIndex * periodMs).toISOString(),
+                        });
                     }
+
+                    latestPenaltyByTaskId.set(
+                        task.id,
+                        new Date(deadlineTime + elapsedPeriods * periodMs).toISOString()
+                    );
                 });
 
                 if (newPenalties.length > 0) {
                     set((state) => ({
+                        tasks: state.tasks.map((task) => {
+                            const lastPenaltyAt = latestPenaltyByTaskId.get(task.id);
+                            return lastPenaltyAt ? { ...task, lastPenaltyAt } : task;
+                        }),
                         penalties: [...(Array.isArray(state.penalties) ? state.penalties : []), ...newPenalties],
                     }));
                 }
@@ -159,7 +254,6 @@ export const useTaskStore = create<TaskStore>()(
 
             resetRecurringTasks: () => {
                 const today = new Date();
-                const todayStr = toLocalDateKey(today);
 
                 set((state) => ({
                     tasks: state.tasks.map((task) => {
@@ -170,32 +264,34 @@ export const useTaskStore = create<TaskStore>()(
 
                         // Determine the reference date (last reset or completion date)
                         const referenceDate = task.lastResetDate || task.completedAt || task.createdAt;
-                        const refDateStr = toLocalDateKey(referenceDate);
+                        const periodsElapsed = getRecurringResetPeriods(
+                            referenceDate,
+                            task.recurrence,
+                            today
+                        );
 
-                        if (task.recurrence === 'DAILY') {
-                            // Reset if the reference date is before today
-                            if (refDateStr < todayStr) {
-                                return {
-                                    ...task,
-                                    status: 'ACTIVE' as TaskStatus,
-                                    completedAt: null,
-                                    lastResetDate: todayStr,
-                                };
-                            }
-                        } else if (task.recurrence === 'WEEKLY') {
-                            // Reset if 7+ days have passed since the reference date
-                            const refDate = new Date(refDateStr + 'T00:00:00');
-                            const daysDiff = Math.floor(
-                                (today.getTime() - refDate.getTime()) / (1000 * 60 * 60 * 24)
-                            );
-                            if (daysDiff >= 7) {
-                                return {
-                                    ...task,
-                                    status: 'ACTIVE' as TaskStatus,
-                                    completedAt: null,
-                                    lastResetDate: todayStr,
-                                };
-                            }
+                        if (periodsElapsed > 0) {
+                            return {
+                                ...task,
+                                status: 'ACTIVE' as TaskStatus,
+                                completedAt: null,
+                                lastResetDate: shiftRecurringDateKey(
+                                    referenceDate,
+                                    periodsElapsed,
+                                    task.recurrence
+                                ),
+                                lastPenaltyAt: null,
+                                deadline: shiftRecurringTimestamp(
+                                    task.deadline,
+                                    periodsElapsed,
+                                    task.recurrence
+                                ),
+                                startDate: shiftRecurringTimestamp(
+                                    task.startDate,
+                                    periodsElapsed,
+                                    task.recurrence
+                                ),
+                            };
                         }
 
                         return task;
@@ -267,6 +363,27 @@ export const useTaskStore = create<TaskStore>()(
         }),
         {
             name: 'todolist-task-store',
+            merge: (persistedState, currentState) => {
+                const persisted = (persistedState as Partial<TaskStore> | undefined) ?? {};
+
+                return {
+                    ...currentState,
+                    ...persisted,
+                    tasks: Array.isArray(persisted.tasks)
+                        ? persisted.tasks.map((task) => ({
+                            ...task,
+                            lastResetDate: task.lastResetDate ?? null,
+                            lastPenaltyAt: task.lastPenaltyAt ?? null,
+                        }))
+                        : currentState.tasks,
+                    completions: Array.isArray(persisted.completions)
+                        ? persisted.completions
+                        : currentState.completions,
+                    penalties: Array.isArray(persisted.penalties)
+                        ? persisted.penalties
+                        : currentState.penalties,
+                };
+            },
         }
     )
 );

@@ -19,6 +19,7 @@ export interface Task {
     createdAt: string;
     completedAt: string | null;
     lastResetDate: string | null;
+    lastPenaltyAt: string | null;
 }
 
 export interface Completion {

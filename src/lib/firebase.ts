@@ -1,106 +1,170 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
-import { getFirestore, doc, setDoc, deleteDoc } from "firebase/firestore";
-import { DEVICE_ID_KEY } from "./storage";
+import { initializeApp } from 'firebase/app';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { DEVICE_ID_KEY } from './storage';
 
-// Your web app's Firebase configuration
+const FIREBASE_CONFIG_KEYS = [
+    'VITE_FIREBASE_API_KEY',
+    'VITE_FIREBASE_AUTH_DOMAIN',
+    'VITE_FIREBASE_PROJECT_ID',
+    'VITE_FIREBASE_STORAGE_BUCKET',
+    'VITE_FIREBASE_MESSAGING_SENDER_ID',
+    'VITE_FIREBASE_APP_ID',
+] as const;
+
 const firebaseConfig = {
-    apiKey: "AIzaSyBorLSWHq3K4EA3inO74cnFjiSOoybUGEU",
-    authDomain: "todolist-app-63415.firebaseapp.com",
-    projectId: "todolist-app-63415",
-    storageBucket: "todolist-app-63415.firebasestorage.app",
-    messagingSenderId: "170107298960",
-    appId: "1:170107298960:web:29f5d266ff58543afce415",
-    measurementId: "G-37DDPQH4QY"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+const missingFirebaseConfigKeys = FIREBASE_CONFIG_KEYS.filter((key) => !import.meta.env[key]);
+const missingMessagingConfigKeys = [
+    ...missingFirebaseConfigKeys,
+    ...(!import.meta.env.VITE_FIREBASE_VAPID_KEY ? ['VITE_FIREBASE_VAPID_KEY'] : []),
+];
 
-// Initialize Firebase Cloud Messaging and get a reference to the service
-export const messaging = getMessaging(app);
+const app = missingFirebaseConfigKeys.length === 0 ? initializeApp(firebaseConfig) : null;
 
-// VAPID key
-export const VAPID_KEY = "BAA1IW18he9Nqj_zgwmq1UD4tXFytU9NzF3c01EBwolq1AQEmdYJTRwAl5FmwOR69ODDtzuGNCHs66AND30Wwu0";
+export const messaging = app ? getMessaging(app) : null;
+
+const getNotificationsApiUrl = (): string => '/api/notifications/token';
+
+export const getFirebaseMessagingConfigError = (): string | null => {
+    if (missingMessagingConfigKeys.length === 0) return null;
+    return `Missing notification config: ${missingMessagingConfigKeys.join(', ')}`;
+};
+
+const ensureMessagingConfigured = (): boolean => {
+    const configError = getFirebaseMessagingConfigError();
+    if (!configError) return true;
+
+    console.error(configError);
+    return false;
+};
+
+const getOrCreateDeviceId = (): string => {
+    let deviceId = localStorage.getItem(DEVICE_ID_KEY);
+    if (!deviceId) {
+        deviceId = crypto.randomUUID();
+        localStorage.setItem(DEVICE_ID_KEY, deviceId);
+    }
+
+    return deviceId;
+};
+
+const syncNotificationToken = async (
+    method: 'POST' | 'DELETE',
+    payload?: Record<string, unknown>
+) => {
+    const response = await fetch(getNotificationsApiUrl(), {
+        method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: payload ? JSON.stringify(payload) : undefined,
+    });
+
+    if (!response.ok) {
+        let errorMessage = `Notification sync failed with status ${response.status}`;
+
+        try {
+            const data = await response.json() as { error?: string };
+            if (typeof data.error === 'string' && data.error) {
+                errorMessage = data.error;
+            }
+        } catch {
+            // Ignore JSON parsing failures and keep the generic message.
+        }
+
+        throw new Error(errorMessage);
+    }
+};
 
 export const requestFirebaseNotificationPermission = async () => {
     try {
+        if (!ensureMessagingConfigured() || !messaging) {
+            return null;
+        }
+
         console.log('Requesting notification permission...');
         const permission = await Notification.requestPermission();
 
-        if (permission === 'granted') {
-            console.log('Notification permission granted.');
-            let swRegistration: ServiceWorkerRegistration | undefined;
-
-            if ('serviceWorker' in navigator) {
-                swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-                    scope: '/firebase-cloud-messaging-push-scope',
-                });
-            }
-
-            const currentToken = await getToken(messaging, {
-                vapidKey: VAPID_KEY,
-                serviceWorkerRegistration: swRegistration,
-            });
-            if (currentToken) {
-                console.log('Firebase Cloud Messaging Token:', currentToken);
-                // Here we could send this token to our backend
-                return currentToken;
-            } else {
-                console.log('No registration token available. Request permission to generate one.');
-                return null;
-            }
-        } else {
+        if (permission !== 'granted') {
             console.log('Notification permission denied.');
             return null;
         }
+
+        console.log('Notification permission granted.');
+        let swRegistration: ServiceWorkerRegistration | undefined;
+
+        if ('serviceWorker' in navigator) {
+            swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                scope: '/firebase-cloud-messaging-push-scope',
+            });
+        }
+
+        const currentToken = await getToken(messaging, {
+            vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+            serviceWorkerRegistration: swRegistration,
+        });
+
+        if (!currentToken) {
+            console.log('No registration token available. Request permission to generate one.');
+            return null;
+        }
+
+        console.log('Firebase Cloud Messaging Token:', currentToken);
+        return currentToken;
     } catch (error) {
         console.error('Error requesting notification permission or getting token:', error);
         return null;
     }
 };
 
-// Initialize Firestore
-export const db = getFirestore(app);
-
 export const saveTokenToFirestore = async (token: string, morningTime: string, eveningTime: string) => {
     try {
-        let deviceId = localStorage.getItem(DEVICE_ID_KEY);
-        if (!deviceId) {
-            deviceId = crypto.randomUUID();
-            localStorage.setItem(DEVICE_ID_KEY, deviceId);
-        }
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-        // Attempt to save to Firestore
-        await setDoc(doc(db, "notification_tokens", deviceId), {
+        await syncNotificationToken('POST', {
+            deviceId: getOrCreateDeviceId(),
             token,
             morningTime,
             eveningTime,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            updatedAt: new Date().toISOString()
+            timezone,
         });
-        console.log('Token saved to Firestore');
+
+        console.log('Token saved to backend');
     } catch (error) {
-        console.error('Failed to save token to Firestore:', error);
+        console.error('Failed to save token to backend:', error);
+        throw error;
     }
 };
 
 export const removeTokenFromFirestore = async () => {
     try {
         const deviceId = localStorage.getItem(DEVICE_ID_KEY);
-        if (deviceId) {
-            await deleteDoc(doc(db, "notification_tokens", deviceId));
-            console.log('Token removed from Firestore');
-            localStorage.removeItem(DEVICE_ID_KEY);
-        }
+        if (!deviceId) return;
+
+        await syncNotificationToken('DELETE', { deviceId });
+        console.log('Token removed from backend');
+        localStorage.removeItem(DEVICE_ID_KEY);
     } catch (error) {
-        console.error('Failed to remove token from Firestore:', error);
+        console.error('Failed to remove token from backend:', error);
+        throw error;
     }
 };
 
 export const onMessageListener = () =>
     new Promise((resolve) => {
+        if (!messaging) {
+            resolve(null);
+            return;
+        }
+
         onMessage(messaging, (payload) => {
             resolve(payload);
         });

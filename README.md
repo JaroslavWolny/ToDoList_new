@@ -27,8 +27,8 @@ Built as a blazing-fast, local-first Progressive Web App (PWA), it seamlessly bl
 ### 🗡️ Level Up Your Life
 Every task is a quest. Earn **XP** for completing your to-dos, fill up your XP bar, and level up just like in your favorite RPG! The progressive XP curve ensures that every new rank feels like a true achievement.
 
-### 🪙 Coin Economy & Avatar Customization
-Complete Daily Missions (e.g., "Complete 3 Critical Tasks") to earn **Coins**. Spend these newly-earned coins in the Avatar Shop to unlock premium, custom avatars (swords, shields, skulls, and more) to personalize your Level Badge and flex your progress.
+### 🪙 Modern Avatar Shop & Customization
+Complete Daily Missions (e.g., "Complete 3 Critical Tasks") to earn **Coins**. Spend these newly-earned coins in our sleek, slide-in **Avatar Shop** to unlock premium avatars with distinct **Rarity Tiers** (from Common to Legendary). Track your collection progress, easily browse with filterable tabs, and personalize your Level Badge to flex your progress!
 
 ### 🎁 Random Loot Drops
 Every task you complete gives you a chance to discover hidden treasure! You might uncover a common **Lucky Pouch** or a rare, highly valuable **Chest** overflowing with extra Coins and XP. Stay productive and let the RNG reward your hard work!
@@ -39,6 +39,9 @@ Missed a deadline? Procrastinated too long? You'll take damage! **Keep your Heal
 ### ⚡ Unbreakable Streaks & Combos
 Consistency is king. Build daily **Streaks** to unlock powerful XP multipliers. Chain tasks together in quick succession to activate **Combo Multipliers** and sky-rocket your productivity stats!
 - **RPG Share Cards (SSR):** Flex your consistency! Using Vercel Edge functions and `@vercel/og` (Satori), we dynamically generate flawless pixel-perfect (1080x1920) RPG-themed collectible cards representing your exact Streak Tier (Wood, Bronze, Silver, Epic/Gold). Share them directly to your Instagram Story or download the PNG to show everyone you mean business.
+### 🆕 Innovative Task Management
+Experience a fresh approach to task creation and editing! We've ditched boring forms for a modern, beautiful **bottom-sheet modal** that dynamically slides up, embracing a "think out of the box" design philosophy for blazing-fast input.
+
 ### 📅 Task Scheduling
 Not ready for a task yet? Lock it away! Set a **Start Date** for your tasks, and they will remain locked and perfectly visible but unclickable until the precise time arrives. Plan your entire week without the anxiety of a cluttered dashboard.
 

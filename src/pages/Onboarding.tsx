@@ -4,6 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../stores/userStore';
 import { WorkStyle, GamificationLevel, ThemeMode, MainMotivation } from '../types';
 import { Sun, Moon, Smartphone, ChevronRight, ChevronLeft, Rocket } from 'lucide-react';
+import {
+    DEFAULT_NOTIFICATION_EVENING,
+    DEFAULT_NOTIFICATION_MORNING,
+    normalizeReminderHour,
+} from '../lib/reminders';
 
 const TOTAL_STEPS = 5;
 
@@ -15,8 +20,8 @@ export function Onboarding() {
     const [dailyGoal, setDailyGoal] = useState(3);
     const [gamificationLevel, setGamificationLevel] = useState<GamificationLevel>('STANDARD');
     const [theme, setTheme] = useState<ThemeMode>('DARK');
-    const [notificationMorning, setNotificationMorning] = useState('08:00');
-    const [notificationEvening, setNotificationEvening] = useState('21:00');
+    const [notificationMorning, setNotificationMorning] = useState(DEFAULT_NOTIFICATION_MORNING);
+    const [notificationEvening, setNotificationEvening] = useState(DEFAULT_NOTIFICATION_EVENING);
     const navigate = useNavigate();
     const completeOnboarding = useUserStore((s) => s.completeOnboarding);
 
@@ -44,8 +49,8 @@ export function Onboarding() {
             dailyGoal,
             gamificationLevel,
             theme,
-            notificationMorning,
-            notificationEvening,
+            notificationMorning: normalizeReminderHour(notificationMorning, DEFAULT_NOTIFICATION_MORNING),
+            notificationEvening: normalizeReminderHour(notificationEvening, DEFAULT_NOTIFICATION_EVENING),
             notificationsEnabled: true,
         });
         navigate('/');
@@ -232,6 +237,7 @@ export function Onboarding() {
                                                 type="time"
                                                 value={notificationMorning}
                                                 onChange={(e) => setNotificationMorning(e.target.value)}
+                                                step={3600}
                                                 className="w-full bg-transparent border-none outline-none appearance-none text-center text-lg p-0 m-0 block"
                                             />
                                         </div>
@@ -243,6 +249,7 @@ export function Onboarding() {
                                                 type="time"
                                                 value={notificationEvening}
                                                 onChange={(e) => setNotificationEvening(e.target.value)}
+                                                step={3600}
                                                 className="w-full bg-transparent border-none outline-none appearance-none text-center text-lg p-0 m-0 block"
                                             />
                                         </div>

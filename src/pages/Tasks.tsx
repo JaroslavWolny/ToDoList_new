@@ -2,15 +2,11 @@ import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Filter } from 'lucide-react';
 import { useTaskStore } from '../stores/taskStore';
-import { useUserStore } from '../stores/userStore';
-import { useAchievementStore } from '../stores/achievementStore';
 import { TaskList } from '../components/tasks/TaskList';
 import { TaskForm } from '../components/tasks/TaskForm';
 import { Task, Priority, TaskStatus } from '../types';
-import { calculateLevel } from '../lib/gamification';
 import { LevelUpOverlay } from '../components/gamification/LevelUpOverlay';
-import { useMissionStore } from '../stores/missionStore';
-import { getMissionProgressUpdates } from '../lib/missions';
+import { completeTaskTransaction } from '../lib/taskCompletion';
 
 type SortOption = 'deadline' | 'priority' | 'created';
 type FilterStatus = 'ALL' | TaskStatus;
@@ -29,10 +25,6 @@ export function Tasks() {
     const [newLevel, setNewLevel] = useState(0);
 
     const taskStore = useTaskStore();
-    const userStore = useUserStore();
-    const achievementStore = useAchievementStore();
-    const missionStore = useMissionStore();
-
     const availableTags = useMemo(() => {
         const tags = new Set<string>();
         taskStore.tasks.forEach((t) => {
@@ -71,69 +63,14 @@ export function Tasks() {
     }, [taskStore.tasks, filterStatus, filterPriority, filterTag, sortBy]);
 
     const handleCompleteTask = useCallback((id: string) => {
-        const prevLevel = userStore.level;
-        const result = taskStore.completeTask(id);
+        const result = completeTaskTransaction(id);
         if (!result) return;
 
-        userStore.addXP(result.xpEarned);
-        userStore.updateStreak();
-        userStore.incrementTasksCompleted();
-        userStore.gainHealth();
-
-        if (result.reward) {
-            if (result.reward.currency === 'XP') {
-                userStore.addXP(result.reward.amount);
-            } else {
-                userStore.addCoins(result.reward.amount);
-            }
-        }
-
-        const completionsNow = taskStore.getCompletionsToday();
-        const task = taskStore.tasks.find((t) => t.id === id);
-        const missionUpdates = getMissionProgressUpdates(task, completionsNow, taskStore.tasks);
-        if (missionUpdates.complete_tasks !== undefined) {
-            missionStore.updateMissionProgress('complete_tasks', missionUpdates.complete_tasks);
-        }
-        if (missionUpdates.marathon !== undefined) {
-            missionStore.updateMissionProgress('marathon', missionUpdates.marathon);
-        }
-        if (missionUpdates.complete_critical !== undefined) {
-            missionStore.updateMissionProgress('complete_critical', missionUpdates.complete_critical);
-        }
-        if (missionUpdates.no_sweat !== undefined) {
-            missionStore.updateMissionProgress('no_sweat', missionUpdates.no_sweat);
-        }
-        if (missionUpdates.complete_high !== undefined) {
-            missionStore.updateMissionProgress('complete_high', missionUpdates.complete_high);
-        }
-        if (missionUpdates.early_bird !== undefined) {
-            missionStore.updateMissionProgress('early_bird', missionUpdates.early_bird);
-        }
-        if (missionUpdates.night_owl !== undefined) {
-            missionStore.updateMissionProgress('night_owl', missionUpdates.night_owl);
-        }
-
-        // Check for completed missions
-        const currentMissions = missionStore.getMissionsForToday();
-        currentMissions.forEach((m) => {
-            if (!m.completed && m.progress >= m.target) {
-                const { xp: bonusXP, coins: bonusCoins } = missionStore.completeMission(m.id);
-                if (bonusXP > 0) {
-                    userStore.addXP(bonusXP);
-                }
-                if (bonusCoins > 0) {
-                    userStore.addCoins(bonusCoins);
-                }
-            }
-        });
-
-        const currentLevel = calculateLevel(useUserStore.getState().xp);
-        if (currentLevel > prevLevel) {
-            setNewLevel(currentLevel);
+        if (result.levelUpTo !== null) {
+            setNewLevel(result.levelUpTo);
             setShowLevelUp(true);
         }
-        achievementStore.checkAndUnlock();
-    }, [userStore, taskStore, achievementStore, missionStore]);
+    }, []);
 
     const stats = useMemo(() => ({
         total: taskStore.tasks.length,
