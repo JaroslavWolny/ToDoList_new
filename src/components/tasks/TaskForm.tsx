@@ -1,8 +1,9 @@
-import { useState, useCallback, useMemo, useEffect, useRef, useSyncExternalStore } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, ChevronLeft, Sparkles, Calendar, Clock, Tag, Repeat, Zap, AlertTriangle, Flame, Shield, Check } from 'lucide-react';
 import { Task, Priority, Recurrence } from '../../types';
 import { toDateTimeLocalInputValue } from '../../lib/dates';
+import { useIsMobile } from '../../lib/useIsMobile';
 
 interface TaskFormProps {
     onSubmit: (task: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate'>) => void;
@@ -30,45 +31,11 @@ const recurrenceOptions: { value: Recurrence; label: string; emoji: string; desc
     { value: 'WEEKLY', label: 'Weekly', emoji: '📅', description: 'Every week' },
 ];
 
-const MOBILE_MEDIA_QUERY = '(max-width: 639px)';
-const emptySubscribe = () => () => undefined;
 
-const subscribeToMobileViewport = (onStoreChange: () => void) => {
-    const mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
-    mediaQuery.addEventListener('change', onStoreChange);
-    return () => mediaQuery.removeEventListener('change', onStoreChange);
-};
 
-const getMobileViewportSnapshot = () =>
-    window.matchMedia(MOBILE_MEDIA_QUERY).matches;
-
-const subscribeToKeyboardInset = (onStoreChange: () => void) => {
-    const viewport = window.visualViewport;
-    if (!viewport) return emptySubscribe();
-
-    viewport.addEventListener('resize', onStoreChange);
-    viewport.addEventListener('scroll', onStoreChange);
-
-    return () => {
-        viewport.removeEventListener('resize', onStoreChange);
-        viewport.removeEventListener('scroll', onStoreChange);
-    };
-};
-
-const getKeyboardInsetSnapshot = () => {
-    if (!getMobileViewportSnapshot()) return 0;
-
-    const viewport = window.visualViewport;
-    if (!viewport) return 0;
-
-    const inset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
-    return inset > 80 ? inset : 0;
-};
-
-// Mascot reactions
-const getMascotEmoji = (step: number, title: string, priority: Priority) => {
-    if (step === 0 && !title) return '🤔';
-    if (step === 0 && title.length > 0) return '😄';
+// Mascot reactions - only change on step transitions, not while typing
+const getMascotEmoji = (step: number, priority: Priority) => {
+    if (step === 0) return '🎯';
     if (step === 1) {
         const map: Record<Priority, string> = { LOW: '😌', MEDIUM: '💪', HIGH: '🔥', CRITICAL: '😱' };
         return map[priority];
@@ -90,17 +57,9 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
     const [tagInput, setTagInput] = useState('');
     const [tags, setTags] = useState<string[]>(editTask?.tags || []);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const isMobile = useSyncExternalStore(
-        subscribeToMobileViewport,
-        getMobileViewportSnapshot,
-        () => false
-    );
-    const keyboardInset = useSyncExternalStore(
-        subscribeToKeyboardInset,
-        getKeyboardInsetSnapshot,
-        () => 0
-    );
+    const isMobile = useIsMobile();
     const contentRef = useRef<HTMLDivElement | null>(null);
+    const sheetRef = useRef<HTMLDivElement | null>(null);
     const submitTimeoutRef = useRef<number | null>(null);
 
     const toISOOrNull = (value: string): string | null => {
@@ -164,7 +123,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
     }, [tags]);
 
     const progress = ((currentStep + 1) / STEPS.length) * 100;
-    const mascot = getMascotEmoji(currentStep, title, priority);
+    const mascot = getMascotEmoji(currentStep, priority);
 
     useEffect(() => {
         const previousOverflow = document.body.style.overflow;
@@ -186,6 +145,63 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
     useEffect(() => {
         contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     }, [currentStep]);
+
+    // Handle iOS keyboard: resize sheet to fit visual viewport and scroll focused element into view
+    useEffect(() => {
+        if (!isMobile) return;
+
+        const viewport = window.visualViewport;
+        if (!viewport) return;
+
+        const onResize = () => {
+            const sheet = sheetRef.current;
+            if (!sheet) return;
+
+            // Calculate available height = visual viewport height
+            const availableHeight = viewport.height;
+            // Offset top accounts for iOS viewport scroll when keyboard pushes content
+            const offsetTop = viewport.offsetTop;
+
+            sheet.style.height = `${availableHeight}px`;
+            sheet.style.top = `${offsetTop}px`;
+            sheet.style.bottom = 'auto';
+
+            // Scroll the focused input into view within the scrollable content
+            requestAnimationFrame(() => {
+                const activeEl = document.activeElement;
+                if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+                    activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        };
+
+        const onBlur = () => {
+            const sheet = sheetRef.current;
+            if (!sheet) return;
+            sheet.style.height = '';
+            sheet.style.top = '';
+            sheet.style.bottom = '0';
+        };
+
+        viewport.addEventListener('resize', onResize);
+        viewport.addEventListener('scroll', onResize);
+
+        // Also listen for focus events inside the sheet to trigger scrollIntoView
+        const sheet = sheetRef.current;
+        const onFocusIn = () => {
+            // Small delay to let the keyboard finish opening
+            setTimeout(() => onResize(), 300);
+        };
+        sheet?.addEventListener('focusin', onFocusIn);
+        sheet?.addEventListener('focusout', onBlur);
+
+        return () => {
+            viewport.removeEventListener('resize', onResize);
+            viewport.removeEventListener('scroll', onResize);
+            sheet?.removeEventListener('focusin', onFocusIn);
+            sheet?.removeEventListener('focusout', onBlur);
+        };
+    }, [isMobile]);
 
     const slideVariants = {
         enter: (dir: number) => ({
@@ -216,6 +232,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
 
             {/* Mobile-first sheet with desktop side panel */}
             <motion.div
+                ref={sheetRef}
                 initial={isMobile ? { y: '100%' } : { x: '100%' }}
                 animate={isMobile ? { y: 0 } : { x: 0 }}
                 exit={isMobile ? { y: '100%' } : { x: '100%' }}
@@ -224,10 +241,10 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                 style={{
                     paddingLeft: 'env(safe-area-inset-left, 0px)',
                     paddingRight: 'env(safe-area-inset-right, 0px)',
-                    paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${keyboardInset}px)`,
+                    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
                 }}
             >
-                <div className="flex max-h-[min(46rem,calc(100dvh-var(--safe-top)-0.75rem))] flex-col overflow-hidden rounded-t-[2rem] border border-b-0 border-[var(--color-border)] bg-[var(--color-bg)] shadow-2xl sm:h-full sm:max-h-none sm:rounded-none sm:rounded-l-3xl sm:border-b sm:border-r-0">
+                <div className="flex max-h-[100%] sm:max-h-none flex-col overflow-hidden rounded-t-[2rem] border border-b-0 border-[var(--color-border)] bg-[var(--color-bg)] shadow-2xl sm:h-full sm:rounded-none sm:rounded-l-3xl sm:border-b sm:border-r-0">
                     <div className="flex justify-center pt-2 sm:hidden">
                         <div className="h-1.5 w-12 rounded-full bg-[var(--color-border)]" />
                     </div>

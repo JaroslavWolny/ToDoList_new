@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useEffectEvent, useRef } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { AppShell } from './components/layout/AppShell';
 import { useUserStore } from './stores/userStore';
@@ -82,47 +82,53 @@ function App() {
     const root = document.documentElement;
     if (theme === 'DARK') {
       root.classList.add('dark');
-    } else if (theme === 'LIGHT') {
+      return;
+    }
+    if (theme === 'LIGHT') {
       root.classList.remove('dark');
-    } else {
-      // AUTO
-      const prefersDark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
-      if (prefersDark) {
+      return;
+    }
+
+    // AUTO – listen for system changes
+    const mediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
+    const applySystemTheme = () => {
+      if (mediaQuery?.matches) {
         root.classList.add('dark');
       } else {
         root.classList.remove('dark');
       }
-    }
+    };
+
+    applySystemTheme();
+    mediaQuery?.addEventListener('change', applySystemTheme);
+    return () => mediaQuery?.removeEventListener('change', applySystemTheme);
   }, [theme]);
 
   if (!onboardingComplete) {
     return (
-      <BrowserRouter>
-        <Suspense fallback={<RouteLoader />}>
-          <Routes>
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="*" element={<Navigate to="/onboarding" replace />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
+      <Suspense fallback={<RouteLoader />}>
+        <Routes>
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="*" element={<Navigate to="/onboarding" replace />} />
+        </Routes>
+      </Suspense>
     );
   }
 
   return (
-    <BrowserRouter>
-      <AppShell>
-        <Suspense fallback={<RouteLoader />}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/tasks" element={<Tasks />} />
-            <Route path="/stats" element={<Stats />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
-      </AppShell>
-    </BrowserRouter>
+    <AppShell>
+      <Suspense fallback={<RouteLoader />}>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/tasks" element={<Tasks />} />
+          <Route path="/stats" element={<Stats />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+    </AppShell>
   );
 }
 
 export default App;
+

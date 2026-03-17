@@ -1,13 +1,21 @@
 import { Suspense, lazy, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Flame } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../../stores/userStore';
 import { getLevelTitle } from '../../lib/gamification';
 
 const StreakShareModal = lazy(() => import('./StreakShareModal').then((module) => ({ default: module.StreakShareModal })));
 
 export function StreakCounter() {
-    const { streakCurrent, streakLongest } = useUserStore();
+    const { streakCurrent, streakLongest, displayName, level } = useUserStore(
+        useShallow((state) => ({
+            streakCurrent: state.streakCurrent,
+            streakLongest: state.streakLongest,
+            displayName: state.displayName,
+            level: state.level,
+        }))
+    );
     const isOnFire = streakCurrent >= 3;
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
@@ -73,8 +81,8 @@ export function StreakCounter() {
                         onClose={() => setIsShareModalOpen(false)}
                         currentStreak={streakCurrent}
                         bestStreak={streakLongest}
-                        username={useUserStore.getState().displayName || 'Hero'}
-                        rank={getLevelTitle(Math.floor(Math.sqrt(useUserStore.getState().xp / 100)))}
+                        username={displayName || 'Hero'}
+                        rank={getLevelTitle(level)}
                     />
                 </Suspense>
             )}

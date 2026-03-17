@@ -155,6 +155,30 @@ Recent audit fixes included:
 - Centralized repeated task and completion derivations in `taskStore` helpers so dashboard/stats views reuse the same indexed calculations instead of repeating full-array scans.
 - Added timeout cleanup for modal and card UI transitions to avoid stale callbacks after unmounts.
 
+### v2 Performance & Architecture Audit (March 2026)
+
+A comprehensive senior-level audit identified and resolved **17 out of 21** issues:
+
+**Critical fixes:**
+- Fixed `StreakCounter` bypassing React reactivity via raw `getState()` in JSX—now uses proper `useShallow` selectors.
+- Fixed AUTO theme not responding to live system dark mode changes—added `matchMedia` event listener with proper cleanup.
+- Fixed `onMessageListener` memory leak in Firebase—replaced Promise-based pattern with callback-based `subscribeToMessages`.
+- Added automatic pruning of completions older than 6 months during store hydration to prevent localStorage overflow (~5 MB limit).
+- Removed dead `penalties` array from `taskStore`—data was persisted but never displayed anywhere.
+
+**Performance optimizations:**
+- Batched `completeTaskTransaction` from **6–8 separate store updates** (each triggering re-renders) into a **single `setState()` call** on `userStore`.
+- Lazy-loaded `TaskForm` (46 KB) and `LevelUpOverlay` on the Tasks page with `Suspense` boundaries.
+- Wrapped `TaskCard` and `TaskList` in `React.memo` to prevent unnecessary re-renders when parent state changes.
+- Replaced inline arrow callbacks in `Tasks.tsx` with stable `useCallback` references.
+- Removed duplicate `resetRecurringTasks()` call in `Dashboard` (already runs in `App`).
+
+**Architecture improvements:**
+- Unified dual `BrowserRouter` instances into a single router in `main.tsx`—previously router state was reset when transitioning out of onboarding.
+- Extracted shared `useIsMobile` hook to eliminate duplicated media query logic across `TaskForm` and `AvatarShopModal`.
+- Replaced `date-fns` with native `Intl.DateTimeFormat` across `TaskCard` and `XPChart`, then **uninstalled `date-fns`** entirely.
+- Moved `firebase-admin`, `satori`, and `@resvg/resvg-js` from `dependencies` to `devDependencies` (server-only packages don't belong in the client bundle).
+
 ---
 
 ## 💡 The Philosophy

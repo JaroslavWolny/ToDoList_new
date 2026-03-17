@@ -1,9 +1,26 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Clock, AlertTriangle, Trash2, Edit3, Lock } from 'lucide-react';
 import { Task } from '../../types';
 import { getPriorityLabel, getPriorityColor } from '../../lib/gamification';
-import { format, isPast, parseISO, isFuture } from 'date-fns';
+
+const formatDeadline = (isoString: string): string => {
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) return isoString;
+    return new Intl.DateTimeFormat('en', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    }).format(date);
+};
+
+const isDatePast = (isoString: string): boolean =>
+    new Date(isoString).getTime() < Date.now();
+
+const isDateFuture = (isoString: string): boolean =>
+    new Date(isoString).getTime() > Date.now();
 
 interface TaskCardProps {
     task: Task;
@@ -13,12 +30,12 @@ interface TaskCardProps {
     onTagClick?: (tag: string) => void;
 }
 
-export function TaskCard({ task, onComplete, onDelete, onEdit, onTagClick }: TaskCardProps) {
+export const TaskCard = memo(function TaskCard({ task, onComplete, onDelete, onEdit, onTagClick }: TaskCardProps) {
     const [showXP, setShowXP] = useState(false);
     const [isCompleting, setIsCompleting] = useState(false);
     const completeTimeoutRef = useRef<number | null>(null);
-    const isOverdue = task.deadline && isPast(parseISO(task.deadline)) && task.status === 'ACTIVE';
-    const isLocked = task.startDate && isFuture(parseISO(task.startDate)) && task.status === 'ACTIVE';
+    const isOverdue = task.deadline && isDatePast(task.deadline) && task.status === 'ACTIVE';
+    const isLocked = task.startDate && isDateFuture(task.startDate) && task.status === 'ACTIVE';
 
     useEffect(() => {
         return () => {
@@ -114,13 +131,13 @@ export function TaskCard({ task, onComplete, onDelete, onEdit, onTagClick }: Tas
                             <div className={`flex items-center gap-1 text-xs ${isOverdue ? 'text-red-500' : 'text-[var(--color-text-secondary)]'
                                 }`}>
                                 {isOverdue ? <AlertTriangle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                                <span>{format(parseISO(task.deadline), 'MMM d, HH:mm')}</span>
+                                <span>{formatDeadline(task.deadline)}</span>
                             </div>
                         )}
                         {isLocked && task.startDate && (
                             <div className="flex items-center gap-1 text-xs text-blue-500 opacity-80">
                                 <Lock className="w-3 h-3" />
-                                <span>Reminder for {format(parseISO(task.startDate), 'MMM d, HH:mm')}</span>
+                                <span>Reminder for {formatDeadline(task.startDate)}</span>
                             </div>
                         )}
                         {task.tags.length > 0 && (
@@ -169,4 +186,5 @@ export function TaskCard({ task, onComplete, onDelete, onEdit, onTagClick }: Tas
             </div>
         </motion.div>
     );
-}
+});
+

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Task } from '../../types';
 import { TaskCard } from './TaskCard';
@@ -11,7 +12,7 @@ interface TaskListProps {
     emptyMessage?: string;
 }
 
-export function TaskList({ tasks, onComplete, onDelete, onEdit, onTagClick, emptyMessage }: TaskListProps) {
+export const TaskList = memo(function TaskList({ tasks, onComplete, onDelete, onEdit, onTagClick, emptyMessage }: TaskListProps) {
     if (tasks.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -39,4 +40,5 @@ export function TaskList({ tasks, onComplete, onDelete, onEdit, onTagClick, empt
             </AnimatePresence>
         </div>
     );
-}
+});
+

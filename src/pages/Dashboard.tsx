@@ -35,14 +35,13 @@ export function Dashboard() {
             dailyMissionsEnabled: state.settings.dailyMissionsEnabled,
         }))
     );
-    const { tasks, completions, addTask, updateTask, deleteTask, resetRecurringTasks } = useTaskStore(
+    const { tasks, completions, addTask, updateTask, deleteTask } = useTaskStore(
         useShallow((state) => ({
             tasks: state.tasks,
             completions: state.completions,
             addTask: state.addTask,
             updateTask: state.updateTask,
             deleteTask: state.deleteTask,
-            resetRecurringTasks: state.resetRecurringTasks,
         }))
     );
     const { initAchievements, checkAndUnlock } = useAchievementStore(
@@ -71,11 +70,10 @@ export function Dashboard() {
         if (hasInitializedRef.current) return;
         hasInitializedRef.current = true;
 
-        resetRecurringTasks();
         generateDailyMissions();
         initAchievements();
         checkAndUnlock();
-    }, [checkAndUnlock, generateDailyMissions, initAchievements, resetRecurringTasks]);
+    }, [checkAndUnlock, generateDailyMissions, initAchievements]);
 
     const handleCompleteTask = useCallback((id: string) => {
         const result = completeTaskTransaction(id);

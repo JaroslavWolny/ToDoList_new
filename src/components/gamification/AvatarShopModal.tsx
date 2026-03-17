@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../../stores/userStore';
 import { AVAILABLE_AVATARS } from '../../lib/avatars';
 import { avatarIcons } from '../../lib/avatarIcons';
+import { useIsMobile } from '../../lib/useIsMobile';
 
 interface AvatarShopModalProps {
     isOpen: boolean;
@@ -36,6 +37,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
     const [justBought, setJustBought] = useState<string | null>(null);
     const [justEquipped, setJustEquipped] = useState<string | null>(null);
     const feedbackTimeoutRef = useRef<number | null>(null);
+    const isMobile = useIsMobile();
 
     useEffect(() => {
         return () => {
@@ -93,30 +95,41 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
 
     return (
         <AnimatePresence>
-            {/* Backdrop */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md"
-                onClick={onClose}
-            />
+            {/* Backdrop - only on desktop */}
+            {!isMobile && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md"
+                    onClick={onClose}
+                />
+            )}
 
-            {/* Slide-in Panel from Right */}
+            {/* Full-screen on mobile, side panel on desktop */}
             <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
+                initial={isMobile ? { y: '100%' } : { x: '100%' }}
+                animate={isMobile ? { y: 0 } : { x: 0 }}
+                exit={isMobile ? { y: '100%' } : { x: '100%' }}
                 transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-                className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[440px] sm:max-w-[85vw] flex flex-col"
+                className={`fixed z-50 flex flex-col ${
+                    isMobile
+                        ? 'inset-0'
+                        : 'right-0 top-0 bottom-0 w-[440px] max-w-[85vw]'
+                }`}
                 style={{
-                    paddingTop: 'env(safe-area-inset-top, 0px)',
-                    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                    paddingTop: isMobile ? 'env(safe-area-inset-top, 0px)' : undefined,
+                    paddingLeft: 'env(safe-area-inset-left, 0px)',
                     paddingRight: 'env(safe-area-inset-right, 0px)',
+                    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
                 }}
             >
-                <div className="flex flex-col h-full bg-[var(--color-bg)] sm:rounded-l-3xl shadow-2xl overflow-hidden border-l border-[var(--color-border)]">
+                <div className={`flex flex-col flex-1 overflow-hidden bg-[var(--color-bg)] shadow-2xl ${
+                    isMobile
+                        ? 'h-full'
+                        : 'border border-[var(--color-border)] rounded-l-3xl border-r-0'
+                }`}>
 
                     {/* Header */}
                     <div className="px-5 pt-5 pb-4">

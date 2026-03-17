@@ -158,14 +158,8 @@ export const removeTokenFromFirestore = async () => {
     }
 };
 
-export const onMessageListener = () =>
-    new Promise((resolve) => {
-        if (!messaging) {
-            resolve(null);
-            return;
-        }
+export const subscribeToMessages = (callback: (payload: unknown) => void): (() => void) => {
+    if (!messaging) return () => {};
+    return onMessage(messaging, callback);
+};
 
-        onMessage(messaging, (payload) => {
-            resolve(payload);
-        });
-    });

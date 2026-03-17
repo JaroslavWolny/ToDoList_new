@@ -1,13 +1,14 @@
-import { useState, useMemo, useCallback } from 'react';
+import { Suspense, lazy, useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Filter } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { getTaskStatusCounts, useTaskStore } from '../stores/taskStore';
 import { TaskList } from '../components/tasks/TaskList';
-import { TaskForm } from '../components/tasks/TaskForm';
 import { Task, Priority, TaskStatus } from '../types';
-import { LevelUpOverlay } from '../components/gamification/LevelUpOverlay';
 import { completeTaskTransaction } from '../lib/taskCompletion';
+
+const TaskForm = lazy(() => import('../components/tasks/TaskForm').then((module) => ({ default: module.TaskForm })));
+const LevelUpOverlay = lazy(() => import('../components/gamification/LevelUpOverlay').then((module) => ({ default: module.LevelUpOverlay })));
 
 type SortOption = 'deadline' | 'priority' | 'created';
 type FilterStatus = 'ALL' | TaskStatus;
@@ -78,6 +79,17 @@ export function Tasks() {
             setNewLevel(result.levelUpTo);
             setShowLevelUp(true);
         }
+    }, []);
+
+    const handleDeleteTask = useCallback((id: string) => {
+        if (window.confirm('Are you sure you want to delete this task?')) {
+            deleteTask(id);
+        }
+    }, [deleteTask]);
+
+    const handleEditTask = useCallback((task: Task) => {
+        setEditingTask(task);
+        setShowTaskForm(true);
     }, []);
 
     const stats = useMemo(() => getTaskStatusCounts(tasks), [tasks]);
@@ -199,15 +211,8 @@ export function Tasks() {
             <TaskList
                 tasks={filteredTasks}
                 onComplete={handleCompleteTask}
-                onDelete={(id) => {
-                    if (window.confirm('Are you sure you want to delete this task?')) {
-                        deleteTask(id);
-                    }
-                }}
-                onEdit={(task) => {
-                    setEditingTask(task);
-                    setShowTaskForm(true);
-                }}
+                onDelete={handleDeleteTask}
+                onEdit={handleEditTask}
                 onTagClick={(tag) => {
                     setFilterTag(tag === filterTag ? null : tag);
                 }}
@@ -229,28 +234,34 @@ export function Tasks() {
             </motion.button>
 
             {showTaskForm && (
-                <TaskForm
-                    onSubmit={(data) => {
-                        if (editingTask) {
-                            updateTask(editingTask.id, data);
-                        } else {
-                            addTask(data);
-                        }
-                        setEditingTask(null);
-                    }}
-                    onClose={() => {
-                        setShowTaskForm(false);
-                        setEditingTask(null);
-                    }}
-                    editTask={editingTask}
-                />
+                <Suspense fallback={null}>
+                    <TaskForm
+                        onSubmit={(data) => {
+                            if (editingTask) {
+                                updateTask(editingTask.id, data);
+                            } else {
+                                addTask(data);
+                            }
+                            setEditingTask(null);
+                        }}
+                        onClose={() => {
+                            setShowTaskForm(false);
+                            setEditingTask(null);
+                        }}
+                        editTask={editingTask}
+                    />
+                </Suspense>
             )}
 
-            <LevelUpOverlay
-                show={showLevelUp}
-                newLevel={newLevel}
-                onDismiss={() => setShowLevelUp(false)}
-            />
+            {showLevelUp && (
+                <Suspense fallback={null}>
+                    <LevelUpOverlay
+                        show={showLevelUp}
+                        newLevel={newLevel}
+                        onDismiss={() => setShowLevelUp(false)}
+                    />
+                </Suspense>
+            )}
         </div>
     );
 }

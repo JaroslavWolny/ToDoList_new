@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
-import { Task, Completion, Penalty, TaskStatus, RandomReward, Recurrence } from '../types';
+import { Task, Completion, TaskStatus, RandomReward, Recurrence } from '../types';
 import { calculateXP, calculateComboMultiplier, calculatePenalty } from '../lib/gamification';
 import { toLocalDateKey } from '../lib/dates';
 
@@ -162,16 +162,17 @@ export const getTaskStatusCounts = (tasks: Task[]) => {
     };
 };
 
+const COMPLETIONS_MAX_AGE_MS = 180 * DAY_MS; // ~6 months
+
 interface TaskStore {
     tasks: Task[];
     completions: Completion[];
-    penalties: Penalty[];
     addTask: (task: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate' | 'lastPenaltyAt'>) => Task;
     updateTask: (id: string, updates: Partial<Task>) => void;
     deleteTask: (id: string) => void;
     completeTask: (id: string) => { xpEarned: number; comboMultiplier: number; reward: RandomReward | null } | null;
     failTask: (id: string) => void;
-    processOverdueTasks: (gamificationLevel: 'CASUAL' | 'STANDARD' | 'HARDCORE') => Penalty[];
+    processOverdueTasks: (gamificationLevel: 'CASUAL' | 'STANDARD' | 'HARDCORE') => { taskId: string; xpLost: number }[];
     resetRecurringTasks: () => void;
     getTasksForToday: () => Task[];
     getActiveTasks: () => Task[];
@@ -186,7 +187,6 @@ export const useTaskStore = create<TaskStore>()(
         (set, get) => ({
             tasks: [],
             completions: [],
-            penalties: [],
 
             addTask: (taskData) => {
                 const newTask: Task = {
@@ -293,7 +293,7 @@ export const useTaskStore = create<TaskStore>()(
             processOverdueTasks: (gamificationLevel) => {
                 const state = get();
                 const now = new Date();
-                const newPenalties: Penalty[] = [];
+                const results: { taskId: string; xpLost: number }[] = [];
                 const latestPenaltyByTaskId = new Map<string, string>();
 
                 const overdueTasks = state.tasks.filter(
@@ -318,19 +318,10 @@ export const useTaskStore = create<TaskStore>()(
                     if (elapsedPeriods <= appliedPeriods) return;
 
                     const xpLost = calculatePenalty(task.priority, gamificationLevel);
+                    const missedPeriods = elapsedPeriods - appliedPeriods;
 
-                    for (
-                        let periodIndex = appliedPeriods + 1;
-                        periodIndex <= elapsedPeriods;
-                        periodIndex += 1
-                    ) {
-                        newPenalties.push({
-                            id: uuidv4(),
-                            taskId: task.id,
-                            xpLost,
-                            reason: `Overdue: ${task.title}`,
-                            createdAt: new Date(deadlineTime + periodIndex * periodMs).toISOString(),
-                        });
+                    for (let i = 0; i < missedPeriods; i++) {
+                        results.push({ taskId: task.id, xpLost });
                     }
 
                     latestPenaltyByTaskId.set(
@@ -339,17 +330,16 @@ export const useTaskStore = create<TaskStore>()(
                     );
                 });
 
-                if (newPenalties.length > 0) {
+                if (results.length > 0) {
                     set((state) => ({
                         tasks: state.tasks.map((task) => {
                             const lastPenaltyAt = latestPenaltyByTaskId.get(task.id);
                             return lastPenaltyAt ? { ...task, lastPenaltyAt } : task;
                         }),
-                        penalties: [...(Array.isArray(state.penalties) ? state.penalties : []), ...newPenalties],
                     }));
                 }
 
-                return newPenalties;
+                return results;
             },
 
             resetRecurringTasks: () => {
@@ -428,6 +418,15 @@ export const useTaskStore = create<TaskStore>()(
             merge: (persistedState, currentState) => {
                 const persisted = (persistedState as Partial<TaskStore> | undefined) ?? {};
 
+                // Prune old completions (keep last 6 months)
+                const cutoff = Date.now() - COMPLETIONS_MAX_AGE_MS;
+                const prunedCompletions = Array.isArray(persisted.completions)
+                    ? persisted.completions.filter((c) => {
+                        const ts = new Date(c.completedAt).getTime();
+                        return !Number.isNaN(ts) && ts >= cutoff;
+                    })
+                    : currentState.completions;
+
                 return {
                     ...currentState,
                     ...persisted,
@@ -438,12 +437,7 @@ export const useTaskStore = create<TaskStore>()(
                             lastPenaltyAt: task.lastPenaltyAt ?? null,
                         }))
                         : currentState.tasks,
-                    completions: Array.isArray(persisted.completions)
-                        ? persisted.completions
-                        : currentState.completions,
-                    penalties: Array.isArray(persisted.penalties)
-                        ? persisted.penalties
-                        : currentState.penalties,
+                    completions: prunedCompletions,
                 };
             },
         }
