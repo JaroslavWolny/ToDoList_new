@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Clock, AlertTriangle, Trash2, Edit3, Lock } from 'lucide-react';
 import { Task } from '../../types';
@@ -16,14 +16,28 @@ interface TaskCardProps {
 export function TaskCard({ task, onComplete, onDelete, onEdit, onTagClick }: TaskCardProps) {
     const [showXP, setShowXP] = useState(false);
     const [isCompleting, setIsCompleting] = useState(false);
+    const completeTimeoutRef = useRef<number | null>(null);
     const isOverdue = task.deadline && isPast(parseISO(task.deadline)) && task.status === 'ACTIVE';
     const isLocked = task.startDate && isFuture(parseISO(task.startDate)) && task.status === 'ACTIVE';
+
+    useEffect(() => {
+        return () => {
+            if (completeTimeoutRef.current !== null) {
+                window.clearTimeout(completeTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const handleComplete = () => {
         if (task.status !== 'ACTIVE' || isLocked) return;
         setIsCompleting(true);
         setShowXP(true);
-        setTimeout(() => {
+
+        if (completeTimeoutRef.current !== null) {
+            window.clearTimeout(completeTimeoutRef.current);
+        }
+
+        completeTimeoutRef.current = window.setTimeout(() => {
             onComplete(task.id);
         }, 600);
     };

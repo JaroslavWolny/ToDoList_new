@@ -1,5 +1,6 @@
-import { Suspense, lazy, useCallback, useEffect, useRef } from 'react';
+import { Suspense, lazy, useEffect, useEffectEvent, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useShallow } from 'zustand/react/shallow';
 import { AppShell } from './components/layout/AppShell';
 import { useUserStore } from './stores/userStore';
 import { useTaskStore } from './stores/taskStore';
@@ -21,22 +22,39 @@ function RouteLoader() {
 }
 
 function App() {
-  const { onboardingComplete, settings } = useUserStore();
-  const { resetRecurringTasks, processOverdueTasks } = useTaskStore();
-  const { checkStreakOnLoad, removeXP, loseHealth } = useUserStore();
+  const { onboardingComplete, theme, gamificationLevel } = useUserStore(
+    useShallow((state) => ({
+      onboardingComplete: state.onboardingComplete,
+      theme: state.settings.theme,
+      gamificationLevel: state.settings.gamificationLevel,
+    }))
+  );
+  const { resetRecurringTasks, processOverdueTasks } = useTaskStore(
+    useShallow((state) => ({
+      resetRecurringTasks: state.resetRecurringTasks,
+      processOverdueTasks: state.processOverdueTasks,
+    }))
+  );
+  const { checkStreakOnLoad, removeXP, loseHealth } = useUserStore(
+    useShallow((state) => ({
+      checkStreakOnLoad: state.checkStreakOnLoad,
+      removeXP: state.removeXP,
+      loseHealth: state.loseHealth,
+    }))
+  );
   const hasInitializedRef = useRef(false);
   const lastMaintenanceDateRef = useRef<string>('');
 
-  const runDailyMaintenance = useCallback(() => {
+  const runDailyMaintenance = useEffectEvent(() => {
     resetRecurringTasks();
     checkStreakOnLoad();
 
-    const penalties = processOverdueTasks(settings.gamificationLevel);
+    const penalties = processOverdueTasks(gamificationLevel);
     penalties.forEach((p) => {
       removeXP(p.xpLost);
       loseHealth();
     });
-  }, [checkStreakOnLoad, loseHealth, processOverdueTasks, removeXP, resetRecurringTasks, settings.gamificationLevel]);
+  });
 
   // Reset recurring tasks, check streak, and process overdue on app load
   useEffect(() => {
@@ -45,7 +63,7 @@ function App() {
     lastMaintenanceDateRef.current = new Date().toDateString();
 
     runDailyMaintenance();
-  }, [runDailyMaintenance]);
+  }, []);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -57,14 +75,14 @@ function App() {
     }, 60 * 1000);
 
     return () => window.clearInterval(intervalId);
-  }, [runDailyMaintenance]);
+  }, []);
 
   // Apply theme
   useEffect(() => {
     const root = document.documentElement;
-    if (settings.theme === 'DARK') {
+    if (theme === 'DARK') {
       root.classList.add('dark');
-    } else if (settings.theme === 'LIGHT') {
+    } else if (theme === 'LIGHT') {
       root.classList.remove('dark');
     } else {
       // AUTO
@@ -75,7 +93,7 @@ function App() {
         root.classList.remove('dark');
       }
     }
-  }, [settings.theme]);
+  }, [theme]);
 
   if (!onboardingComplete) {
     return (

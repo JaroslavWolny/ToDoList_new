@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useTaskStore } from '../../stores/taskStore';
+import { buildCompletionStatsByDate, useTaskStore } from '../../stores/taskStore';
 import { toLocalDateKey } from '../../lib/dates';
 
 interface HeatmapCalendarProps {
@@ -7,7 +7,7 @@ interface HeatmapCalendarProps {
 }
 
 export function HeatmapCalendar({ months = 5 }: HeatmapCalendarProps) {
-    const { completions } = useTaskStore();
+    const completions = useTaskStore((state) => state.completions);
 
     const { cells, monthLabels, totalWeeks } = useMemo(() => {
         const today = new Date();
@@ -15,11 +15,7 @@ export function HeatmapCalendar({ months = 5 }: HeatmapCalendarProps) {
         startDate.setMonth(startDate.getMonth() - months);
         startDate.setDate(startDate.getDate() - startDate.getDay());
 
-        const completionMap = new Map<string, number>();
-        completions.forEach((c) => {
-            const date = toLocalDateKey(c.completedAt);
-            completionMap.set(date, (completionMap.get(date) || 0) + 1);
-        });
+        const completionStatsByDate = buildCompletionStatsByDate(completions);
 
         const cells: Array<{ date: string; count: number; dayOfWeek: number; weekIndex: number }> = [];
         const monthLabels: Array<{ label: string; weekIndex: number }> = [];
@@ -51,7 +47,7 @@ export function HeatmapCalendar({ months = 5 }: HeatmapCalendarProps) {
 
             cells.push({
                 date: dateStr,
-                count: completionMap.get(dateStr) || 0,
+                count: completionStatsByDate.get(dateStr)?.count || 0,
                 dayOfWeek,
                 weekIndex,
             });

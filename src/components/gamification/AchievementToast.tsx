@@ -1,10 +1,17 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useShallow } from 'zustand/react/shallow';
 import { useAchievementStore } from '../../stores/achievementStore';
 import { Trophy } from 'lucide-react';
 
 export function AchievementToast() {
-    const { lastUnlocked, showUnlockAnimation, dismissUnlockAnimation } = useAchievementStore();
+    const { lastUnlocked, showUnlockAnimation, dismissUnlockAnimation } = useAchievementStore(
+        useShallow((state) => ({
+            lastUnlocked: state.lastUnlocked,
+            showUnlockAnimation: state.showUnlockAnimation,
+            dismissUnlockAnimation: state.dismissUnlockAnimation,
+        }))
+    );
 
     useEffect(() => {
         if (showUnlockAnimation) {
@@ -48,4 +55,3 @@ export function AchievementToast() {
         </AnimatePresence>
     );
 }
-

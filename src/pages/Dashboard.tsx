@@ -1,8 +1,9 @@
-import { Suspense, lazy, useState, useCallback, useEffect, useRef } from 'react';
+import { Suspense, lazy, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Zap } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../stores/userStore';
-import { useTaskStore } from '../stores/taskStore';
+import { getCompletionsToday, getTasksForToday, useTaskStore } from '../stores/taskStore';
 import { useAchievementStore } from '../stores/achievementStore';
 import { useMissionStore } from '../stores/missionStore';
 import { XPBar } from '../components/gamification/XPBar';
@@ -14,6 +15,7 @@ import { TaskList } from '../components/tasks/TaskList';
 import { Task, RandomReward } from '../types';
 import { calculateComboMultiplier } from '../lib/gamification';
 import { completeTaskTransaction } from '../lib/taskCompletion';
+import { toLocalDateKey } from '../lib/dates';
 
 const LevelUpOverlay = lazy(() => import('../components/gamification/LevelUpOverlay').then((module) => ({ default: module.LevelUpOverlay })));
 const RandomRewardModal = lazy(() => import('../components/gamification/RandomRewardModal').then((module) => ({ default: module.RandomRewardModal })));
@@ -27,25 +29,53 @@ export function Dashboard() {
     const [rewardDrop, setRewardDrop] = useState<RandomReward | null>(null);
     const hasInitializedRef = useRef(false);
 
-    const userStore = useUserStore();
-    const taskStore = useTaskStore();
-    const achievementStore = useAchievementStore();
-    const missionStore = useMissionStore();
+    const { displayName, dailyMissionsEnabled } = useUserStore(
+        useShallow((state) => ({
+            displayName: state.displayName,
+            dailyMissionsEnabled: state.settings.dailyMissionsEnabled,
+        }))
+    );
+    const { tasks, completions, addTask, updateTask, deleteTask, resetRecurringTasks } = useTaskStore(
+        useShallow((state) => ({
+            tasks: state.tasks,
+            completions: state.completions,
+            addTask: state.addTask,
+            updateTask: state.updateTask,
+            deleteTask: state.deleteTask,
+            resetRecurringTasks: state.resetRecurringTasks,
+        }))
+    );
+    const { initAchievements, checkAndUnlock } = useAchievementStore(
+        useShallow((state) => ({
+            initAchievements: state.initAchievements,
+            checkAndUnlock: state.checkAndUnlock,
+        }))
+    );
+    const { missions, lastGeneratedDate, generateDailyMissions } = useMissionStore(
+        useShallow((state) => ({
+            missions: state.missions,
+            lastGeneratedDate: state.lastGeneratedDate,
+            generateDailyMissions: state.generateDailyMissions,
+        }))
+    );
 
-    const todayTasks = taskStore.getTasksForToday();
-    const completionsToday = taskStore.getCompletionsToday();
+    const todayTasks = useMemo(() => getTasksForToday(tasks), [tasks]);
+    const completionsToday = useMemo(() => getCompletionsToday(completions), [completions]);
     const currentCombo = calculateComboMultiplier(completionsToday.length);
-    const missions = missionStore.getMissionsForToday();
+    const missionsForToday = useMemo(() => {
+        const today = toLocalDateKey(new Date());
+        return lastGeneratedDate === today ? missions : [];
+    }, [lastGeneratedDate, missions]);
 
     useEffect(() => {
         if (hasInitializedRef.current) return;
         hasInitializedRef.current = true;
 
-        taskStore.resetRecurringTasks();
-        missionStore.generateDailyMissions();
-        achievementStore.initAchievements();
-        achievementStore.checkAndUnlock();
-    }, [achievementStore, missionStore, taskStore]);
+        resetRecurringTasks();
+        generateDailyMissions();
+        initAchievements();
+        checkAndUnlock();
+    }, [checkAndUnlock, generateDailyMissions, initAchievements, resetRecurringTasks]);
 
     const handleCompleteTask = useCallback((id: string) => {
         const result = completeTaskTransaction(id);
@@ -63,14 +93,14 @@ export function Dashboard() {
     }, []);
 
     const handleAddTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate' | 'lastPenaltyAt'>) => {
-        taskStore.addTask(taskData);
-    }, [taskStore]);
+        addTask(taskData);
+    }, [addTask]);
 
     const handleDeleteTask = useCallback((id: string) => {
         if (window.confirm('Are you sure you want to delete this task?')) {
-            taskStore.deleteTask(id);
+            deleteTask(id);
         }
-    }, [taskStore]);
+    }, [deleteTask]);
 
     const handleEditTask = useCallback((task: Task) => {
         setEditingTask(task);
@@ -79,10 +109,10 @@ export function Dashboard() {
 
     const handleUpdateTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate' | 'lastPenaltyAt'>) => {
         if (editingTask) {
-            taskStore.updateTask(editingTask.id, taskData);
+            updateTask(editingTask.id, taskData);
             setEditingTask(null);
         }
-    }, [editingTask, taskStore]);
+    }, [editingTask, updateTask]);
 
 
     return (
@@ -95,7 +125,7 @@ export function Dashboard() {
                     </h1>
                     <div className="pl-4 mt-0.5">
                         <span className="text-[1.7rem] font-black gradient-text leading-none tracking-tight">
-                            {userStore.displayName || 'Hero'}
+                            {displayName || 'Hero'}
                         </span>
                     </div>
                 </div>
@@ -122,14 +152,14 @@ export function Dashboard() {
 
 
             {/* Daily Missions */}
-            {userStore.settings.dailyMissionsEnabled && missions.length > 0 && (
+            {dailyMissionsEnabled && missionsForToday.length > 0 && (
                 <div className="mb-4">
                     <h3 className="text-sm font-bold mb-2 flex items-center gap-1.5">
                         <Zap className="w-4 h-4 text-yellow-500" />
                         Daily Missions
                     </h3>
                     <div className="space-y-2">
-                        {missions.map((mission) => (
+                        {missionsForToday.map((mission) => (
                             <div
                                 key={mission.id}
                                 className={`card-surface rounded-xl p-3 flex items-center gap-3 ${mission.completed ? 'opacity-60' : ''

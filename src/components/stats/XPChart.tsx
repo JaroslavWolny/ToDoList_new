@@ -1,30 +1,29 @@
 import { useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { useTaskStore } from '../../stores/taskStore';
+import { buildCompletionStatsByDate, useTaskStore } from '../../stores/taskStore';
 import { subDays, format } from 'date-fns';
-import { toLocalDateKey } from '../../lib/dates';
 
 interface XPChartProps {
     days?: number;
 }
 
 export function XPChart({ days = 14 }: XPChartProps) {
-    const { completions } = useTaskStore();
+    const completions = useTaskStore((state) => state.completions);
 
     const data = useMemo(() => {
         const today = new Date();
+        const completionStatsByDate = buildCompletionStatsByDate(completions);
         const result = [];
+
         for (let i = days - 1; i >= 0; i--) {
             const date = subDays(today, i);
             const dateStr = format(date, 'yyyy-MM-dd');
-            const dayCompletions = completions.filter(
-                (c) => toLocalDateKey(c.completedAt) === dateStr
-            );
-            const xp = dayCompletions.reduce((sum, c) => sum + c.xpEarned, 0);
+            const statsForDate = completionStatsByDate.get(dateStr) ?? { count: 0, xp: 0 };
+
             result.push({
                 date: format(date, 'MMM d'),
-                xp,
-                tasks: dayCompletions.length,
+                xp: statsForDate.xp,
+                tasks: statsForDate.count,
             });
         }
         return result;

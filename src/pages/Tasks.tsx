@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Filter } from 'lucide-react';
-import { useTaskStore } from '../stores/taskStore';
+import { useShallow } from 'zustand/react/shallow';
+import { getTaskStatusCounts, useTaskStore } from '../stores/taskStore';
 import { TaskList } from '../components/tasks/TaskList';
 import { TaskForm } from '../components/tasks/TaskForm';
 import { Task, Priority, TaskStatus } from '../types';
@@ -24,20 +25,27 @@ export function Tasks() {
     const [showLevelUp, setShowLevelUp] = useState(false);
     const [newLevel, setNewLevel] = useState(0);
 
-    const taskStore = useTaskStore();
+    const { tasks, addTask, updateTask, deleteTask } = useTaskStore(
+        useShallow((state) => ({
+            tasks: state.tasks,
+            addTask: state.addTask,
+            updateTask: state.updateTask,
+            deleteTask: state.deleteTask,
+        }))
+    );
     const availableTags = useMemo(() => {
         const tags = new Set<string>();
-        taskStore.tasks.forEach((t) => {
+        tasks.forEach((t) => {
             // Only show tags from tasks that match the current status filter
             if (filterStatus === 'ALL' || t.status === filterStatus) {
-                t.tags.forEach(tag => tags.add(tag));
+                t.tags.forEach((tag) => tags.add(tag));
             }
         });
         return Array.from(tags).sort();
-    }, [taskStore.tasks, filterStatus]);
+    }, [tasks, filterStatus]);
 
     const filteredTasks = useMemo(() => {
-        let result = [...taskStore.tasks];
+        let result = [...tasks];
 
         if (filterStatus !== 'ALL') {
             result = result.filter((t) => t.status === filterStatus);
@@ -60,7 +68,7 @@ export function Tasks() {
         });
 
         return result;
-    }, [taskStore.tasks, filterStatus, filterPriority, filterTag, sortBy]);
+    }, [tasks, filterStatus, filterPriority, filterTag, sortBy]);
 
     const handleCompleteTask = useCallback((id: string) => {
         const result = completeTaskTransaction(id);
@@ -72,11 +80,7 @@ export function Tasks() {
         }
     }, []);
 
-    const stats = useMemo(() => ({
-        total: taskStore.tasks.length,
-        active: taskStore.tasks.filter((t) => t.status === 'ACTIVE').length,
-        completed: taskStore.tasks.filter((t) => t.status === 'COMPLETED').length,
-    }), [taskStore.tasks]);
+    const stats = useMemo(() => getTaskStatusCounts(tasks), [tasks]);
 
     return (
         <div className="page-container">
@@ -197,7 +201,7 @@ export function Tasks() {
                 onComplete={handleCompleteTask}
                 onDelete={(id) => {
                     if (window.confirm('Are you sure you want to delete this task?')) {
-                        taskStore.deleteTask(id);
+                        deleteTask(id);
                     }
                 }}
                 onEdit={(task) => {
@@ -228,9 +232,9 @@ export function Tasks() {
                 <TaskForm
                     onSubmit={(data) => {
                         if (editingTask) {
-                            taskStore.updateTask(editingTask.id, data);
+                            updateTask(editingTask.id, data);
                         } else {
-                            taskStore.addTask(data);
+                            addTask(data);
                         }
                         setEditingTask(null);
                     }}

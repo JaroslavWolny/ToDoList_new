@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef, useSyncExternalStore } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, ChevronLeft, Sparkles, Calendar, Clock, Tag, Repeat, Zap, AlertTriangle, Flame, Shield, Check } from 'lucide-react';
 import { Task, Priority, Recurrence } from '../../types';
@@ -30,6 +30,41 @@ const recurrenceOptions: { value: Recurrence; label: string; emoji: string; desc
     { value: 'WEEKLY', label: 'Weekly', emoji: '📅', description: 'Every week' },
 ];
 
+const MOBILE_MEDIA_QUERY = '(max-width: 639px)';
+const emptySubscribe = () => () => undefined;
+
+const subscribeToMobileViewport = (onStoreChange: () => void) => {
+    const mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
+    mediaQuery.addEventListener('change', onStoreChange);
+    return () => mediaQuery.removeEventListener('change', onStoreChange);
+};
+
+const getMobileViewportSnapshot = () =>
+    window.matchMedia(MOBILE_MEDIA_QUERY).matches;
+
+const subscribeToKeyboardInset = (onStoreChange: () => void) => {
+    const viewport = window.visualViewport;
+    if (!viewport) return emptySubscribe();
+
+    viewport.addEventListener('resize', onStoreChange);
+    viewport.addEventListener('scroll', onStoreChange);
+
+    return () => {
+        viewport.removeEventListener('resize', onStoreChange);
+        viewport.removeEventListener('scroll', onStoreChange);
+    };
+};
+
+const getKeyboardInsetSnapshot = () => {
+    if (!getMobileViewportSnapshot()) return 0;
+
+    const viewport = window.visualViewport;
+    if (!viewport) return 0;
+
+    const inset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+    return inset > 80 ? inset : 0;
+};
+
 // Mascot reactions
 const getMascotEmoji = (step: number, title: string, priority: Priority) => {
     if (step === 0 && !title) return '🤔';
@@ -55,9 +90,18 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
     const [tagInput, setTagInput] = useState('');
     const [tags, setTags] = useState<string[]>(editTask?.tags || []);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 639px)').matches);
-    const [keyboardInset, setKeyboardInset] = useState(0);
+    const isMobile = useSyncExternalStore(
+        subscribeToMobileViewport,
+        getMobileViewportSnapshot,
+        () => false
+    );
+    const keyboardInset = useSyncExternalStore(
+        subscribeToKeyboardInset,
+        getKeyboardInsetSnapshot,
+        () => 0
+    );
     const contentRef = useRef<HTMLDivElement | null>(null);
+    const submitTimeoutRef = useRef<number | null>(null);
 
     const toISOOrNull = (value: string): string | null => {
         if (!value) return null;
@@ -88,9 +132,13 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
     const handleSubmit = useCallback(() => {
         if (!title.trim()) return;
         setIsSubmitting(true);
-        
+
         // Small delay for the satisfying animation
-        setTimeout(() => {
+        if (submitTimeoutRef.current !== null) {
+            window.clearTimeout(submitTimeoutRef.current);
+        }
+
+        submitTimeoutRef.current = window.setTimeout(() => {
             onSubmit({
                 title: title.trim(),
                 description: description.trim(),
@@ -119,18 +167,6 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
     const mascot = getMascotEmoji(currentStep, title, priority);
 
     useEffect(() => {
-        const mediaQuery = window.matchMedia('(max-width: 639px)');
-        const handleChange = (event: MediaQueryListEvent) => {
-            setIsMobile(event.matches);
-        };
-
-        setIsMobile(mediaQuery.matches);
-        mediaQuery.addEventListener('change', handleChange);
-
-        return () => mediaQuery.removeEventListener('change', handleChange);
-    }, []);
-
-    useEffect(() => {
         const previousOverflow = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
 
@@ -140,26 +176,12 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
     }, []);
 
     useEffect(() => {
-        if (!isMobile || !window.visualViewport) {
-            setKeyboardInset(0);
-            return;
-        }
-
-        const updateKeyboardInset = () => {
-            const viewport = window.visualViewport;
-            const inset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
-            setKeyboardInset(inset > 80 ? inset : 0);
-        };
-
-        updateKeyboardInset();
-        window.visualViewport.addEventListener('resize', updateKeyboardInset);
-        window.visualViewport.addEventListener('scroll', updateKeyboardInset);
-
         return () => {
-            window.visualViewport?.removeEventListener('resize', updateKeyboardInset);
-            window.visualViewport?.removeEventListener('scroll', updateKeyboardInset);
+            if (submitTimeoutRef.current !== null) {
+                window.clearTimeout(submitTimeoutRef.current);
+            }
         };
-    }, [isMobile]);
+    }, []);
 
     useEffect(() => {
         contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });

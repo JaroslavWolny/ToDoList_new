@@ -114,10 +114,10 @@ Make sure you have **Node.js 18+** and `npm` installed.
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/QuestDo.git
+git clone https://github.com/JaroslavWolny/ToDoList_new.git
 
 # 2. Enter the dungeon
-cd QuestDo
+cd ToDoList_new
 
 # 3. Equip your gear (install dependencies)
 npm install
@@ -135,6 +135,7 @@ npm run preview
 ### Quality Checks
 ```bash
 npm run lint
+./node_modules/.bin/tsc --noEmit
 npm run build
 ```
 
@@ -149,6 +150,10 @@ Recent audit fixes included:
 - Made export/import restore the full persisted app state, with backward compatibility for the older JSON backup format.
 - Extended reset behavior to remove saved notification tokens and local device identifiers.
 - Aligned notification settings and backend scheduling to explicit hourly reminder slots.
+- Reworked mobile `TaskForm` viewport handling to use subscription-based state (`useSyncExternalStore`) instead of synchronous `setState` calls inside effects.
+- Narrowed major Zustand consumers to selector-based subscriptions to reduce unnecessary rerenders in `App`, `Dashboard`, `Tasks`, `Stats`, `Settings`, and key gamification/stats components.
+- Centralized repeated task and completion derivations in `taskStore` helpers so dashboard/stats views reuse the same indexed calculations instead of repeating full-array scans.
+- Added timeout cleanup for modal and card UI transitions to avoid stale callbacks after unmounts.
 
 ---
 

@@ -62,6 +62,106 @@ const getRecurringResetPeriods = (
     return recurrence === 'WEEKLY' ? Math.floor(daysDiff / 7) : daysDiff;
 };
 
+export type CompletionDayStats = {
+    count: number;
+    xp: number;
+};
+
+export const getTasksForToday = (tasks: Task[], today = new Date()): Task[] => {
+    const todayKey = toLocalDateKey(today);
+
+    return tasks.filter((task) => {
+        if (task.status !== 'ACTIVE') return false;
+
+        if (task.startDate) {
+            const startDate = toLocalDateKey(task.startDate);
+            if (startDate > todayKey) return false;
+        }
+
+        if (task.recurrence !== 'NONE') return true;
+
+        if (task.deadline) {
+            const deadlineDate = toLocalDateKey(task.deadline);
+            return deadlineDate <= todayKey;
+        }
+
+        const createdDate = new Date(task.createdAt);
+        const daysSinceCreated = Math.floor(
+            (today.getTime() - createdDate.getTime()) / DAY_MS
+        );
+
+        return daysSinceCreated <= 7;
+    });
+};
+
+export const getActiveTasks = (tasks: Task[]): Task[] =>
+    tasks.filter((task) => task.status === 'ACTIVE');
+
+export const getOverdueTasks = (tasks: Task[], now = new Date()): Task[] => {
+    const nowMs = now.getTime();
+
+    return tasks.filter(
+        (task) =>
+            task.status === 'ACTIVE'
+            && task.deadline !== null
+            && new Date(task.deadline).getTime() < nowMs
+    );
+};
+
+export const getCompletionsForDate = (
+    completions: Completion[],
+    date: string
+): Completion[] =>
+    completions.filter((completion) => toLocalDateKey(completion.completedAt) === date);
+
+export const getCompletionsToday = (
+    completions: Completion[],
+    today = new Date()
+): Completion[] => getCompletionsForDate(completions, toLocalDateKey(today));
+
+export const buildCompletionStatsByDate = (
+    completions: Completion[]
+): Map<string, CompletionDayStats> => {
+    const statsByDate = new Map<string, CompletionDayStats>();
+
+    completions.forEach((completion) => {
+        const date = toLocalDateKey(completion.completedAt);
+        const existing = statsByDate.get(date);
+
+        if (existing) {
+            existing.count += 1;
+            existing.xp += completion.xpEarned;
+            return;
+        }
+
+        statsByDate.set(date, {
+            count: 1,
+            xp: completion.xpEarned,
+        });
+    });
+
+    return statsByDate;
+};
+
+export const getTaskStatusCounts = (tasks: Task[]) => {
+    let active = 0;
+    let completed = 0;
+    let failed = 0;
+
+    tasks.forEach((task) => {
+        if (task.status === 'ACTIVE') active += 1;
+        if (task.status === 'COMPLETED') completed += 1;
+        if (task.status === 'FAILED') failed += 1;
+    });
+
+    return {
+        total: tasks.length,
+        active,
+        completed,
+        failed,
+    };
+};
+
 interface TaskStore {
     tasks: Task[];
     completions: Completion[];
@@ -129,7 +229,7 @@ export const useTaskStore = create<TaskStore>()(
                 const task = state.tasks.find((t) => t.id === id);
                 if (!task || task.status !== 'ACTIVE') return null;
 
-                const completionsToday = state.getCompletionsToday();
+                const completionsToday = getCompletionsToday(state.completions);
                 const comboMultiplier = calculateComboMultiplier(completionsToday.length + 1);
                 const baseXP = calculateXP(task.priority);
                 const xpEarned = Math.floor(baseXP * comboMultiplier);
@@ -300,61 +400,23 @@ export const useTaskStore = create<TaskStore>()(
             },
 
             getTasksForToday: () => {
-                const { tasks } = get();
-                const today = toLocalDateKey(new Date());
-                return tasks.filter((t) => {
-                    if (t.status !== 'ACTIVE') return false;
-
-                    // Exclude tasks scheduled for the future
-                    if (t.startDate) {
-                        const startDate = toLocalDateKey(t.startDate);
-                        if (startDate > today) return false;
-                    }
-
-                    // Recurring tasks always show
-                    if (t.recurrence !== 'NONE') return true;
-
-                    // Tasks with deadline today or past
-                    if (t.deadline) {
-                        const deadlineDate = toLocalDateKey(t.deadline);
-                        return deadlineDate <= today;
-                    }
-
-                    // Non-recurring tasks without deadline: show if created within 7 days
-                    const createdDate = new Date(t.createdAt);
-                    const now = new Date();
-                    const daysSinceCreated = Math.floor(
-                        (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
-                    );
-                    return daysSinceCreated <= 7;
-                });
+                return getTasksForToday(get().tasks);
             },
 
             getActiveTasks: () => {
-                return get().tasks.filter((t) => t.status === 'ACTIVE');
+                return getActiveTasks(get().tasks);
             },
 
             getOverdueTasks: () => {
-                const { tasks } = get();
-                const now = new Date().getTime();
-                return tasks.filter(
-                    (t) => t.status === 'ACTIVE' && t.deadline !== null && new Date(t.deadline).getTime() < now
-                );
+                return getOverdueTasks(get().tasks);
             },
 
             getCompletionsToday: () => {
-                const { completions } = get();
-                const today = toLocalDateKey(new Date());
-                return completions.filter(
-                    (c) => toLocalDateKey(c.completedAt) === today
-                );
+                return getCompletionsToday(get().completions);
             },
 
             getCompletionsForDate: (date: string) => {
-                const { completions } = get();
-                return completions.filter(
-                    (c) => toLocalDateKey(c.completedAt) === date
-                );
+                return getCompletionsForDate(get().completions, date);
             },
 
             getTotalCompletionsCount: () => {

@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Lock, Check, Sparkles, ShoppingBag, Star, Coins } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../../stores/userStore';
 import { AVAILABLE_AVATARS } from '../../lib/avatars';
 import { avatarIcons } from '../../lib/avatarIcons';
@@ -22,10 +23,27 @@ const getRarity = (cost: number) => {
 type TabType = 'all' | 'owned' | 'locked';
 
 export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
-    const { coins, unlockedAvatars, equippedAvatar, buyAvatar, equipAvatar } = useUserStore();
+    const { coins, unlockedAvatars, equippedAvatar, buyAvatar, equipAvatar } = useUserStore(
+        useShallow((state) => ({
+            coins: state.coins,
+            unlockedAvatars: state.unlockedAvatars,
+            equippedAvatar: state.equippedAvatar,
+            buyAvatar: state.buyAvatar,
+            equipAvatar: state.equipAvatar,
+        }))
+    );
     const [activeTab, setActiveTab] = useState<TabType>('all');
     const [justBought, setJustBought] = useState<string | null>(null);
     const [justEquipped, setJustEquipped] = useState<string | null>(null);
+    const feedbackTimeoutRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (feedbackTimeoutRef.current !== null) {
+                window.clearTimeout(feedbackTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const handleBuy = useCallback((avatarId: string, cost: number) => {
         const success = buyAvatar(avatarId, cost);
@@ -33,7 +51,12 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
             setJustBought(avatarId);
             equipAvatar(avatarId);
             setJustEquipped(avatarId);
-            setTimeout(() => {
+
+            if (feedbackTimeoutRef.current !== null) {
+                window.clearTimeout(feedbackTimeoutRef.current);
+            }
+
+            feedbackTimeoutRef.current = window.setTimeout(() => {
                 setJustBought(null);
                 setJustEquipped(null);
             }, 2000);
@@ -43,7 +66,12 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
     const handleEquip = useCallback((avatarId: string) => {
         equipAvatar(avatarId);
         setJustEquipped(avatarId);
-        setTimeout(() => setJustEquipped(null), 1500);
+
+        if (feedbackTimeoutRef.current !== null) {
+            window.clearTimeout(feedbackTimeoutRef.current);
+        }
+
+        feedbackTimeoutRef.current = window.setTimeout(() => setJustEquipped(null), 1500);
     }, [equipAvatar]);
 
     if (!isOpen) return null;

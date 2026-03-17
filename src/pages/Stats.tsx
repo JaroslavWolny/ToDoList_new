@@ -1,4 +1,6 @@
 import { motion } from 'framer-motion';
+import { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../stores/userStore';
 import { useAchievementStore } from '../stores/achievementStore';
 import { HeatmapCalendar } from '../components/stats/HeatmapCalendar';
@@ -7,10 +9,19 @@ import { AchievementGrid } from '../components/stats/AchievementGrid';
 import { Flame, Zap, CheckCircle2, Trophy } from 'lucide-react';
 
 export function Stats() {
-    const { streakLongest, totalTasksCompleted, totalXPEarned } = useUserStore();
-    const achievementStore = useAchievementStore();
-    const unlockedCount = achievementStore.getUnlockedCount();
-    const totalAchievements = achievementStore.achievements.length;
+    const { streakLongest, totalTasksCompleted, totalXPEarned } = useUserStore(
+        useShallow((state) => ({
+            streakLongest: state.streakLongest,
+            totalTasksCompleted: state.totalTasksCompleted,
+            totalXPEarned: state.totalXPEarned,
+        }))
+    );
+    const achievements = useAchievementStore((state) => state.achievements);
+    const unlockedCount = useMemo(
+        () => achievements.filter((achievement) => achievement.unlockedAt).length,
+        [achievements]
+    );
+    const totalAchievements = achievements.length;
 
     const statCards = [
         {

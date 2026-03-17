@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../stores/userStore';
 import {
     getFirebaseMessagingConfigError,
@@ -14,7 +15,6 @@ import {
     DEFAULT_NOTIFICATION_EVENING,
     DEFAULT_NOTIFICATION_MORNING,
     normalizeReminderHour,
-    normalizeReminderSettings,
 } from '../lib/reminders';
 import {
     ACHIEVEMENT_STORE_KEY,
@@ -43,27 +43,37 @@ const isStorageBackup = (value: unknown): value is StorageBackup => {
 };
 
 export function Settings() {
-    const { settings, updateSettings, streakFreezeTokens, resetUser } = useUserStore();
+    const { settings, updateSettings, streakFreezeTokens, resetUser } = useUserStore(
+        useShallow((state) => ({
+            settings: state.settings,
+            updateSettings: state.updateSettings,
+            streakFreezeTokens: state.streakFreezeTokens,
+            resetUser: state.resetUser,
+        }))
+    );
     const [importError, setImportError] = useState('');
+    const importErrorTimeoutRef = useRef<number | null>(null);
     const notificationConfigError = getFirebaseMessagingConfigError();
 
     useEffect(() => {
-        const normalizedSettings = normalizeReminderSettings({
-            notificationMorning: settings.notificationMorning,
-            notificationEvening: settings.notificationEvening,
-        });
+        return () => {
+            if (importErrorTimeoutRef.current !== null) {
+                window.clearTimeout(importErrorTimeoutRef.current);
+            }
+        };
+    }, []);
 
-        if (
-            normalizedSettings.notificationMorning !== settings.notificationMorning
-            || normalizedSettings.notificationEvening !== settings.notificationEvening
-        ) {
-            updateSettings(normalizedSettings);
+    const showImportError = (message: string) => {
+        setImportError(message);
+
+        if (importErrorTimeoutRef.current !== null) {
+            window.clearTimeout(importErrorTimeoutRef.current);
         }
-    }, [
-        settings.notificationEvening,
-        settings.notificationMorning,
-        updateSettings,
-    ]);
+
+        importErrorTimeoutRef.current = window.setTimeout(() => {
+            setImportError('');
+        }, 3000);
+    };
 
     const themeOptions: { value: ThemeMode; icon: React.ReactNode; label: string }[] = [
         { value: 'LIGHT', icon: <Sun className="w-4 h-4" />, label: 'Light' },
@@ -164,11 +174,9 @@ export function Settings() {
                         return;
                     }
 
-                    setImportError('Invalid file format');
-                    setTimeout(() => setImportError(''), 3000);
+                    showImportError('Invalid file format');
                 } catch {
-                    setImportError('Failed to parse file');
-                    setTimeout(() => setImportError(''), 3000);
+                    showImportError('Failed to parse file');
                 }
             };
             reader.readAsText(file);

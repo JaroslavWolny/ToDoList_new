@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, Sparkles, Target, Trophy } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useAchievementStore } from '../../stores/achievementStore';
 import { useUserStore } from '../../stores/userStore';
 import { useTaskStore } from '../../stores/taskStore';
 import { ACHIEVEMENT_DEFS } from '../../lib/achievements';
-import { Achievement } from '../../types';
+import { Achievement, UserState } from '../../types';
 
 type AchievementProgress = { current: number; max: number };
 type EnhancedAchievement = Achievement & {
@@ -20,49 +21,123 @@ const categories = [
     { key: 'special', label: 'Special', tint: 'from-sky-500/15 to-cyan-500/5', accent: 'text-sky-500', activeBg: 'bg-sky-500 shadow-sky-500/25', activeText: 'text-sky-100' },
 ] as const;
 
+const achievementDefByKey = new Map(
+    ACHIEVEMENT_DEFS.map((definition) => [definition.key, definition])
+);
+
 export function AchievementGrid() {
-    const { achievements } = useAchievementStore();
-    const user = useUserStore();
+    const achievements = useAchievementStore((state) => state.achievements);
+    const user = useUserStore(
+        useShallow((state): UserState => ({
+            displayName: state.displayName,
+            level: state.level,
+            xp: state.xp,
+            coins: state.coins,
+            health: state.health,
+            maxHealth: state.maxHealth,
+            streakCurrent: state.streakCurrent,
+            streakLongest: state.streakLongest,
+            lastCompletedDate: state.lastCompletedDate,
+            streakFreezeTokens: state.streakFreezeTokens,
+            settings: state.settings,
+            onboardingComplete: state.onboardingComplete,
+            createdAt: state.createdAt,
+            totalTasksCompleted: state.totalTasksCompleted,
+            totalXPEarned: state.totalXPEarned,
+            equippedAvatar: state.equippedAvatar,
+            unlockedAvatars: state.unlockedAvatars,
+        }))
+    );
     const completions = useTaskStore((state) => state.completions);
     const [activeCategory, setActiveCategory] = useState<(typeof categories)[number]['key']>('tasks');
     const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
-    const enhancedAchievements = useMemo(() => achievements.map((achievement) => {
-        const def = ACHIEVEMENT_DEFS.find((definition) => definition.key === achievement.key);
-        let progress = null;
-        let progressRatio = 0;
+    const { enhancedAchievements, focusAchievement, totalUnlocked, categoryStats, achievementsByCategory } = useMemo(() => {
+        const statsByCategory = new Map<
+            (typeof categories)[number]['key'],
+            { total: number; unlocked: number }
+        >(
+            categories.map((category) => [category.key, { total: 0, unlocked: 0 }])
+        );
+        const groupedAchievements = new Map<
+            (typeof categories)[number]['key'],
+            EnhancedAchievement[]
+        >(
+            categories.map((category) => [category.key, []])
+        );
+        const nextEnhancedAchievements = achievements.map((achievement) => {
+            const definition = achievementDefByKey.get(achievement.key);
+            let progress: AchievementProgress | null = null;
+            let progressRatio = 0;
 
-        if (!achievement.unlockedAt && def?.getProgress) {
-            progress = def.getProgress(user, completions);
-            if (progress && progress.max > 0) {
-                progress.current = Math.min(progress.current, progress.max);
-                progressRatio = Math.max(0, Math.min(1, progress.current / progress.max));
+            if (!achievement.unlockedAt && definition?.getProgress) {
+                const rawProgress = definition.getProgress(user, completions);
+
+                if (rawProgress) {
+                    const current = rawProgress.max > 0
+                        ? Math.min(rawProgress.current, rawProgress.max)
+                        : rawProgress.current;
+
+                    progress = {
+                        ...rawProgress,
+                        current,
+                    };
+
+                    if (rawProgress.max > 0) {
+                        progressRatio = Math.max(0, Math.min(1, current / rawProgress.max));
+                    }
+                }
             }
-        }
+
+            const enhancedAchievement = {
+                ...achievement,
+                progress,
+                progressRatio,
+            };
+
+            groupedAchievements.get(achievement.category)?.push(enhancedAchievement);
+
+            const stats = statsByCategory.get(achievement.category);
+            if (stats) {
+                stats.total += 1;
+                if (achievement.unlockedAt) {
+                    stats.unlocked += 1;
+                }
+            }
+
+            return enhancedAchievement;
+        });
+
+        let nextFocusAchievement: EnhancedAchievement | null = null;
+        groupedAchievements.forEach((group) => {
+            group.sort((a, b) => {
+                if (!!a.unlockedAt !== !!b.unlockedAt) return a.unlockedAt ? 1 : -1;
+                return b.progressRatio - a.progressRatio;
+            });
+
+            group.forEach((achievement) => {
+                if (
+                    !achievement.unlockedAt
+                    && achievement.progress
+                    && achievement.progress.max > 0
+                    && (!nextFocusAchievement || achievement.progressRatio > nextFocusAchievement.progressRatio)
+                ) {
+                    nextFocusAchievement = achievement;
+                }
+            });
+        });
 
         return {
-            ...achievement,
-            progress,
-            progressRatio,
+            enhancedAchievements: nextEnhancedAchievements,
+            focusAchievement: nextFocusAchievement,
+            totalUnlocked: nextEnhancedAchievements.filter((achievement) => achievement.unlockedAt).length,
+            categoryStats: statsByCategory,
+            achievementsByCategory: groupedAchievements,
         };
-    }), [achievements, completions, user]);
-
-    const lockedWithProgress = enhancedAchievements
-        .filter((achievement) => !achievement.unlockedAt && achievement.progress && achievement.progress.max > 0)
-        .sort((a, b) => b.progressRatio - a.progressRatio);
-    const focusAchievement = lockedWithProgress[0] ?? null;
-    const unlockedAchievements = enhancedAchievements
-        .filter((achievement) => achievement.unlockedAt)
-        .sort((a, b) => new Date(b.unlockedAt ?? 0).getTime() - new Date(a.unlockedAt ?? 0).getTime());
-    const totalUnlocked = unlockedAchievements.length;
+    }, [achievements, completions, user]);
 
     const activeCategoryMeta = categories.find((category) => category.key === activeCategory) ?? categories[0];
-    const activeCategoryAchievements = enhancedAchievements
-        .filter((achievement) => achievement.category === activeCategory)
-        .sort((a, b) => {
-            if (!!a.unlockedAt !== !!b.unlockedAt) return a.unlockedAt ? 1 : -1;
-            return b.progressRatio - a.progressRatio;
-        });
+    const activeCategoryAchievements = achievementsByCategory.get(activeCategory) ?? [];
     const unlockedInCategory = activeCategoryAchievements.filter((achievement) => achievement.unlockedAt).length;
     const selectedAchievement = activeCategoryAchievements.find((achievement) => achievement.key === selectedKey)
         ?? activeCategoryAchievements[0]
@@ -178,8 +253,7 @@ export function AchievementGrid() {
 
                 <div className="grid grid-cols-2 gap-2">
                     {categories.map((category) => {
-                        const count = enhancedAchievements.filter((achievement) => achievement.category === category.key && achievement.unlockedAt).length;
-                        const total = enhancedAchievements.filter((achievement) => achievement.category === category.key).length;
+                        const stats = categoryStats.get(category.key) ?? { total: 0, unlocked: 0 };
                         const active = category.key === activeCategory;
 
                         return (
@@ -195,7 +269,7 @@ export function AchievementGrid() {
                                 <div className="flex items-center justify-between gap-2">
                                     <span className={`text-sm font-bold truncate ${active ? 'text-white' : category.accent}`}>{category.label}</span>
                                     <span className={`text-[11px] font-semibold shrink-0 ${active ? category.activeText : 'text-[var(--color-text-secondary)]'}`}>
-                                        {count}/{total}
+                                        {stats.unlocked}/{stats.total}
                                     </span>
                                 </div>
                             </button>
