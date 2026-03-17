@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, ChevronLeft, Sparkles, Calendar, Clock, Tag, Repeat, Zap, AlertTriangle, Flame, Shield, Check } from 'lucide-react';
 import { Task, Priority, Recurrence } from '../../types';
@@ -55,6 +55,9 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
     const [tagInput, setTagInput] = useState('');
     const [tags, setTags] = useState<string[]>(editTask?.tags || []);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 639px)').matches);
+    const [keyboardInset, setKeyboardInset] = useState(0);
+    const contentRef = useRef<HTMLDivElement | null>(null);
 
     const toISOOrNull = (value: string): string | null => {
         if (!value) return null;
@@ -115,6 +118,53 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
     const progress = ((currentStep + 1) / STEPS.length) * 100;
     const mascot = getMascotEmoji(currentStep, title, priority);
 
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(max-width: 639px)');
+        const handleChange = (event: MediaQueryListEvent) => {
+            setIsMobile(event.matches);
+        };
+
+        setIsMobile(mediaQuery.matches);
+        mediaQuery.addEventListener('change', handleChange);
+
+        return () => mediaQuery.removeEventListener('change', handleChange);
+    }, []);
+
+    useEffect(() => {
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!isMobile || !window.visualViewport) {
+            setKeyboardInset(0);
+            return;
+        }
+
+        const updateKeyboardInset = () => {
+            const viewport = window.visualViewport;
+            const inset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+            setKeyboardInset(inset > 80 ? inset : 0);
+        };
+
+        updateKeyboardInset();
+        window.visualViewport.addEventListener('resize', updateKeyboardInset);
+        window.visualViewport.addEventListener('scroll', updateKeyboardInset);
+
+        return () => {
+            window.visualViewport?.removeEventListener('resize', updateKeyboardInset);
+            window.visualViewport?.removeEventListener('scroll', updateKeyboardInset);
+        };
+    }, [isMobile]);
+
+    useEffect(() => {
+        contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [currentStep]);
+
     const slideVariants = {
         enter: (dir: number) => ({
             x: dir > 0 ? 80 : -80,
@@ -142,23 +192,26 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                 onClick={onClose}
             />
 
-            {/* Slide-in Panel from Right */}
+            {/* Mobile-first sheet with desktop side panel */}
             <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
+                initial={isMobile ? { y: '100%' } : { x: '100%' }}
+                animate={isMobile ? { y: 0 } : { x: 0 }}
+                exit={isMobile ? { y: '100%' } : { x: '100%' }}
                 transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-                className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[420px] sm:max-w-[85vw] flex flex-col"
+                className="fixed inset-x-0 bottom-0 z-50 flex flex-col pt-3 sm:inset-y-0 sm:left-auto sm:w-[420px] sm:max-w-[85vw] sm:pt-0"
                 style={{
-                    paddingTop: 'env(safe-area-inset-top, 0px)',
-                    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                    paddingLeft: 'env(safe-area-inset-left, 0px)',
                     paddingRight: 'env(safe-area-inset-right, 0px)',
+                    paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${keyboardInset}px)`,
                 }}
             >
-                <div className="flex flex-col h-full bg-[var(--color-bg)] sm:rounded-l-3xl shadow-2xl overflow-hidden border-l border-[var(--color-border)]">
+                <div className="flex max-h-[min(46rem,calc(100dvh-var(--safe-top)-0.75rem))] flex-col overflow-hidden rounded-t-[2rem] border border-b-0 border-[var(--color-border)] bg-[var(--color-bg)] shadow-2xl sm:h-full sm:max-h-none sm:rounded-none sm:rounded-l-3xl sm:border-b sm:border-r-0">
+                    <div className="flex justify-center pt-2 sm:hidden">
+                        <div className="h-1.5 w-12 rounded-full bg-[var(--color-border)]" />
+                    </div>
                     
                     {/* Header */}
-                    <div className="relative px-5 pt-5 pb-3">
+                    <div className="relative shrink-0 px-5 pt-4 pb-3 sm:pt-5">
                         {/* Close Button */}
                         <div className="flex items-center justify-between mb-4">
                             <motion.button
@@ -203,7 +256,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                     </div>
 
                     {/* Mascot + Title */}
-                    <div className="px-5 py-3">
+                    <div className="shrink-0 px-5 py-3">
                         <div className="flex items-center gap-3">
                             <motion.div
                                 key={mascot}
@@ -237,7 +290,11 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                     </div>
 
                     {/* Step Content */}
-                    <div className="flex-1 overflow-y-auto px-5 pb-4">
+                    <div
+                        ref={contentRef}
+                        className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6"
+                        style={{ WebkitOverflowScrolling: 'touch' }}
+                    >
                         <AnimatePresence mode="wait" custom={direction}>
                             <motion.div
                                 key={currentStep}
@@ -259,7 +316,8 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                                 onChange={(e) => setTitle(e.target.value)}
                                                 placeholder="e.g. Learn React hooks 🚀"
                                                 className="w-full px-5 py-4 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all text-base font-semibold placeholder:text-[var(--color-text-secondary)]/40 placeholder:font-normal"
-                                                autoFocus
+                                                autoFocus={!isMobile}
+                                                enterKeyHint="next"
                                                 onKeyDown={(e) => e.key === 'Enter' && canGoNext && goNext()}
                                             />
                                             {title.length > 0 && (
@@ -284,7 +342,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                                 onChange={(e) => setDescription(e.target.value)}
                                                 placeholder="Add more details about your quest..."
                                                 rows={3}
-                                                className="w-full px-5 py-3.5 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all text-sm resize-none placeholder:text-[var(--color-text-secondary)]/40"
+                                                className="w-full px-5 py-3.5 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all text-base sm:text-sm resize-none placeholder:text-[var(--color-text-secondary)]/40"
                                             />
                                         </div>
 
@@ -378,9 +436,12 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                                     type="datetime-local"
                                                     value={deadline}
                                                     onChange={(e) => setDeadline(e.target.value)}
-                                                    className="w-full box-border bg-transparent border-none outline-none appearance-none text-sm px-5 py-3.5 m-0 block font-medium"
+                                                    className="w-full box-border bg-transparent border-none outline-none appearance-none text-base sm:text-sm px-5 py-3.5 m-0 block font-medium"
                                                 />
                                             </div>
+                                            <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
+                                                Optional. Leave empty if this quest has no deadline.
+                                            </p>
                                         </motion.div>
 
                                         {/* Reminder */}
@@ -398,9 +459,12 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                                     type="datetime-local"
                                                     value={startDate}
                                                     onChange={(e) => setStartDate(e.target.value)}
-                                                    className="w-full box-border bg-transparent border-none outline-none appearance-none text-sm px-5 py-3.5 m-0 block font-medium"
+                                                    className="w-full box-border bg-transparent border-none outline-none appearance-none text-base sm:text-sm px-5 py-3.5 m-0 block font-medium"
                                                 />
                                             </div>
+                                            <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
+                                                Optional reminder date and time.
+                                            </p>
                                         </motion.div>
 
                                         {/* Recurrence */}
@@ -455,8 +519,8 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                                     onChange={(e) => setTagInput(e.target.value)}
                                                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
                                                     placeholder="Type a tag..."
-                                                    className="flex-1 px-5 py-3.5 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 text-sm font-medium transition-all placeholder:text-[var(--color-text-secondary)]/40"
-                                                    autoFocus
+                                                    className="flex-1 px-5 py-3.5 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 text-base sm:text-sm font-medium transition-all placeholder:text-[var(--color-text-secondary)]/40"
+                                                    autoFocus={!isMobile}
                                                 />
                                                 <motion.button
                                                     type="button"
@@ -557,7 +621,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                     </div>
 
                     {/* Bottom Action Bar */}
-                    <div className="px-5 pb-5 pt-3 border-t border-[var(--color-border)] bg-[var(--color-bg)]">
+                    <div className="shrink-0 border-t border-[var(--color-border)] bg-[var(--color-bg)] px-5 pb-5 pt-3">
                         <div className="flex gap-3">
                             {currentStep > 0 && (
                                 <motion.button
