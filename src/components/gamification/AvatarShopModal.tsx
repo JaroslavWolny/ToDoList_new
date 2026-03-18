@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Lock, Check, Sparkles, ShoppingBag, Star, Coins } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -23,26 +23,46 @@ const getRarity = (cost: number) => {
 
 type TabType = 'all' | 'owned' | 'locked';
 
+// Stable selector — defined outside component so useShallow's reference check works correctly
+const selectShopState = (state: ReturnType<typeof useUserStore.getState>) => ({
+    coins: state.coins,
+    unlockedAvatars: state.unlockedAvatars,
+    equippedAvatar: state.equippedAvatar,
+    buyAvatar: state.buyAvatar,
+    equipAvatar: state.equipAvatar,
+});
+
+const isAvatarUnlocked = (avatarId: string, cost: number, unlockedAvatars: string[]) =>
+    cost === 0 || unlockedAvatars.includes(avatarId);
+
 export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
     const { coins, unlockedAvatars, equippedAvatar, buyAvatar, equipAvatar } = useUserStore(
-        useShallow((state) => ({
-            coins: state.coins,
-            unlockedAvatars: state.unlockedAvatars,
-            equippedAvatar: state.equippedAvatar,
-            buyAvatar: state.buyAvatar,
-            equipAvatar: state.equipAvatar,
-        }))
+        useShallow(selectShopState)
     );
     const [activeTab, setActiveTab] = useState<TabType>('all');
     const [justBought, setJustBought] = useState<string | null>(null);
     const [justEquipped, setJustEquipped] = useState<string | null>(null);
-    const feedbackTimeoutRef = useRef<number | null>(null);
+    const buyFeedbackTimeoutRef = useRef<number | null>(null);
+    const equipFeedbackTimeoutRef = useRef<number | null>(null);
     const isMobile = useIsMobile();
+
+    // Body scroll lock while modal is open
+    useEffect(() => {
+        if (!isOpen) return;
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [isOpen]);
 
     useEffect(() => {
         return () => {
-            if (feedbackTimeoutRef.current !== null) {
-                window.clearTimeout(feedbackTimeoutRef.current);
+            if (buyFeedbackTimeoutRef.current !== null) {
+                window.clearTimeout(buyFeedbackTimeoutRef.current);
+            }
+            if (equipFeedbackTimeoutRef.current !== null) {
+                window.clearTimeout(equipFeedbackTimeoutRef.current);
             }
         };
     }, []);
@@ -54,11 +74,11 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
             equipAvatar(avatarId);
             setJustEquipped(avatarId);
 
-            if (feedbackTimeoutRef.current !== null) {
-                window.clearTimeout(feedbackTimeoutRef.current);
+            if (buyFeedbackTimeoutRef.current !== null) {
+                window.clearTimeout(buyFeedbackTimeoutRef.current);
             }
 
-            feedbackTimeoutRef.current = window.setTimeout(() => {
+            buyFeedbackTimeoutRef.current = window.setTimeout(() => {
                 setJustBought(null);
                 setJustEquipped(null);
             }, 2000);
@@ -69,29 +89,35 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
         equipAvatar(avatarId);
         setJustEquipped(avatarId);
 
-        if (feedbackTimeoutRef.current !== null) {
-            window.clearTimeout(feedbackTimeoutRef.current);
+        if (equipFeedbackTimeoutRef.current !== null) {
+            window.clearTimeout(equipFeedbackTimeoutRef.current);
         }
 
-        feedbackTimeoutRef.current = window.setTimeout(() => setJustEquipped(null), 1500);
+        equipFeedbackTimeoutRef.current = window.setTimeout(() => setJustEquipped(null), 1500);
     }, [equipAvatar]);
 
-    if (!isOpen) return null;
+    const ownedCount = useMemo(() =>
+        AVAILABLE_AVATARS.filter(a => isAvatarUnlocked(a.id, a.cost, unlockedAvatars)).length,
+        [unlockedAvatars]
+    );
 
-    const filteredAvatars = AVAILABLE_AVATARS.filter(avatar => {
-        const isUnlocked = avatar.cost === 0 || unlockedAvatars.includes(avatar.id);
-        if (activeTab === 'owned') return isUnlocked;
-        if (activeTab === 'locked') return !isUnlocked;
-        return true;
-    });
+    const filteredAvatars = useMemo(() =>
+        AVAILABLE_AVATARS.filter(avatar => {
+            const unlocked = isAvatarUnlocked(avatar.id, avatar.cost, unlockedAvatars);
+            if (activeTab === 'owned') return unlocked;
+            if (activeTab === 'locked') return !unlocked;
+            return true;
+        }),
+        [activeTab, unlockedAvatars]
+    );
 
-    const ownedCount = AVAILABLE_AVATARS.filter(a => a.cost === 0 || unlockedAvatars.includes(a.id)).length;
-
-    const tabs: { id: TabType; label: string; emoji: string; count?: number }[] = [
+    const tabs: { id: TabType; label: string; emoji: string; count?: number }[] = useMemo(() => [
         { id: 'all', label: 'All', emoji: '🏪', count: AVAILABLE_AVATARS.length },
         { id: 'owned', label: 'Owned', emoji: '✅', count: ownedCount },
         { id: 'locked', label: 'Locked', emoji: '🔒', count: AVAILABLE_AVATARS.length - ownedCount },
-    ];
+    ], [ownedCount]);
+
+    if (!isOpen) return null;
 
     return (
         <AnimatePresence>
@@ -123,6 +149,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                     paddingLeft: 'env(safe-area-inset-left, 0px)',
                     paddingRight: 'env(safe-area-inset-right, 0px)',
                     paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                    overscrollBehavior: 'none',
                 }}
             >
                 <div className={`flex flex-col flex-1 overflow-hidden bg-[var(--color-bg)] shadow-2xl ${
@@ -230,7 +257,8 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
 
                     {/* Avatar Grid */}
                     <div
-                        className="flex-1 overflow-y-auto px-5 pb-5 space-y-3"
+                        className="flex-1 overflow-y-auto px-5 pb-5 space-y-3 overscroll-contain"
+                        style={{ WebkitOverflowScrolling: 'touch' }}
                     >
                         <AnimatePresence mode="wait">
                             <motion.div
@@ -259,7 +287,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                                 )}
 
                                 {filteredAvatars.map((avatar, index) => {
-                                    const isUnlocked = avatar.cost === 0 || unlockedAvatars.includes(avatar.id);
+                                    const unlocked = isAvatarUnlocked(avatar.id, avatar.cost, unlockedAvatars);
                                     const isEquipped = equippedAvatar === avatar.id || (equippedAvatar === null && avatar.id === 'default');
                                     const canAfford = coins >= avatar.cost;
                                     const IconComponent = avatarIcons[avatar.icon as keyof typeof avatarIcons];
@@ -272,7 +300,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                                             key={avatar.id}
                                             initial={{ opacity: 0, x: 40 }}
                                             animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: index * 0.06, type: 'spring', damping: 20 }}
+                                            transition={{ delay: Math.min(index * 0.06, 0.3), type: 'spring', damping: 20 }}
                                             className={`relative rounded-2xl border-2 overflow-hidden transition-all ${
                                                 isEquipped
                                                     ? 'border-primary-500 bg-primary-500/5 shadow-lg shadow-primary-500/10'
@@ -289,7 +317,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                                                         {rarity.label}
                                                     </span>
                                                 </div>
-                                                {!isUnlocked && (
+                                                {!unlocked && (
                                                     <div className="flex items-center gap-1">
                                                         <span className="text-xs">🪙</span>
                                                         <span className={`text-xs font-extrabold ${canAfford ? 'text-yellow-500' : 'text-red-400'}`}>
@@ -319,19 +347,19 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                                                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${
                                                         isEquipped
                                                             ? 'bg-gradient-to-br from-primary-500/20 to-violet-500/20 shadow-lg'
-                                                            : isUnlocked
+                                                            : unlocked
                                                             ? 'bg-gradient-to-br from-gray-700 to-gray-900'
                                                             : 'bg-gradient-to-br from-gray-800 to-gray-950'
                                                     }`}>
                                                         {IconComponent && (
                                                             <IconComponent
-                                                                className={`w-8 h-8 ${isUnlocked ? avatar.color : 'text-gray-600'}`}
+                                                                className={`w-8 h-8 ${unlocked ? avatar.color : 'text-gray-600'}`}
                                                                 strokeWidth={isEquipped ? 2.5 : 2}
                                                             />
                                                         )}
 
                                                         {/* Lock overlay */}
-                                                        {!isUnlocked && (
+                                                        {!unlocked && (
                                                             <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-2xl backdrop-blur-[2px]">
                                                                 <Lock className="w-5 h-5 text-white/50" />
                                                             </div>
@@ -368,7 +396,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                                                                 <Check className="w-3 h-3" /> Equipped
                                                             </motion.span>
                                                         )}
-                                                        {isUnlocked && !isEquipped && (
+                                                        {unlocked && !isEquipped && (
                                                             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                                                                 ✅ Owned
                                                             </span>
@@ -392,7 +420,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                                                         <div className="w-10 h-10 rounded-xl bg-primary-500/10 flex items-center justify-center">
                                                             <Star className="w-5 h-5 text-primary-400 fill-primary-400" />
                                                         </div>
-                                                    ) : isUnlocked ? (
+                                                    ) : unlocked ? (
                                                         <motion.button
                                                             whileHover={{ scale: 1.1 }}
                                                             whileTap={{ scale: 0.9 }}

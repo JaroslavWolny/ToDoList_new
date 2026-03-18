@@ -5,8 +5,10 @@ import { Task, Priority, Recurrence } from '../../types';
 import { toDateTimeLocalInputValue } from '../../lib/dates';
 import { useIsMobile } from '../../lib/useIsMobile';
 
+type TaskFormData = Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate' | 'lastPenaltyAt'>;
+
 interface TaskFormProps {
-    onSubmit: (task: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate'>) => void;
+    onSubmit: (task: TaskFormData) => void;
     onClose: () => void;
     editTask?: Task | null;
 }
@@ -32,6 +34,9 @@ const recurrenceOptions: { value: Recurrence; label: string; emoji: string; desc
 ];
 
 
+const QUICK_IDEAS = ['📚 Study', '🏃 Exercise', '🧹 Clean up', '💻 Code', '📧 Email', '🛒 Shopping'];
+
+const POPULAR_TAGS = ['work', 'personal', 'health', 'learning', 'urgent', 'home'];
 
 // Mascot reactions - only change on step transitions, not while typing
 const getMascotEmoji = (step: number, priority: Priority) => {
@@ -43,6 +48,28 @@ const getMascotEmoji = (step: number, priority: Priority) => {
     if (step === 2) return '⏰';
     if (step === 3) return '🏷️';
     return '✨';
+};
+
+const toISOOrNull = (value: string): string | null => {
+    if (!value) return null;
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed.toISOString();
+};
+
+const slideVariants = {
+    enter: (dir: number) => ({
+        x: dir > 0 ? 80 : -80,
+        opacity: 0,
+    }),
+    center: {
+        x: 0,
+        opacity: 1,
+    },
+    exit: (dir: number) => ({
+        x: dir > 0 ? -80 : 80,
+        opacity: 0,
+    }),
 };
 
 export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
@@ -57,17 +84,19 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
     const [tagInput, setTagInput] = useState('');
     const [tags, setTags] = useState<string[]>(editTask?.tags || []);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [keyboardOpen, setKeyboardOpen] = useState(false);
     const isMobile = useIsMobile();
     const contentRef = useRef<HTMLDivElement | null>(null);
     const sheetRef = useRef<HTMLDivElement | null>(null);
     const submitTimeoutRef = useRef<number | null>(null);
+    const initialViewportHeightRef = useRef<number>(window.visualViewport?.height ?? window.innerHeight);
+    const isMountedRef = useRef(true);
 
-    const toISOOrNull = (value: string): string | null => {
-        if (!value) return null;
-        const parsed = new Date(value);
-        if (Number.isNaN(parsed.getTime())) return null;
-        return parsed.toISOString();
-    };
+    // Track mount state for safe timeout callbacks
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
 
     const canGoNext = useMemo(() => {
         if (currentStep === 0) return title.trim().length > 0;
@@ -98,6 +127,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
         }
 
         submitTimeoutRef.current = window.setTimeout(() => {
+            if (!isMountedRef.current) return;
             onSubmit({
                 title: title.trim(),
                 description: description.trim(),
@@ -112,18 +142,19 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
     }, [title, description, priority, deadline, startDate, recurrence, tags, onSubmit, onClose]);
 
     const addTag = useCallback(() => {
-        if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-            setTags([...tags, tagInput.trim()]);
+        const trimmed = tagInput.trim();
+        if (trimmed) {
+            setTags(prev => prev.includes(trimmed) ? prev : [...prev, trimmed]);
             setTagInput('');
         }
-    }, [tagInput, tags]);
+    }, [tagInput]);
 
     const removeTag = useCallback((tag: string) => {
-        setTags(tags.filter((t) => t !== tag));
-    }, [tags]);
+        setTags(prev => prev.filter((t) => t !== tag));
+    }, []);
 
-    const progress = ((currentStep + 1) / STEPS.length) * 100;
-    const mascot = getMascotEmoji(currentStep, priority);
+    const progress = useMemo(() => ((currentStep + 1) / STEPS.length) * 100, [currentStep]);
+    const mascot = useMemo(() => getMascotEmoji(currentStep, priority), [currentStep, priority]);
 
     useEffect(() => {
         const previousOverflow = document.body.style.overflow;
@@ -153,70 +184,78 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
         const viewport = window.visualViewport;
         if (!viewport) return;
 
+        // Store initial height on mount
+        initialViewportHeightRef.current = viewport.height;
+
+        const KEYBOARD_THRESHOLD = 100; // px – viewport must shrink by this much to count as keyboard open
+
         const onResize = () => {
             const sheet = sheetRef.current;
             if (!sheet) return;
 
-            // Calculate available height = visual viewport height
-            const availableHeight = viewport.height;
-            // Offset top accounts for iOS viewport scroll when keyboard pushes content
-            const offsetTop = viewport.offsetTop;
+            const initialHeight = initialViewportHeightRef.current;
+            const currentHeight = viewport.height;
+            const isKbOpen = initialHeight - currentHeight > KEYBOARD_THRESHOLD;
 
-            sheet.style.height = `${availableHeight}px`;
-            sheet.style.top = `${offsetTop}px`;
-            sheet.style.bottom = 'auto';
+            setKeyboardOpen(isKbOpen);
+
+            if (isKbOpen) {
+                // Position sheet exactly within the visual viewport
+                const offsetTop = viewport.offsetTop;
+                sheet.style.height = `${currentHeight}px`;
+                sheet.style.top = `${offsetTop}px`;
+                sheet.style.bottom = 'auto';
+                sheet.style.maxHeight = 'none';
+            } else {
+                // Reset to default bottom-sheet layout
+                sheet.style.height = '';
+                sheet.style.top = '';
+                sheet.style.bottom = '0';
+                sheet.style.maxHeight = '';
+            }
 
             // Scroll the focused input into view within the scrollable content
-            requestAnimationFrame(() => {
-                const activeEl = document.activeElement;
-                if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
-                    activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            });
-        };
-
-        const onBlur = () => {
-            const sheet = sheetRef.current;
-            if (!sheet) return;
-            sheet.style.height = '';
-            sheet.style.top = '';
-            sheet.style.bottom = '0';
+            if (isKbOpen) {
+                requestAnimationFrame(() => {
+                    const activeEl = document.activeElement;
+                    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+                        activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                });
+            }
         };
 
         viewport.addEventListener('resize', onResize);
         viewport.addEventListener('scroll', onResize);
 
-        // Also listen for focus events inside the sheet to trigger scrollIntoView
+        // Also listen for focus events inside the sheet to trigger resize after keyboard opens
         const sheet = sheetRef.current;
         const onFocusIn = () => {
-            // Small delay to let the keyboard finish opening
-            setTimeout(() => onResize(), 300);
+            // Delay to let the keyboard finish opening
+            setTimeout(() => onResize(), 350);
+        };
+        const onFocusOut = () => {
+            // Delay slightly to prevent flicker if focus moves between inputs
+            setTimeout(() => {
+                const activeEl = document.activeElement;
+                const isStillFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+                if (!isStillFocused) {
+                    onResize();
+                }
+            }, 100);
         };
         sheet?.addEventListener('focusin', onFocusIn);
-        sheet?.addEventListener('focusout', onBlur);
+        sheet?.addEventListener('focusout', onFocusOut);
 
         return () => {
             viewport.removeEventListener('resize', onResize);
             viewport.removeEventListener('scroll', onResize);
             sheet?.removeEventListener('focusin', onFocusIn);
-            sheet?.removeEventListener('focusout', onBlur);
+            sheet?.removeEventListener('focusout', onFocusOut);
         };
     }, [isMobile]);
 
-    const slideVariants = {
-        enter: (dir: number) => ({
-            x: dir > 0 ? 80 : -80,
-            opacity: 0,
-        }),
-        center: {
-            x: 0,
-            opacity: 1,
-        },
-        exit: (dir: number) => ({
-            x: dir > 0 ? -80 : 80,
-            opacity: 0,
-        }),
-    };
+    // slideVariants is defined outside the component to avoid re-creation on every render
 
     return (
         <AnimatePresence>
@@ -242,6 +281,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                     paddingLeft: 'env(safe-area-inset-left, 0px)',
                     paddingRight: 'env(safe-area-inset-right, 0px)',
                     paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                    overscrollBehavior: 'none',
                 }}
             >
                 <div className="flex max-h-[100%] sm:max-h-none flex-col overflow-hidden rounded-t-[2rem] border border-b-0 border-[var(--color-border)] bg-[var(--color-bg)] shadow-2xl sm:h-full sm:rounded-none sm:rounded-l-3xl sm:border-b sm:border-r-0">
@@ -298,10 +338,10 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                     <div className="shrink-0 px-5 py-3">
                         <div className="flex items-center gap-3">
                             <motion.div
-                                key={mascot}
-                                initial={{ scale: 0, rotate: -180 }}
-                                animate={{ scale: 1, rotate: 0 }}
-                                transition={{ type: 'spring', damping: 12, stiffness: 200 }}
+                                key={currentStep}
+                                initial={{ scale: 0.5, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ type: 'spring', damping: 15, stiffness: 200 }}
                                 className="text-3xl select-none"
                             >
                                 {mascot}
@@ -332,7 +372,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                     <div
                         ref={contentRef}
                         className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6"
-                        style={{ WebkitOverflowScrolling: 'touch' }}
+                        style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
                     >
                         <AnimatePresence mode="wait" custom={direction}>
                             <motion.div
@@ -372,39 +412,44 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                             )}
                                         </div>
 
-                                        <div>
-                                            <label className="block text-xs font-bold text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">
-                                                Description (optional)
-                                            </label>
-                                            <textarea
-                                                value={description}
-                                                onChange={(e) => setDescription(e.target.value)}
-                                                placeholder="Add more details about your quest..."
-                                                rows={3}
-                                                className="w-full px-5 py-3.5 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all text-base sm:text-sm resize-none placeholder:text-[var(--color-text-secondary)]/40"
-                                            />
-                                        </div>
-
-                                        {/* Quick suggestion chips */}
-                                        <div>
-                                            <p className="text-xs font-bold text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">
-                                                Quick ideas ✨
-                                            </p>
-                                            <div className="flex flex-wrap gap-2">
-                                                {['📚 Study', '🏃 Exercise', '🧹 Clean up', '💻 Code', '📧 Email', '🛒 Shopping'].map((idea) => (
-                                                    <motion.button
-                                                        key={idea}
-                                                        type="button"
-                                                        whileHover={{ scale: 1.05 }}
-                                                        whileTap={{ scale: 0.95 }}
-                                                        onClick={() => setTitle(idea)}
-                                                        className="px-3.5 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface-hover)] hover:border-primary-500/30 transition-all"
-                                                    >
-                                                        {idea}
-                                                    </motion.button>
-                                                ))}
+                                        {/* Hide description when keyboard is open on mobile to save space */}
+                                        {!(keyboardOpen && isMobile) && (
+                                            <div>
+                                                <label className="block text-xs font-bold text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">
+                                                    Description (optional)
+                                                </label>
+                                                <textarea
+                                                    value={description}
+                                                    onChange={(e) => setDescription(e.target.value)}
+                                                    placeholder="Add more details about your quest..."
+                                                    rows={3}
+                                                    className="w-full px-5 py-3.5 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all text-base sm:text-sm resize-none placeholder:text-[var(--color-text-secondary)]/40"
+                                                />
                                             </div>
-                                        </div>
+                                        )}
+
+                                        {/* Hide quick ideas when keyboard is open on mobile */}
+                                        {!(keyboardOpen && isMobile) && (
+                                            <div>
+                                                <p className="text-xs font-bold text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">
+                                                    Quick ideas ✨
+                                                </p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {QUICK_IDEAS.map((idea) => (
+                                                        <motion.button
+                                                            key={idea}
+                                                            type="button"
+                                                            whileHover={{ scale: 1.05 }}
+                                                            whileTap={{ scale: 0.95 }}
+                                                            onClick={() => setTitle(idea)}
+                                                            className="px-3.5 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-medium hover:bg-[var(--color-surface-hover)] hover:border-primary-500/30 transition-all"
+                                                        >
+                                                            {idea}
+                                                        </motion.button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
@@ -606,13 +651,13 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                                 Popular tags 🔖
                                             </p>
                                             <div className="flex flex-wrap gap-2">
-                                                {['work', 'personal', 'health', 'learning', 'urgent', 'home'].filter(t => !tags.includes(t)).map((suggestion) => (
+                                                {POPULAR_TAGS.filter(t => !tags.includes(t)).map((suggestion) => (
                                                     <motion.button
                                                         key={suggestion}
                                                         type="button"
                                                         whileHover={{ scale: 1.05 }}
                                                         whileTap={{ scale: 0.95 }}
-                                                        onClick={() => setTags([...tags, suggestion])}
+                                                        onClick={() => setTags(prev => [...prev, suggestion])}
                                                         className="px-3 py-1.5 rounded-lg bg-[var(--color-surface)] border border-dashed border-[var(--color-border)] text-xs text-[var(--color-text-secondary)] hover:border-primary-500/50 hover:text-primary-500 transition-all"
                                                     >
                                                         + {suggestion}
@@ -635,11 +680,14 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                                 <p className="text-sm font-bold">{title || 'Untitled quest'}</p>
                                                 {description && <p className="text-xs text-[var(--color-text-secondary)]">{description}</p>}
                                                 <div className="flex flex-wrap gap-1.5 mt-2">
-                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                                        priorityOptions.find(p => p.value === priority)?.bgColor
-                                                    } ${priorityOptions.find(p => p.value === priority)?.color}`}>
-                                                        {priorityOptions.find(p => p.value === priority)?.emoji} {priority}
-                                                    </span>
+                                                {(() => {
+                                                    const p = priorityOptions.find(opt => opt.value === priority);
+                                                    return (
+                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${p?.bgColor} ${p?.color}`}>
+                                                            {p?.emoji} {priority}
+                                                        </span>
+                                                    );
+                                                })()}
                                                     {recurrence !== 'NONE' && (
                                                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500">
                                                             🔄 {recurrence}

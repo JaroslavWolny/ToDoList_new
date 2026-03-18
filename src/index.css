@@ -145,6 +145,15 @@
   }
 }
 
+/* Prevent overscroll / rubber-banding from leaking through modals on iOS */
+.modal-scroll-lock {
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
+}
+
 /* Particle animation for XP */
 @keyframes particleFloat {
   0% {
