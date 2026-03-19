@@ -24,7 +24,7 @@ export const completeTaskTransaction = (
     // ── 1. Compute all user-store deltas up front ──────────────────
     let xpDelta = result.xpEarned;
     let coinsDelta = 0;
-    let healthDelta = 1; // gainHealth
+    const healthDelta = 1; // gainHealth
 
     if (result.reward) {
         if (result.reward.currency === 'XP') {
