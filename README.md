@@ -192,6 +192,12 @@ A comprehensive senior-level audit identified and resolved **17 out of 21** issu
 - Resolved "impure function" React warnings in `AvatarShopModal` by moving random number generation into `useEffect` / `useMemo` hooks.
 - Fixed TypeScript errors and type definitions within the `AchievementGrid` component.
 
+**Performance & UX Polish (Recent):**
+- Replaced intrusive native browser alerts in the Settings page with elegant, inline toast notifications.
+- Optimized date parsing in `taskStore` using `Date.parse()` to improve performance during overdue task processing.
+- Added font caching to `vite-og-plugin.ts`, significantly speeding up dynamic OG Share Card generation by avoiding redundant network requests.
+- Polished the `TaskForm` category selection UI to ensure smooth mobile scrolling and perfect overflow handling.
+
 ---
 
 ## 💡 The Philosophy

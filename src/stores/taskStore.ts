@@ -104,7 +104,7 @@ export const getOverdueTasks = (tasks: Task[], now = new Date()): Task[] => {
         (task) =>
             task.status === 'ACTIVE'
             && task.deadline !== null
-            && new Date(task.deadline).getTime() < nowMs
+            && Date.parse(task.deadline) < nowMs
     );
 };
 
@@ -293,15 +293,16 @@ export const useTaskStore = create<TaskStore>()(
             processOverdueTasks: (gamificationLevel) => {
                 const state = get();
                 const now = new Date();
+                const nowMs = now.getTime();
                 const results: { taskId: string; xpLost: number }[] = [];
                 const latestPenaltyByTaskId = new Map<string, string>();
 
                 const overdueTasks = state.tasks.filter(
-                    (t) => t.status === 'ACTIVE' && t.deadline && new Date(t.deadline) < now
+                    (t) => t.status === 'ACTIVE' && t.deadline && Date.parse(t.deadline) < nowMs
                 );
 
                 overdueTasks.forEach((task) => {
-                    const deadlineTime = new Date(task.deadline!).getTime();
+                    const deadlineTime = Date.parse(task.deadline!);
                     if (Number.isNaN(deadlineTime)) return;
 
                     const periodMs = getPenaltyPeriodMs(task.recurrence);

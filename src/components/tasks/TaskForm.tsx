@@ -227,7 +227,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                         animate={{ scale: 1, rotate: 0 }}
                                         transition={{ type: 'spring', damping: 10 }}
                                         className="select-none"
-                                        style={{ fontSize: 56 }}
+                                        style={{ fontSize: 56, lineHeight: 1, width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}
                                     >
                                         🎯
                                     </motion.div>
@@ -258,10 +258,10 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                                 initial={{ scale: 0 }}
                                                 animate={{ scale: 1 }}
                                                 className="absolute top-1/2 -translate-y-1/2"
-                                                style={{ right: 14 }}
+                                                style={{ right: 16 }}
                                             >
-                                                <div className="rounded-full bg-green-500 flex items-center justify-center" style={{ width: 24, height: 24 }}>
-                                                    <Check className="text-white" style={{ width: 14, height: 14 }} strokeWidth={3} />
+                                                <div className="rounded-full bg-green-500 flex items-center justify-center shadow-sm shadow-green-500/30" style={{ width: 22, height: 22 }}>
+                                                    <Check className="text-white" style={{ width: 12, height: 12 }} strokeWidth={3} />
                                                 </div>
                                             </motion.div>
                                         )}
@@ -314,7 +314,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                         animate={{ scale: 1 }}
                                         transition={{ type: 'spring', damping: 10 }}
                                         className="select-none"
-                                        style={{ fontSize: 56 }}
+                                        style={{ fontSize: 56, lineHeight: 1, width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}
                                     >
                                         ⚡
                                     </motion.div>
@@ -383,7 +383,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                         animate={{ scale: 1 }}
                                         transition={{ type: 'spring', damping: 10 }}
                                         className="select-none"
-                                        style={{ fontSize: 56 }}
+                                        style={{ fontSize: 56, lineHeight: 1, width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}
                                     >
                                         📋
                                     </motion.div>
@@ -465,7 +465,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                         animate={{ scale: 1 }}
                                         transition={{ type: 'spring', damping: 10 }}
                                         className="select-none"
-                                        style={{ fontSize: 56 }}
+                                        style={{ fontSize: 56, lineHeight: 1, width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}
                                     >
                                         🏷️
                                     </motion.div>

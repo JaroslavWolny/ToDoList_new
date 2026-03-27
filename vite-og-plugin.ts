@@ -22,6 +22,8 @@ function h(type: string, props: Record<string, unknown> = {}, ...children: Sator
     };
 }
 
+let cachedFontBuffer: ArrayBuffer | null = null;
+
 export async function generateOGImage(url: string) {
     const searchParams = new URL(url, 'http://localhost').searchParams;
     const username = searchParams.get('username') || 'Quester';
@@ -108,8 +110,10 @@ export async function generateOGImage(url: string) {
         )
     );
 
-    const fontResponse = await fetch('https://unpkg.com/inter-ui/Inter%20(web)/fonts/Inter-Bold.woff');
-    const fontBuffer = await fontResponse.arrayBuffer();
+    if (!cachedFontBuffer) {
+        const fontResponse = await fetch('https://unpkg.com/inter-ui/Inter%20(web)/fonts/Inter-Bold.woff');
+        cachedFontBuffer = await fontResponse.arrayBuffer();
+    }
 
     const svg = await satori(element as unknown as ReactNode, {
         width: imageWidth,
@@ -117,7 +121,7 @@ export async function generateOGImage(url: string) {
         fonts: [
             {
                 name: 'Inter',
-                data: fontBuffer,
+                data: cachedFontBuffer,
                 weight: 700,
                 style: 'normal',
             },

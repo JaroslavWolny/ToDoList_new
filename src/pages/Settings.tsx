@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../stores/userStore';
 import {
@@ -8,7 +8,7 @@ import {
     saveTokenToFirestore,
     removeTokenFromFirestore,
 } from '../lib/firebase';
-import { Moon, Sun, Smartphone, Download, Trash2, Shield, Snowflake, Bell, BellOff, Upload } from 'lucide-react';
+import { Moon, Sun, Smartphone, Download, Trash2, Shield, Snowflake, Bell, BellOff, Upload, AlertTriangle, CheckCircle, XCircle, Info, X } from 'lucide-react';
 import { GamificationLevel, ThemeMode } from '../types';
 import { toLocalDateKey } from '../lib/dates';
 import {
@@ -42,6 +42,29 @@ const isStorageBackup = (value: unknown): value is StorageBackup => {
         && value.stores !== null;
 };
 
+type ToastType = 'success' | 'error' | 'warning' | 'info';
+interface Toast {
+    id: number;
+    type: ToastType;
+    message: string;
+}
+
+const TOAST_ICONS: Record<ToastType, typeof CheckCircle> = {
+    success: CheckCircle,
+    error: XCircle,
+    warning: AlertTriangle,
+    info: Info,
+};
+
+const TOAST_COLORS: Record<ToastType, { bg: string; border: string; text: string; icon: string }> = {
+    success: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400', icon: 'text-emerald-500' },
+    error: { bg: 'bg-red-500/10', border: 'border-red-500/20', text: 'text-red-400', icon: 'text-red-500' },
+    warning: { bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-400', icon: 'text-amber-500' },
+    info: { bg: 'bg-blue-500/10', border: 'border-blue-500/20', text: 'text-blue-400', icon: 'text-blue-500' },
+};
+
+let toastIdCounter = 0;
+
 export function Settings() {
     const { settings, updateSettings, streakFreezeTokens, resetUser } = useUserStore(
         useShallow((state) => ({
@@ -51,29 +74,21 @@ export function Settings() {
             resetUser: state.resetUser,
         }))
     );
-    const [importError, setImportError] = useState('');
-    const importErrorTimeoutRef = useRef<number | null>(null);
+    const [toasts, setToasts] = useState<Toast[]>([]);
     const notificationConfigError = getFirebaseMessagingConfigError();
+    const hasNotificationConfig = !notificationConfigError;
 
-    useEffect(() => {
-        return () => {
-            if (importErrorTimeoutRef.current !== null) {
-                window.clearTimeout(importErrorTimeoutRef.current);
-            }
-        };
+    const showToast = useCallback((type: ToastType, message: string) => {
+        const id = ++toastIdCounter;
+        setToasts(prev => [...prev.slice(-2), { id, type, message }]);
+        setTimeout(() => {
+            setToasts(prev => prev.filter(t => t.id !== id));
+        }, 4000);
     }, []);
 
-    const showImportError = (message: string) => {
-        setImportError(message);
-
-        if (importErrorTimeoutRef.current !== null) {
-            window.clearTimeout(importErrorTimeoutRef.current);
-        }
-
-        importErrorTimeoutRef.current = window.setTimeout(() => {
-            setImportError('');
-        }, 3000);
-    };
+    const dismissToast = useCallback((id: number) => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+    }, []);
 
     const themeOptions: { value: ThemeMode; icon: React.ReactNode; label: string }[] = [
         { value: 'LIGHT', icon: <Sun className="w-4 h-4" />, label: 'Light' },
@@ -174,9 +189,9 @@ export function Settings() {
                         return;
                     }
 
-                    showImportError('Invalid file format');
+                    showToast('error', 'Invalid file format.');
                 } catch {
-                    showImportError('Failed to parse file');
+                    showToast('error', 'Failed to parse file.');
                 }
             };
             reader.readAsText(file);
@@ -199,6 +214,38 @@ export function Settings() {
 
     return (
         <div className="page-container">
+            {/* ═══ Toast notifications ═══ */}
+            <div className="fixed top-0 left-0 right-0 z-[100] flex flex-col items-center pointer-events-none"
+                 style={{ paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))' }}>
+                <AnimatePresence mode="popLayout">
+                    {toasts.map((toast) => {
+                        const Icon = TOAST_ICONS[toast.type];
+                        const colors = TOAST_COLORS[toast.type];
+                        return (
+                            <motion.div
+                                key={toast.id}
+                                layout
+                                initial={{ opacity: 0, y: -30, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                                className={`pointer-events-auto w-[calc(100%-32px)] max-w-md flex items-center gap-3 rounded-2xl border backdrop-blur-xl shadow-lg ${colors.bg} ${colors.border}`}
+                                style={{ padding: '12px 16px', marginBottom: 8 }}
+                            >
+                                <Icon className={`flex-shrink-0 ${colors.icon}`} style={{ width: 20, height: 20 }} />
+                                <p className={`flex-1 text-sm font-medium ${colors.text}`}>{toast.message}</p>
+                                <button
+                                    onClick={() => dismissToast(toast.id)}
+                                    className="flex-shrink-0 rounded-full p-1 hover:bg-white/10 transition-colors"
+                                >
+                                    <X className="text-[var(--color-text-secondary)]" style={{ width: 14, height: 14 }} />
+                                </button>
+                            </motion.div>
+                        );
+                    })}
+                </AnimatePresence>
+            </div>
+
             <h1 className="text-2xl font-bold mb-6">Settings</h1>
 
             {/* Theme */}
@@ -287,8 +334,8 @@ export function Settings() {
                     checked={settings.notificationsEnabled}
                     onChange={async (v) => {
                         if (v) {
-                            if (notificationConfigError) {
-                                alert(notificationConfigError);
+                            if (!hasNotificationConfig) {
+                                showToast('warning', 'Push notifications are not configured for this environment.');
                                 updateSettings({ notificationsEnabled: false });
                                 return;
                             }
@@ -298,31 +345,41 @@ export function Settings() {
                                 try {
                                     updateSettings({ notificationsEnabled: true });
                                     await saveTokenToFirestore(token, settings.notificationMorning, settings.notificationEvening);
+                                    showToast('success', 'Notifications enabled! 🔔');
                                 } catch (error) {
                                     console.error(error);
                                     updateSettings({ notificationsEnabled: false });
-                                    alert('Notifications could not be saved. Check backend env/config and try again.');
+                                    showToast('error', 'Failed to save notification settings. Please try again.');
                                 }
                             } else {
-                                alert('Please allow notifications in your browser settings to use this feature.');
+                                showToast('info', 'Please allow notifications in your browser settings to use this feature.');
                                 updateSettings({ notificationsEnabled: false });
                             }
                         } else {
                             updateSettings({ notificationsEnabled: false });
                             try {
                                 await removeTokenFromFirestore();
+                                showToast('info', 'Notifications disabled.');
                             } catch (error) {
                                 console.error(error);
-                                alert('Failed to remove notification token from the backend.');
+                                showToast('error', 'Failed to fully disable notifications on the server.');
                             }
                         }
                     }}
                     icon={settings.notificationsEnabled ? <Bell className="w-4 h-4 text-primary-500" /> : <BellOff className="w-4 h-4 text-[var(--color-text-secondary)]" />}
                 />
-                {notificationConfigError && (
-                    <p className="text-xs text-amber-500 mt-3">
-                        {notificationConfigError}
-                    </p>
+                {!hasNotificationConfig && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-start gap-2.5 mt-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15"
+                    >
+                        <AlertTriangle className="flex-shrink-0 text-amber-500 mt-0.5" style={{ width: 16, height: 16 }} />
+                        <div>
+                            <p className="text-xs font-semibold text-amber-500">Notifications unavailable</p>
+                            <p className="text-xs text-amber-500/70 mt-0.5">Push notification service is not configured for this environment.</p>
+                        </div>
+                    </motion.div>
                 )}
                 {settings.notificationsEnabled && (
                     <motion.div
@@ -353,7 +410,7 @@ export function Settings() {
                                         await saveTokenToFirestore(token, val, settings.notificationEvening);
                                     } catch (error) {
                                         console.error(error);
-                                        alert('Failed to update morning reminder on the backend.');
+                                        showToast('error', 'Failed to update morning reminder.');
                                     }
                                 }}
                                 step={3600}
@@ -383,7 +440,7 @@ export function Settings() {
                                         await saveTokenToFirestore(token, settings.notificationMorning, val);
                                     } catch (error) {
                                         console.error(error);
-                                        alert('Failed to update evening reminder on the backend.');
+                                        showToast('error', 'Failed to update evening reminder.');
                                     }
                                 }}
                                 step={3600}
@@ -454,7 +511,7 @@ export function Settings() {
                     <div className="text-left">
                         <p className="text-sm font-medium">Import Data</p>
                         <p className="text-xs text-[var(--color-text-secondary)]">
-                            {importError || 'Restore from a JSON backup'}
+                            Restore from a JSON backup
                         </p>
                     </div>
                 </motion.button>
