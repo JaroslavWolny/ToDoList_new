@@ -108,24 +108,27 @@ export function AchievementGrid() {
             return enhancedAchievement;
         });
 
-        let nextFocusAchievement: EnhancedAchievement | null = null;
-        groupedAchievements.forEach((group) => {
-            group.sort((a, b) => {
-                if (!!a.unlockedAt !== !!b.unlockedAt) return a.unlockedAt ? 1 : -1;
-                return b.progressRatio - a.progressRatio;
-            });
+        const nextFocusAchievement: EnhancedAchievement | null = Array.from(groupedAchievements.values()).reduce<EnhancedAchievement | null>(
+            (best, group) => {
+                group.sort((a, b) => {
+                    if (!!a.unlockedAt !== !!b.unlockedAt) return a.unlockedAt ? 1 : -1;
+                    return b.progressRatio - a.progressRatio;
+                });
 
-            group.forEach((achievement) => {
-                if (
-                    !achievement.unlockedAt
-                    && achievement.progress
-                    && achievement.progress.max > 0
-                    && (!nextFocusAchievement || achievement.progressRatio > nextFocusAchievement.progressRatio)
-                ) {
-                    nextFocusAchievement = achievement;
-                }
-            });
-        });
+                return group.reduce<EnhancedAchievement | null>((current, achievement) => {
+                    if (
+                        !achievement.unlockedAt
+                        && achievement.progress
+                        && achievement.progress.max > 0
+                        && (!current || achievement.progressRatio > current.progressRatio)
+                    ) {
+                        return achievement;
+                    }
+                    return current;
+                }, best);
+            },
+            null
+        );
 
         return {
             enhancedAchievements: nextEnhancedAchievements,

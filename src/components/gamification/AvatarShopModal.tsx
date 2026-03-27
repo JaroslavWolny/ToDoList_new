@@ -1,29 +1,28 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Lock, Check, Sparkles, ShoppingBag, Star, Coins } from 'lucide-react';
+import { X, Lock, Sparkles, Star, Coins, Trophy } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../../stores/userStore';
-import { AVAILABLE_AVATARS } from '../../lib/avatars';
+import { AVAILABLE_AVATARS, AVATAR_CATEGORIES, CategoryFilter } from '../../lib/avatars';
 import { avatarIcons } from '../../lib/avatarIcons';
 import { useIsMobile } from '../../lib/useIsMobile';
+import { AvatarRarity } from '../../types';
 
 interface AvatarShopModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-// Rarity tiers based on cost
-const getRarity = (cost: number) => {
-    if (cost === 0) return { label: 'Starter', color: 'text-gray-400', bg: 'bg-gray-500/10', border: 'border-gray-500/20', glow: '', emoji: '⚪' };
-    if (cost <= 100) return { label: 'Common', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', glow: 'shadow-emerald-500/10', emoji: '🟢' };
-    if (cost <= 300) return { label: 'Rare', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', glow: 'shadow-blue-500/10', emoji: '🔵' };
-    if (cost <= 800) return { label: 'Epic', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20', glow: 'shadow-purple-500/20', emoji: '🟣' };
-    return { label: 'Legendary', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', glow: 'shadow-yellow-500/20', emoji: '🌟' };
+const RARITY_CONFIG: Record<AvatarRarity, { label: string; color: string; bg: string; border: string; glow: string; emoji: string }> = {
+    STARTER: { label: 'Starter', color: 'text-gray-400', bg: 'bg-gray-500/10', border: 'border-gray-500/20', glow: '', emoji: '⚪' },
+    COMMON: { label: 'Common', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', glow: 'shadow-emerald-500/10', emoji: '🟢' },
+    RARE: { label: 'Rare', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', glow: 'shadow-blue-500/10', emoji: '🔵' },
+    EPIC: { label: 'Epic', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20', glow: 'shadow-purple-500/20', emoji: '🟣' },
+    LEGENDARY: { label: 'Legendary', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', glow: 'shadow-yellow-500/20', emoji: '🌟' },
 };
 
-type TabType = 'all' | 'owned' | 'locked';
+type OwnershipFilter = 'all' | 'owned' | 'locked';
 
-// Stable selector — defined outside component so useShallow's reference check works correctly
 const selectShopState = (state: ReturnType<typeof useUserStore.getState>) => ({
     coins: state.coins,
     unlockedAvatars: state.unlockedAvatars,
@@ -35,35 +34,68 @@ const selectShopState = (state: ReturnType<typeof useUserStore.getState>) => ({
 const isAvatarUnlocked = (avatarId: string, cost: number, unlockedAvatars: string[]) =>
     cost === 0 || unlockedAvatars.includes(avatarId);
 
+const CONFETTI_PARTICLES = Array.from({ length: 16 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 80 - 40,
+    y: -(Math.random() * 100 + 30),
+    rotation: Math.random() * 720 - 360,
+    scale: Math.random() * 0.4 + 0.6,
+    color: ['#FFD700', '#FF6B6B', '#4ECDC4', '#A855F7', '#3B82F6', '#F59E0B'][Math.floor(Math.random() * 6)],
+    delay: Math.random() * 0.2,
+}));
+
+// Confetti particle component
+function PurchaseConfetti({ show }: { show: boolean }) {
+    if (!show) return null;
+
+    return (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
+            {CONFETTI_PARTICLES.map((p) => (
+                <motion.div
+                    key={p.id}
+                    initial={{ x: '50%', y: '50%', scale: 0, rotate: 0, opacity: 1 }}
+                    animate={{
+                        x: `calc(50% + ${p.x}px)`,
+                        y: `calc(50% + ${p.y}px)`,
+                        scale: p.scale,
+                        rotate: p.rotation,
+                        opacity: 0,
+                    }}
+                    transition={{ duration: 0.7, delay: p.delay, ease: 'easeOut' }}
+                    className="absolute rounded-full"
+                    style={{ width: 6, height: 6, backgroundColor: p.color }}
+                />
+            ))}
+        </div>
+    );
+}
+
 export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
     const { coins, unlockedAvatars, equippedAvatar, buyAvatar, equipAvatar } = useUserStore(
         useShallow(selectShopState)
     );
-    const [activeTab, setActiveTab] = useState<TabType>('all');
+    const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
+    const [ownershipFilter, setOwnershipFilter] = useState<OwnershipFilter>('all');
     const [justBought, setJustBought] = useState<string | null>(null);
     const [justEquipped, setJustEquipped] = useState<string | null>(null);
+    const [showConfetti, setShowConfetti] = useState<string | null>(null);
     const buyFeedbackTimeoutRef = useRef<number | null>(null);
     const equipFeedbackTimeoutRef = useRef<number | null>(null);
+    const confettiTimeoutRef = useRef<number | null>(null);
     const isMobile = useIsMobile();
 
-    // Body scroll lock while modal is open
     useEffect(() => {
         if (!isOpen) return;
         const previousOverflow = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = previousOverflow;
-        };
+        return () => { document.body.style.overflow = previousOverflow; };
     }, [isOpen]);
 
     useEffect(() => {
         return () => {
-            if (buyFeedbackTimeoutRef.current !== null) {
-                window.clearTimeout(buyFeedbackTimeoutRef.current);
-            }
-            if (equipFeedbackTimeoutRef.current !== null) {
-                window.clearTimeout(equipFeedbackTimeoutRef.current);
-            }
+            if (buyFeedbackTimeoutRef.current !== null) window.clearTimeout(buyFeedbackTimeoutRef.current);
+            if (equipFeedbackTimeoutRef.current !== null) window.clearTimeout(equipFeedbackTimeoutRef.current);
+            if (confettiTimeoutRef.current !== null) window.clearTimeout(confettiTimeoutRef.current);
         };
     }, []);
 
@@ -71,28 +103,20 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
         const success = buyAvatar(avatarId, cost);
         if (success) {
             setJustBought(avatarId);
+            setShowConfetti(avatarId);
             equipAvatar(avatarId);
             setJustEquipped(avatarId);
-
-            if (buyFeedbackTimeoutRef.current !== null) {
-                window.clearTimeout(buyFeedbackTimeoutRef.current);
-            }
-
-            buyFeedbackTimeoutRef.current = window.setTimeout(() => {
-                setJustBought(null);
-                setJustEquipped(null);
-            }, 2000);
+            if (buyFeedbackTimeoutRef.current !== null) window.clearTimeout(buyFeedbackTimeoutRef.current);
+            buyFeedbackTimeoutRef.current = window.setTimeout(() => { setJustBought(null); setJustEquipped(null); }, 2500);
+            if (confettiTimeoutRef.current !== null) window.clearTimeout(confettiTimeoutRef.current);
+            confettiTimeoutRef.current = window.setTimeout(() => setShowConfetti(null), 1000);
         }
     }, [buyAvatar, equipAvatar]);
 
     const handleEquip = useCallback((avatarId: string) => {
         equipAvatar(avatarId);
         setJustEquipped(avatarId);
-
-        if (equipFeedbackTimeoutRef.current !== null) {
-            window.clearTimeout(equipFeedbackTimeoutRef.current);
-        }
-
+        if (equipFeedbackTimeoutRef.current !== null) window.clearTimeout(equipFeedbackTimeoutRef.current);
         equipFeedbackTimeoutRef.current = window.setTimeout(() => setJustEquipped(null), 1500);
     }, [equipAvatar]);
 
@@ -104,24 +128,25 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
     const filteredAvatars = useMemo(() =>
         AVAILABLE_AVATARS.filter(avatar => {
             const unlocked = isAvatarUnlocked(avatar.id, avatar.cost, unlockedAvatars);
-            if (activeTab === 'owned') return unlocked;
-            if (activeTab === 'locked') return !unlocked;
+            if (ownershipFilter === 'owned' && !unlocked) return false;
+            if (ownershipFilter === 'locked' && unlocked) return false;
+            if (categoryFilter !== 'all' && avatar.category !== categoryFilter) return false;
             return true;
         }),
-        [activeTab, unlockedAvatars]
+        [categoryFilter, ownershipFilter, unlockedAvatars]
     );
 
-    const tabs: { id: TabType; label: string; emoji: string; count?: number }[] = useMemo(() => [
-        { id: 'all', label: 'All', emoji: '🏪', count: AVAILABLE_AVATARS.length },
-        { id: 'owned', label: 'Owned', emoji: '✅', count: ownedCount },
-        { id: 'locked', label: 'Locked', emoji: '🔒', count: AVAILABLE_AVATARS.length - ownedCount },
+    const ownershipTabs = useMemo(() => [
+        { id: 'all' as OwnershipFilter, label: 'All', count: AVAILABLE_AVATARS.length },
+        { id: 'owned' as OwnershipFilter, label: 'Owned', count: ownedCount },
+        { id: 'locked' as OwnershipFilter, label: 'Locked', count: AVAILABLE_AVATARS.length - ownedCount },
     ], [ownedCount]);
 
     if (!isOpen) return null;
 
     return (
         <AnimatePresence>
-            {/* Backdrop - only on desktop */}
+            {/* Backdrop – desktop only */}
             {!isMobile && (
                 <motion.div
                     initial={{ opacity: 0 }}
@@ -133,16 +158,14 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                 />
             )}
 
-            {/* Full-screen on mobile, side panel on desktop */}
+            {/* Panel */}
             <motion.div
                 initial={isMobile ? { y: '100%' } : { x: '100%' }}
                 animate={isMobile ? { y: 0 } : { x: 0 }}
                 exit={isMobile ? { y: '100%' } : { x: '100%' }}
                 transition={{ type: 'spring', damping: 28, stiffness: 300 }}
                 className={`fixed z-50 flex flex-col ${
-                    isMobile
-                        ? 'inset-0'
-                        : 'right-0 top-0 bottom-0 w-[440px] max-w-[85vw]'
+                    isMobile ? 'inset-0' : 'right-0 top-0 bottom-0 w-[480px] max-w-[85vw]'
                 }`}
                 style={{
                     paddingTop: isMobile ? 'env(safe-area-inset-top, 0px)' : undefined,
@@ -153,70 +176,73 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                 }}
             >
                 <div className={`flex flex-col flex-1 overflow-hidden bg-[var(--color-bg)] shadow-2xl ${
-                    isMobile
-                        ? 'h-full'
-                        : 'border border-[var(--color-border)] rounded-l-3xl border-r-0'
+                    isMobile ? 'h-full' : 'border border-[var(--color-border)] rounded-l-3xl border-r-0'
                 }`}>
 
-                    {/* Header */}
-                    <div className="px-5 pt-5 pb-4">
-                        <div className="flex items-center justify-between mb-4">
+                    {/* ── HEADER ─────────────────────────────────── */}
+                    <div style={{ padding: '16px 20px 12px' }}>
+                        {/* Top bar: Close + Coins – 44pt touch targets */}
+                        <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
                             <motion.button
-                                whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
                                 onClick={onClose}
-                                className="p-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                                className="flex items-center justify-center rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] active:bg-[var(--color-surface-hover)] transition-colors"
+                                style={{ width: 44, height: 44 }}
                             >
-                                <X className="w-5 h-5 text-[var(--color-text-secondary)]" />
+                                <X className="text-[var(--color-text-secondary)]" style={{ width: 20, height: 20 }} />
                             </motion.button>
 
-                            {/* Coin Balance */}
                             <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                transition={{ type: 'spring', damping: 15, delay: 0.2 }}
-                                className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/20"
+                                transition={{ type: 'spring', damping: 15, delay: 0.15 }}
+                                className="flex items-center bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/20 rounded-2xl"
+                                style={{ height: 42, paddingLeft: 14, paddingRight: 16, gap: 8 }}
                             >
                                 <motion.span
                                     animate={{ rotate: [0, 10, -10, 0] }}
                                     transition={{ repeat: Infinity, duration: 2, repeatDelay: 3 }}
-                                    className="text-lg"
+                                    style={{ fontSize: 20 }}
                                 >
                                     🪙
                                 </motion.span>
-                                <span className="font-extrabold text-yellow-500 tabular-nums">{coins}</span>
+                                <span className="font-extrabold text-yellow-500 tabular-nums" style={{ fontSize: 16 }}>{coins}</span>
                             </motion.div>
                         </div>
 
-                        {/* Title with mascot */}
-                        <div className="flex items-center gap-3 mb-4">
+                        {/* Title row */}
+                        <div className="flex items-center" style={{ gap: 12, marginBottom: 16 }}>
                             <motion.div
                                 initial={{ scale: 0, rotate: -180 }}
                                 animate={{ scale: 1, rotate: 0 }}
                                 transition={{ type: 'spring', damping: 12, stiffness: 200 }}
-                                className="text-3xl select-none"
+                                className="select-none"
+                                style={{ fontSize: 32 }}
                             >
                                 🛍️
                             </motion.div>
                             <div>
-                                <h2 className="text-lg font-extrabold">Avatar Shop</h2>
-                                <p className="text-xs text-[var(--color-text-secondary)]">
+                                <h2 className="font-extrabold" style={{ fontSize: 20, lineHeight: '24px' }}>Avatar Shop</h2>
+                                <p className="text-[var(--color-text-secondary)]" style={{ fontSize: 13 }}>
                                     Collect & equip your battle icons
                                 </p>
                             </div>
                         </div>
 
-                        {/* Collection Progress */}
-                        <div className="mb-4">
-                            <div className="flex items-center justify-between mb-1.5">
-                                <span className="text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">
-                                    Collection Progress
+                        {/* Collection Progress – 8pt height bar */}
+                        <div style={{ marginBottom: 14 }}>
+                            <div className="flex items-center justify-between" style={{ marginBottom: 6 }}>
+                                <span className="font-bold text-[var(--color-text-secondary)] uppercase tracking-wider" style={{ fontSize: 11 }}>
+                                    Collection
                                 </span>
-                                <span className="text-[10px] font-bold text-primary-400 tabular-nums">
-                                    {ownedCount}/{AVAILABLE_AVATARS.length}
-                                </span>
+                                <div className="flex items-center" style={{ gap: 4 }}>
+                                    <Trophy className="text-primary-400" style={{ width: 12, height: 12 }} />
+                                    <span className="font-bold text-primary-400 tabular-nums" style={{ fontSize: 12 }}>
+                                        {ownedCount}/{AVAILABLE_AVATARS.length}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="h-2 bg-[var(--color-border)] rounded-full overflow-hidden">
+                            <div className="bg-[var(--color-border)] rounded-full overflow-hidden" style={{ height: 8 }}>
                                 <motion.div
                                     className="h-full rounded-full bg-gradient-to-r from-primary-500 via-violet-500 to-pink-500"
                                     initial={{ width: 0 }}
@@ -226,261 +252,231 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                             </div>
                         </div>
 
-                        {/* Tabs */}
-                        <div className="flex gap-1.5 p-1 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)]">
-                            {tabs.map((tab) => (
+                        {/* Ownership Tabs – 44pt height each */}
+                        <div className="flex bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)]"
+                            style={{ padding: 4, gap: 4, marginBottom: 12 }}>
+                            {ownershipTabs.map((tab) => (
                                 <motion.button
                                     key={tab.id}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                                        activeTab === tab.id
+                                    whileTap={{ scale: 0.97 }}
+                                    onClick={() => setOwnershipFilter(tab.id)}
+                                    className={`flex-1 flex items-center justify-center rounded-xl font-bold transition-all ${
+                                        ownershipFilter === tab.id
                                             ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/20'
-                                            : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]'
+                                            : 'text-[var(--color-text-secondary)] active:bg-[var(--color-surface-hover)]'
                                     }`}
+                                    style={{ height: 40, fontSize: 13, gap: 6 }}
                                 >
-                                    <span className="text-sm">{tab.emoji}</span>
                                     {tab.label}
-                                    {tab.count !== undefined && (
-                                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                                            activeTab === tab.id
-                                                ? 'bg-white/20'
-                                                : 'bg-[var(--color-surface-hover)]'
-                                        }`}>
-                                            {tab.count}
-                                        </span>
-                                    )}
+                                    <span className={`rounded-full tabular-nums ${
+                                        ownershipFilter === tab.id ? 'bg-white/20' : 'bg-[var(--color-surface-hover)]'
+                                    }`} style={{ fontSize: 11, paddingLeft: 7, paddingRight: 7, paddingTop: 2, paddingBottom: 2 }}>
+                                        {tab.count}
+                                    </span>
+                                </motion.button>
+                            ))}
+                        </div>
+
+                        {/* Category Filter – 40pt height, scrollable */}
+                        <div className="flex overflow-x-auto scrollbar-hide" style={{ gap: 8, paddingBottom: 4 }}>
+                            {AVATAR_CATEGORIES.map((cat) => (
+                                <motion.button
+                                    key={cat.id}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => setCategoryFilter(cat.id)}
+                                    className={`flex-shrink-0 flex items-center rounded-xl font-bold transition-all ${
+                                        categoryFilter === cat.id
+                                            ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30'
+                                            : 'text-[var(--color-text-secondary)] active:text-[var(--color-text)] border border-transparent'
+                                    }`}
+                                    style={{ height: 36, paddingLeft: 12, paddingRight: 14, fontSize: 12, gap: 5 }}
+                                >
+                                    <span style={{ fontSize: 15 }}>{cat.emoji}</span>
+                                    {cat.label}
                                 </motion.button>
                             ))}
                         </div>
                     </div>
 
-                    {/* Avatar Grid */}
+                    {/* ── AVATAR GRID (2-column) ──────────────────── */}
                     <div
-                        className="flex-1 overflow-y-auto px-5 pb-5 space-y-3 overscroll-contain"
-                        style={{ WebkitOverflowScrolling: 'touch' }}
+                        className="flex-1 overflow-y-auto overscroll-contain scrollbar-hide"
+                        style={{ padding: '0 20px 20px', WebkitOverflowScrolling: 'touch' }}
                     >
                         <AnimatePresence mode="wait">
                             <motion.div
-                                key={activeTab}
-                                initial={{ opacity: 0, y: 20 }}
+                                key={`${categoryFilter}-${ownershipFilter}`}
+                                initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
+                                exit={{ opacity: 0, y: -16 }}
                                 transition={{ duration: 0.2 }}
-                                className="space-y-3"
                             >
                                 {filteredAvatars.length === 0 && (
-                                    <motion.div
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        className="text-center py-12"
-                                    >
-                                        <div className="text-4xl mb-3">
-                                            {activeTab === 'locked' ? '🎉' : '📦'}
+                                    <div className="text-center" style={{ paddingTop: 60, paddingBottom: 60 }}>
+                                        <div style={{ fontSize: 48, marginBottom: 12 }}>
+                                            {ownershipFilter === 'locked' ? '🎉' : '📦'}
                                         </div>
-                                        <p className="text-sm font-bold text-[var(--color-text-secondary)]">
-                                            {activeTab === 'locked'
-                                                ? 'You\'ve unlocked everything!'
-                                                : 'No avatars here yet'}
+                                        <p className="font-bold text-[var(--color-text-secondary)]" style={{ fontSize: 15 }}>
+                                            {ownershipFilter === 'locked' ? "You've unlocked everything!" : 'No avatars here'}
                                         </p>
-                                    </motion.div>
+                                        <p className="text-[var(--color-text-secondary)]" style={{ fontSize: 13, marginTop: 4 }}>
+                                            Try changing your filters
+                                        </p>
+                                    </div>
                                 )}
 
-                                {filteredAvatars.map((avatar, index) => {
-                                    const unlocked = isAvatarUnlocked(avatar.id, avatar.cost, unlockedAvatars);
-                                    const isEquipped = equippedAvatar === avatar.id || (equippedAvatar === null && avatar.id === 'default');
-                                    const canAfford = coins >= avatar.cost;
-                                    const IconComponent = avatarIcons[avatar.icon as keyof typeof avatarIcons];
-                                    const rarity = getRarity(avatar.cost);
-                                    const wasJustBought = justBought === avatar.id;
-                                    const wasJustEquipped = justEquipped === avatar.id;
+                                {/* 2-column grid – cards sized for iPhone 15 Pro (393pt - 40px padding = 353px / 2 cols - gap) */}
+                                <div className="grid grid-cols-2" style={{ gap: 10 }}>
+                                    {filteredAvatars.map((avatar, index) => {
+                                        const unlocked = isAvatarUnlocked(avatar.id, avatar.cost, unlockedAvatars);
+                                        const isEquipped = equippedAvatar === avatar.id || (equippedAvatar === null && avatar.id === 'default');
+                                        const canAfford = coins >= avatar.cost;
+                                        const IconComponent = avatarIcons[avatar.icon as keyof typeof avatarIcons];
+                                        const rarity = RARITY_CONFIG[avatar.rarity];
+                                        const wasJustBought = justBought === avatar.id;
+                                        const wasJustEquipped = justEquipped === avatar.id;
+                                        const hasConfetti = showConfetti === avatar.id;
 
-                                    return (
-                                        <motion.div
-                                            key={avatar.id}
-                                            initial={{ opacity: 0, x: 40 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: Math.min(index * 0.06, 0.3), type: 'spring', damping: 20 }}
-                                            className={`relative rounded-2xl border-2 overflow-hidden transition-all ${
-                                                isEquipped
-                                                    ? 'border-primary-500 bg-primary-500/5 shadow-lg shadow-primary-500/10'
-                                                    : wasJustBought
-                                                    ? 'border-green-500 bg-green-500/5 shadow-lg shadow-green-500/10'
-                                                    : `${rarity.border} bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)]`
-                                            }`}
-                                        >
-                                            {/* Rarity Banner */}
-                                            <div className={`px-4 py-1.5 flex items-center justify-between ${rarity.bg}`}>
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-xs">{rarity.emoji}</span>
-                                                    <span className={`text-[10px] font-extrabold uppercase tracking-wider ${rarity.color}`}>
-                                                        {rarity.label}
-                                                    </span>
-                                                </div>
-                                                {!unlocked && (
-                                                    <div className="flex items-center gap-1">
-                                                        <span className="text-xs">🪙</span>
-                                                        <span className={`text-xs font-extrabold ${canAfford ? 'text-yellow-500' : 'text-red-400'}`}>
-                                                            {avatar.cost}
-                                                        </span>
+                                        return (
+                                            <motion.div
+                                                key={avatar.id}
+                                                initial={{ opacity: 0, scale: 0.9 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ delay: Math.min(index * 0.03, 0.2), type: 'spring', damping: 18 }}
+                                                className={`relative rounded-2xl border-2 overflow-hidden transition-all ${
+                                                    isEquipped
+                                                        ? 'border-primary-500 bg-primary-500/5 shadow-lg shadow-primary-500/10'
+                                                        : wasJustBought
+                                                        ? 'border-green-500 bg-green-500/5 shadow-lg shadow-green-500/10'
+                                                        : `${rarity.border} bg-[var(--color-surface)]`
+                                                }`}
+                                            >
+                                                <PurchaseConfetti show={hasConfetti} />
+
+                                                {/* NEW badge */}
+                                                {avatar.isNew && !unlocked && (
+                                                    <div className="absolute z-10 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black uppercase shadow-lg shadow-amber-500/25 rounded-bl-lg"
+                                                        style={{ top: 0, right: 0, fontSize: 8, paddingLeft: 6, paddingRight: 6, paddingTop: 3, paddingBottom: 3 }}>
+                                                        NEW
                                                     </div>
                                                 )}
-                                                {isEquipped && (
+
+                                                {/* Card content */}
+                                                <div className="flex flex-col items-center" style={{ padding: '16px 10px 14px' }}>
+                                                    {/* Avatar icon – 56x56pt */}
                                                     <motion.div
-                                                        initial={{ scale: 0 }}
-                                                        animate={{ scale: 1 }}
-                                                        className="flex items-center gap-1"
+                                                        whileTap={{ scale: 0.95, rotate: 5 }}
+                                                        className="relative"
+                                                        style={{ marginBottom: 10 }}
                                                     >
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                                        <span className="text-[10px] font-extrabold text-green-400 uppercase tracking-wider">Active</span>
-                                                    </motion.div>
-                                                )}
-                                            </div>
-
-                                            {/* Avatar Content */}
-                                            <div className="p-4 flex items-center gap-4">
-                                                {/* Avatar Icon */}
-                                                <motion.div
-                                                    whileHover={{ scale: 1.1, rotate: 5 }}
-                                                    className="relative flex-shrink-0"
-                                                >
-                                                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${
-                                                        isEquipped
-                                                            ? 'bg-gradient-to-br from-primary-500/20 to-violet-500/20 shadow-lg'
-                                                            : unlocked
-                                                            ? 'bg-gradient-to-br from-gray-700 to-gray-900'
-                                                            : 'bg-gradient-to-br from-gray-800 to-gray-950'
-                                                    }`}>
-                                                        {IconComponent && (
-                                                            <IconComponent
-                                                                className={`w-8 h-8 ${unlocked ? avatar.color : 'text-gray-600'}`}
-                                                                strokeWidth={isEquipped ? 2.5 : 2}
-                                                            />
-                                                        )}
-
-                                                        {/* Lock overlay */}
-                                                        {!unlocked && (
-                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-2xl backdrop-blur-[2px]">
-                                                                <Lock className="w-5 h-5 text-white/50" />
-                                                            </div>
-                                                        )}
-
-                                                        {/* Equipped glow ring */}
-                                                        {isEquipped && (
-                                                            <div className="absolute -inset-0.5 rounded-2xl border-2 border-primary-500/50 animate-pulse pointer-events-none" />
-                                                        )}
-                                                    </div>
-
-                                                    {/* "NEW" badge for just bought */}
-                                                    {wasJustBought && (
-                                                        <motion.div
-                                                            initial={{ scale: 0, rotate: -30 }}
-                                                            animate={{ scale: 1, rotate: 0 }}
-                                                            className="absolute -top-2 -right-2 px-1.5 py-0.5 rounded-lg bg-green-500 text-white text-[8px] font-black uppercase shadow-lg shadow-green-500/30"
-                                                        >
-                                                            NEW!
-                                                        </motion.div>
-                                                    )}
-                                                </motion.div>
-
-                                                {/* Avatar Info */}
-                                                <div className="flex-1 min-w-0">
-                                                    <h3 className="font-extrabold text-sm truncate">{avatar.name}</h3>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        {isEquipped && (
-                                                            <motion.span
-                                                                initial={{ opacity: 0, scale: 0 }}
-                                                                animate={{ opacity: 1, scale: 1 }}
-                                                                className="inline-flex items-center gap-1 text-[10px] font-bold text-primary-400 bg-primary-500/10 px-2 py-0.5 rounded-full"
-                                                            >
-                                                                <Check className="w-3 h-3" /> Equipped
-                                                            </motion.span>
-                                                        )}
-                                                        {unlocked && !isEquipped && (
-                                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                                                                ✅ Owned
-                                                            </span>
-                                                        )}
-                                                        {wasJustEquipped && (
-                                                            <motion.span
-                                                                initial={{ opacity: 0, x: -10 }}
-                                                                animate={{ opacity: 1, x: 0 }}
-                                                                exit={{ opacity: 0 }}
-                                                                className="text-[10px] font-bold text-green-400"
-                                                            >
-                                                                ✨ Equipped!
-                                                            </motion.span>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* Action Button */}
-                                                <div className="flex-shrink-0">
-                                                    {isEquipped ? (
-                                                        <div className="w-10 h-10 rounded-xl bg-primary-500/10 flex items-center justify-center">
-                                                            <Star className="w-5 h-5 text-primary-400 fill-primary-400" />
-                                                        </div>
-                                                    ) : unlocked ? (
-                                                        <motion.button
-                                                            whileHover={{ scale: 1.1 }}
-                                                            whileTap={{ scale: 0.9 }}
-                                                            onClick={() => handleEquip(avatar.id)}
-                                                            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-extrabold shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 transition-shadow"
-                                                        >
-                                                            Equip
-                                                        </motion.button>
-                                                    ) : (
-                                                        <motion.button
-                                                            whileHover={{ scale: canAfford ? 1.05 : 1 }}
-                                                            whileTap={{ scale: canAfford ? 0.95 : 1 }}
-                                                            onClick={() => canAfford && handleBuy(avatar.id, avatar.cost)}
-                                                            disabled={!canAfford}
-                                                            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all ${
-                                                                canAfford
-                                                                    ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-black shadow-lg shadow-yellow-500/25 hover:shadow-yellow-500/40'
-                                                                    : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] opacity-50 cursor-not-allowed'
-                                                            }`}
-                                                        >
-                                                            {canAfford ? (
-                                                                <>
-                                                                    <ShoppingBag className="w-3.5 h-3.5" />
-                                                                    Buy
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <Coins className="w-3.5 h-3.5" />
-                                                                    Need {avatar.cost - coins}
-                                                                </>
+                                                        <div className={`flex items-center justify-center rounded-2xl transition-all ${
+                                                            isEquipped
+                                                                ? 'bg-gradient-to-br from-primary-500/20 to-violet-500/20 shadow-lg'
+                                                                : unlocked
+                                                                ? 'bg-gradient-to-br from-gray-700 to-gray-900'
+                                                                : 'bg-gradient-to-br from-gray-800 to-gray-950'
+                                                        }`} style={{ width: 56, height: 56 }}>
+                                                            {IconComponent && (
+                                                                <IconComponent
+                                                                    className={unlocked ? avatar.color : 'text-gray-600'}
+                                                                    style={{ width: 28, height: 28 }}
+                                                                    strokeWidth={isEquipped ? 2.5 : 2}
+                                                                />
                                                             )}
-                                                        </motion.button>
-                                                    )}
+                                                            {!unlocked && (
+                                                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-2xl backdrop-blur-[1px]">
+                                                                    <Lock className="text-white/50" style={{ width: 18, height: 18 }} />
+                                                                </div>
+                                                            )}
+                                                            {isEquipped && (
+                                                                <div className="absolute -inset-0.5 rounded-2xl border-2 border-primary-500/40 animate-pulse pointer-events-none" />
+                                                            )}
+                                                        </div>
+
+                                                        {wasJustBought && (
+                                                            <motion.div
+                                                                initial={{ scale: 0, rotate: -30 }}
+                                                                animate={{ scale: 1, rotate: 0 }}
+                                                                className="absolute bg-green-500 text-white font-black uppercase shadow-lg shadow-green-500/30 rounded-lg"
+                                                                style={{ top: -6, right: -8, fontSize: 8, paddingLeft: 5, paddingRight: 5, paddingTop: 2, paddingBottom: 2 }}
+                                                            >
+                                                                NEW!
+                                                            </motion.div>
+                                                        )}
+                                                    </motion.div>
+
+                                                    {/* Name */}
+                                                    <p className="font-bold text-center truncate w-full" style={{ fontSize: 13, lineHeight: '16px' }}>
+                                                        {avatar.name}
+                                                    </p>
+
+                                                    {/* Rarity badge */}
+                                                    <span className={`font-extrabold ${rarity.color}`} style={{ fontSize: 10, marginTop: 3 }}>
+                                                        {rarity.emoji} {rarity.label}
+                                                    </span>
+
+                                                    {/* Status / Action – min 36pt touch target */}
+                                                    <div style={{ marginTop: 10, width: '100%' }}>
+                                                        {isEquipped ? (
+                                                            <div className="flex items-center justify-center bg-primary-500/10 rounded-xl" style={{ height: 36, gap: 5 }}>
+                                                                <Star className="text-primary-400 fill-primary-400" style={{ width: 14, height: 14 }} />
+                                                                <span className="font-bold text-primary-400" style={{ fontSize: 12 }}>
+                                                                    {wasJustEquipped ? '✨ Active!' : 'Active'}
+                                                                </span>
+                                                            </div>
+                                                        ) : unlocked ? (
+                                                            <motion.button
+                                                                whileTap={{ scale: 0.95 }}
+                                                                onClick={() => handleEquip(avatar.id)}
+                                                                className="w-full flex items-center justify-center rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 text-white font-bold shadow-lg shadow-primary-500/20"
+                                                                style={{ height: 36, fontSize: 13 }}
+                                                            >
+                                                                Equip
+                                                            </motion.button>
+                                                        ) : (
+                                                            <motion.button
+                                                                whileTap={{ scale: canAfford ? 0.95 : 1 }}
+                                                                onClick={() => canAfford && handleBuy(avatar.id, avatar.cost)}
+                                                                disabled={!canAfford}
+                                                                className={`w-full flex items-center justify-center rounded-xl font-bold transition-all ${
+                                                                    canAfford
+                                                                        ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-black shadow-lg shadow-yellow-500/20'
+                                                                        : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] opacity-60 cursor-not-allowed'
+                                                                }`}
+                                                                style={{ height: 36, fontSize: 12, gap: 5 }}
+                                                            >
+                                                                {canAfford ? (
+                                                                    <>🪙 {avatar.cost}</>
+                                                                ) : (
+                                                                    <><Coins style={{ width: 13, height: 13 }} /> {avatar.cost}</>
+                                                                )}
+                                                            </motion.button>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </motion.div>
-                                    );
-                                })}
+                                            </motion.div>
+                                        );
+                                    })}
+                                </div>
                             </motion.div>
                         </AnimatePresence>
                     </div>
 
-                    {/* Bottom Info Bar */}
-                    <div className="px-5 pb-5 pt-3 border-t border-[var(--color-border)] bg-[var(--color-bg)]">
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4 }}
-                            className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-violet-500/5 via-primary-500/5 to-pink-500/5 dark:from-violet-500/10 dark:via-primary-500/10 dark:to-pink-500/10 border border-primary-500/10"
-                        >
-                            <div className="flex items-center gap-2">
-                                <Sparkles className="w-4 h-4 text-primary-400" />
-                                <span className="text-[11px] font-bold text-[var(--color-text-secondary)]">
+                    {/* ── BOTTOM BAR ──────────────────────────────── */}
+                    <div className="border-t border-[var(--color-border)] bg-[var(--color-bg)] flex-shrink-0"
+                        style={{ padding: '12px 20px 16px' }}>
+                        <div className="flex items-center justify-between bg-gradient-to-r from-violet-500/5 via-primary-500/5 to-pink-500/5 dark:from-violet-500/10 dark:via-primary-500/10 dark:to-pink-500/10 border border-primary-500/10 rounded-2xl"
+                            style={{ padding: '10px 14px' }}>
+                            <div className="flex items-center" style={{ gap: 8 }}>
+                                <Sparkles className="text-primary-400" style={{ width: 16, height: 16 }} />
+                                <span className="font-bold text-[var(--color-text-secondary)]" style={{ fontSize: 12 }}>
                                     Complete quests to earn coins!
                                 </span>
                             </div>
-                            <div className="flex items-center gap-1 text-[11px] font-extrabold text-yellow-500">
+                            <span className="font-extrabold text-yellow-500" style={{ fontSize: 13 }}>
                                 🪙 {coins}
-                            </div>
-                        </motion.div>
+                            </span>
+                        </div>
                     </div>
                 </div>
             </motion.div>

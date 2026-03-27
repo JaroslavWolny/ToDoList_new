@@ -93,12 +93,18 @@ export interface UserState {
     unlockedAvatars: string[];
 }
 
+export type AvatarRarity = 'STARTER' | 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+export type AvatarCategory = 'warriors' | 'cosmic' | 'animals' | 'royalty' | 'mystic';
+
 export interface Avatar {
     id: string;
     name: string;
     cost: number;
     icon: string;
     color: string;
+    rarity: AvatarRarity;
+    category: AvatarCategory;
+    isNew?: boolean;
 }
 
 export interface RandomReward {

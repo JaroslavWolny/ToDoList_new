@@ -179,6 +179,19 @@ A comprehensive senior-level audit identified and resolved **17 out of 21** issu
 - Replaced `date-fns` with native `Intl.DateTimeFormat` across `TaskCard` and `XPChart`, then **uninstalled `date-fns`** entirely.
 - Moved `firebase-admin`, `satori`, and `@resvg/resvg-js` from `dependencies` to `devDependencies` (server-only packages don't belong in the client bundle).
 
+### Recent UI/UX & Native App Polish (Late March 2026)
+
+**Mobile Experience:**
+- Completely redesigned `TaskForm` with a premium, full-screen step-by-step onboarding flow specifically polished for modern iOS devices (iPhone 15 Pro). 
+- Optimized touch targets, layout spacing, and visual hierarchy for a native-app feel.
+- Improved the New Task form responsiveness to prevent shift glitches when the software keyboard appears.
+
+**Gamification & UI Fixes:**
+- Fixed UI glitch with the health emoji within the `HealthBar` component.
+- Redesigned the `AvatarShop` to align perfectly with the gamified aesthetic (Duolingo-inspired), featuring a right-side slide-in panel, rarity tiers, and filterable tabs.
+- Resolved "impure function" React warnings in `AvatarShopModal` by moving random number generation into `useEffect` / `useMemo` hooks.
+- Fixed TypeScript errors and type definitions within the `AchievementGrid` component.
+
 ---
 
 ## 💡 The Philosophy
