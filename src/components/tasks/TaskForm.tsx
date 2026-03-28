@@ -37,6 +37,16 @@ const POPULAR_TAGS = ['work', 'personal', 'health', 'learning', 'urgent', 'home'
 
 const toISOOrNull = (value: string): string | null => {
     if (!value) return null;
+    
+    // Safely parse YYYY-MM-DDTHH:mm to avoid Safari NaN issues
+    const [datePart, timePart] = value.split('T');
+    if (datePart && timePart) {
+        const [year, month, day] = datePart.split('-').map(Number);
+        const [hours, minutes] = timePart.split(':').map(Number);
+        const parsed = new Date(year, month - 1, day, hours, minutes);
+        if (!Number.isNaN(parsed.getTime())) return parsed.toISOString();
+    }
+
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return null;
     return parsed.toISOString();
@@ -207,7 +217,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
 
                 {/* ═══ Main content – vertically centered, scrollable ═══ */}
                 <div
-                    className="flex-1 w-full max-w-md mx-auto flex flex-col justify-center overflow-y-auto overscroll-contain scrollbar-hide"
+                    className="flex-1 w-full max-w-md mx-auto flex flex-col justify-center overflow-y-auto overscroll-contain scrollbar-hide px-1"
                     style={{ WebkitOverflowScrolling: 'touch', paddingTop: 24, paddingBottom: 24 }}
                 >
                     <AnimatePresence mode="wait">
@@ -242,29 +252,35 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                     </div>
 
                                     {/* Title input – 52pt height for easy thumb tap */}
-                                    <div className="relative w-full">
+                                    <div 
+                                        className="relative w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] focus-within:ring-2 focus-within:ring-primary-500/50 transition-all overflow-hidden"
+                                        style={{ height: 52, transform: 'translateZ(0)' }}
+                                    >
                                         <input
                                             type="text"
                                             value={title}
                                             onChange={(e) => setTitle(e.target.value)}
                                             placeholder="e.g. Learn React hooks 🚀"
-                                            className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-center font-semibold placeholder:text-[var(--color-text-secondary)]/40 placeholder:font-normal"
-                                            style={{ height: 52, fontSize: 17, paddingLeft: 20, paddingRight: 44 }}
+                                            className="absolute inset-0 w-full h-full bg-transparent border-none outline-none appearance-none text-center font-semibold placeholder:text-[var(--color-text-secondary)]/40 placeholder:font-normal m-0"
+                                            style={{ fontSize: 17, paddingLeft: 44, paddingRight: 44 }}
                                             autoFocus
                                             enterKeyHint="next"
+                                            autoComplete="off"
+                                            name="quest-title-input"
+                                            id="quest-title-input"
                                         />
-                                        {title.length > 0 && (
-                                            <motion.div
-                                                initial={{ scale: 0 }}
-                                                animate={{ scale: 1 }}
-                                                className="absolute top-1/2 -translate-y-1/2"
-                                                style={{ right: 16 }}
-                                            >
-                                                <div className="rounded-full bg-green-500 flex items-center justify-center shadow-sm shadow-green-500/30" style={{ width: 22, height: 22 }}>
-                                                    <Check className="text-white" style={{ width: 12, height: 12 }} strokeWidth={3} />
-                                                </div>
-                                            </motion.div>
-                                        )}
+                                        <div className="absolute top-0 bottom-0 right-0 flex items-center justify-center pointer-events-none" style={{ width: 44 }}>
+                                            {title.length > 0 && (
+                                                <motion.div
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                >
+                                                    <div className="rounded-full bg-green-500 flex items-center justify-center shadow-sm shadow-green-500/30" style={{ width: 22, height: 22 }}>
+                                                        <Check className="text-white" style={{ width: 12, height: 12 }} strokeWidth={3} />
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Description – 44pt min height */}
@@ -483,8 +499,11 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                             onChange={(e) => setTagInput(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
                                             placeholder="Type a tag..."
-                                            className="flex-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 font-medium transition-all placeholder:text-[var(--color-text-secondary)]/40"
+                                            className="flex-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-primary-500/50 appearance-none font-medium transition-all placeholder:text-[var(--color-text-secondary)]/40"
                                             style={{ height: 48, fontSize: 15, paddingLeft: 16, paddingRight: 16 }}
+                                            autoComplete="off"
+                                            name="quest-tag-input"
+                                            id="quest-tag-input"
                                         />
                                         <motion.button
                                             type="button"
