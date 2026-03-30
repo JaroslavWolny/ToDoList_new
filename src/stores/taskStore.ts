@@ -54,9 +54,9 @@ const getRecurringResetPeriods = (
     if (!referenceDay) return 0;
 
     const todayDay = toLocalDateKey(today);
-    const referenceStart = new Date(`${referenceDay}T00:00:00`);
-    const todayStart = new Date(`${todayDay}T00:00:00`);
-    const daysDiff = Math.floor((todayStart.getTime() - referenceStart.getTime()) / DAY_MS);
+    const referenceStart = new Date(`${referenceDay}T00:00:00Z`);
+    const todayStart = new Date(`${todayDay}T00:00:00Z`);
+    const daysDiff = Math.round((todayStart.getTime() - referenceStart.getTime()) / DAY_MS);
 
     if (daysDiff <= 0) return 0;
     return recurrence === 'WEEKLY' ? Math.floor(daysDiff / 7) : daysDiff;
