@@ -199,13 +199,13 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                                 className="flex items-center bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/20 rounded-2xl"
                                 style={{ height: 42, paddingLeft: 14, paddingRight: 16, gap: 8 }}
                             >
-                                <motion.span
+                                <motion.div
                                     animate={{ rotate: [0, 10, -10, 0] }}
                                     transition={{ repeat: Infinity, duration: 2, repeatDelay: 3 }}
-                                    style={{ fontSize: 20 }}
+                                    className="flex items-center justify-center"
                                 >
-                                    🪙
-                                </motion.span>
+                                    <Coins className="text-yellow-500" style={{ width: 20, height: 20 }} strokeWidth={2.5} />
+                                </motion.div>
                                 <span className="font-extrabold text-yellow-500 tabular-nums" style={{ fontSize: 16 }}>{coins}</span>
                             </motion.div>
                         </div>
@@ -445,11 +445,8 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                                                                 }`}
                                                                 style={{ height: 36, fontSize: 12, gap: 5 }}
                                                             >
-                                                                {canAfford ? (
-                                                                    <>🪙 {avatar.cost}</>
-                                                                ) : (
-                                                                    <><Coins style={{ width: 13, height: 13 }} /> {avatar.cost}</>
-                                                                )}
+                                                                <Coins style={{ width: 14, height: 14 }} strokeWidth={2.5} />
+                                                                {avatar.cost}
                                                             </motion.button>
                                                         )}
                                                     </div>
@@ -473,8 +470,9 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                                     Complete quests to earn coins!
                                 </span>
                             </div>
-                            <span className="font-extrabold text-yellow-500" style={{ fontSize: 13 }}>
-                                🪙 {coins}
+                            <span className="font-extrabold text-yellow-500 flex items-center" style={{ fontSize: 13, gap: 5 }}>
+                                <Coins style={{ width: 15, height: 15 }} strokeWidth={2.5} />
+                                {coins}
                             </span>
                         </div>
                     </div>
