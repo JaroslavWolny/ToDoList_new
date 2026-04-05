@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Plus, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Zap, Sparkles } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../stores/userStore';
 import { getCompletionsToday, getTasksForToday, useTaskStore } from '../stores/taskStore';
@@ -12,6 +12,7 @@ import { LevelBadge } from '../components/gamification/LevelBadge';
 import { HealthBar } from '../components/gamification/HealthBar';
 import { ComboIndicator } from '../components/gamification/ComboIndicator';
 import { TaskList } from '../components/tasks/TaskList';
+import { QuickRituals, RITUAL_TAG } from '../components/tasks/QuickRituals';
 import { Task, RandomReward } from '../types';
 import { calculateComboMultiplier } from '../lib/gamification';
 import { completeTaskTransaction } from '../lib/taskCompletion';
@@ -27,6 +28,7 @@ export function Dashboard() {
     const [showLevelUp, setShowLevelUp] = useState(false);
     const [newLevel, setNewLevel] = useState(0);
     const [rewardDrop, setRewardDrop] = useState<RandomReward | null>(null);
+    const [showRituals, setShowRituals] = useState(false);
     const hasInitializedRef = useRef(false);
 
     const { displayName, dailyMissionsEnabled } = useUserStore(
@@ -61,6 +63,15 @@ export function Dashboard() {
     const todayTasks = useMemo(() => getTasksForToday(tasks), [tasks]);
     const completionsToday = useMemo(() => getCompletionsToday(completions), [completions]);
     const currentCombo = calculateComboMultiplier(completionsToday.length);
+
+    // Ritual tasks for quick access (all active/completed recurring tasks with 'ritual' tag)
+    const ritualStats = useMemo(() => {
+        const rituals = tasks.filter(
+            (t) => t.tags.includes(RITUAL_TAG) && (t.status === 'ACTIVE' || t.status === 'COMPLETED') && t.recurrence !== 'NONE'
+        );
+        const remaining = rituals.filter((t) => t.status === 'ACTIVE').length;
+        return { total: rituals.length, remaining };
+    }, [tasks]);
     const missionsForToday = useMemo(() => {
         const today = toLocalDateKey(new Date());
         return lastGeneratedDate === today ? missions : [];
@@ -198,6 +209,34 @@ export function Dashboard() {
                 />
             </div>
 
+            {/* Ritual Pill Button */}
+            {ritualStats.total > 0 && (
+                <motion.button
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowRituals(true)}
+                    className={`fixed left-6 z-20 flex items-center gap-2 px-4 py-3 rounded-2xl shadow-lg transition-colors ${
+                        ritualStats.remaining === 0
+                            ? 'bg-green-500 shadow-green-500/30 text-white'
+                            : 'bg-gradient-to-r from-purple-500 to-cyan-500 shadow-purple-500/30 text-white'
+                    }`}
+                    style={{
+                        bottom: 'calc(6rem + env(safe-area-inset-bottom, 0px) + 0.5rem)',
+                        left: 'calc(1.5rem + env(safe-area-inset-left, 0px))',
+                    }}
+                >
+                    <Sparkles className="w-4 h-4" />
+                    <span className="text-xs font-bold">
+                        {ritualStats.remaining === 0 ? '✓ Rituals' : `${ritualStats.remaining} rituals`}
+                    </span>
+                    {ritualStats.remaining > 0 && (
+                        <span className="ritual-pulse w-2 h-2 rounded-full bg-white/80" />
+                    )}
+                </motion.button>
+            )}
+
             {/* FAB */}
             <motion.button
                 whileHover={{ scale: 1.1 }}
@@ -211,6 +250,14 @@ export function Dashboard() {
             >
                 <Plus className="w-6 h-6" />
             </motion.button>
+
+            {/* Quick Rituals Drawer */}
+            <QuickRituals
+                isOpen={showRituals}
+                onClose={() => setShowRituals(false)}
+                tasks={tasks}
+                onComplete={handleCompleteTask}
+            />
 
             {/* Task Form Modal */}
             {showTaskForm && (

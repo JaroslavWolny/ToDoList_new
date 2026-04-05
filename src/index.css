@@ -196,3 +196,19 @@
 .animate-confetti {
   animation: confettiFall 2s ease-in forwards;
 }
+
+/* Ritual pulse indicator */
+@keyframes ritualPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.5);
+  }
+}
+
+.ritual-pulse {
+  animation: ritualPulse 2s ease-in-out infinite;
+}
