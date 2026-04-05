@@ -40,7 +40,7 @@ const recurrenceOptions: { value: Recurrence; label: string; emoji: string }[] =
 ];
 
 const QUICK_IDEAS = ['📚 Study', '🏃 Exercise', '🧹 Clean up', '💻 Code', '📧 Email', '🛒 Shopping'];
-const POPULAR_TAGS = ['work', 'personal', 'health', 'learning', 'urgent', 'home'];
+const POPULAR_TAGS = ['ritual', 'work', 'personal', 'health', 'learning', 'urgent', 'home'];
 
 const toISOOrNull = (value: string): string | null => {
     if (!value) return null;
@@ -557,18 +557,25 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                             Popular tags 🔖
                                         </p>
                                         <div className="flex flex-wrap justify-center" style={{ gap: 8 }}>
-                                            {POPULAR_TAGS.filter(t => !tags.includes(t)).map((s) => (
-                                                <motion.button
-                                                    key={s}
-                                                    type="button"
-                                                    whileTap={{ scale: 0.95 }}
-                                                    onClick={() => setTags(prev => [...prev, s])}
-                                                    className="rounded-xl border border-dashed border-[var(--color-border)] text-[var(--color-text-secondary)] active:border-primary-500/50 active:text-primary-500 transition-all"
-                                                    style={{ height: 36, paddingLeft: 14, paddingRight: 14, fontSize: 13 }}
-                                                >
-                                                    + {s}
-                                                </motion.button>
-                                            ))}
+                                            {POPULAR_TAGS.filter(t => !tags.includes(t)).map((s) => {
+                                                const isRitual = s === 'ritual';
+                                                return (
+                                                    <motion.button
+                                                        key={s}
+                                                        type="button"
+                                                        whileTap={{ scale: 0.95 }}
+                                                        onClick={() => setTags(prev => [...prev, s])}
+                                                        className={`rounded-xl transition-all ${
+                                                            isRitual
+                                                                ? 'bg-gradient-to-r from-purple-500/15 to-cyan-500/15 dark:from-purple-500/25 dark:to-cyan-500/25 border border-purple-500/30 text-purple-600 dark:text-purple-400 font-bold'
+                                                                : 'border border-dashed border-[var(--color-border)] text-[var(--color-text-secondary)] active:border-primary-500/50 active:text-primary-500'
+                                                        }`}
+                                                        style={{ height: 36, paddingLeft: 14, paddingRight: 14, fontSize: 13 }}
+                                                    >
+                                                        {isRitual ? '✨ ritual' : `+ ${s}`}
+                                                    </motion.button>
+                                                );
+                                            })}
                                         </div>
                                     </div>
 
