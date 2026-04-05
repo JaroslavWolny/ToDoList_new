@@ -8,12 +8,14 @@ import { getLevelTitle } from '../../lib/gamification';
 const StreakShareModal = lazy(() => import('./StreakShareModal').then((module) => ({ default: module.StreakShareModal })));
 
 export function StreakCounter() {
-    const { streakCurrent, streakLongest, displayName, level } = useUserStore(
+    const { streakCurrent, streakLongest, displayName, level, xp, totalTasksCompleted } = useUserStore(
         useShallow((state) => ({
             streakCurrent: state.streakCurrent,
             streakLongest: state.streakLongest,
             displayName: state.displayName,
             level: state.level,
+            xp: state.xp,
+            totalTasksCompleted: state.totalTasksCompleted,
         }))
     );
     const isOnFire = streakCurrent >= 3;
@@ -83,6 +85,9 @@ export function StreakCounter() {
                         bestStreak={streakLongest}
                         username={displayName || 'Hero'}
                         rank={getLevelTitle(level)}
+                        level={level}
+                        xp={xp}
+                        totalTasks={totalTasksCompleted}
                     />
                 </Suspense>
             )}
