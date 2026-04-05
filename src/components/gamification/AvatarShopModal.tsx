@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Lock, Sparkles, Star, Coins, Trophy } from 'lucide-react';
+import { X, Lock, Sparkles, Star, Coins, Trophy, ShoppingBag } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../../stores/userStore';
 import { AVAILABLE_AVATARS, AVATAR_CATEGORIES, CategoryFilter } from '../../lib/avatars';
@@ -216,10 +216,10 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                                 initial={{ scale: 0, rotate: -180 }}
                                 animate={{ scale: 1, rotate: 0 }}
                                 transition={{ type: 'spring', damping: 12, stiffness: 200 }}
-                                className="select-none"
-                                style={{ fontSize: 32 }}
+                                className="select-none flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500/20 to-violet-500/20"
+                                style={{ width: 48, height: 48 }}
                             >
-                                🛍️
+                                <ShoppingBag className="text-primary-400" style={{ width: 26, height: 26 }} strokeWidth={2} />
                             </motion.div>
                             <div>
                                 <h2 className="font-extrabold" style={{ fontSize: 20, lineHeight: '24px' }}>Avatar Shop</h2>
