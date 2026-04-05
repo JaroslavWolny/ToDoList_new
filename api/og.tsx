@@ -54,7 +54,6 @@ export default function handler(req: Request) {
         let accentColor = '#8d6e63';
         let accentGlow = 'rgba(141, 110, 99, 0.4)';
         let meshOverlay = 'radial-gradient(ellipse at 20% 50%, rgba(141, 110, 99, 0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(141, 110, 99, 0.1) 0%, transparent 50%)';
-        let streakGradient = 'linear-gradient(135deg, #a1887f, #8d6e63)';
         let cardBorderGradient = `linear-gradient(135deg, rgba(141,110,99,0.6), rgba(141,110,99,0.1), rgba(141,110,99,0.4))`;
 
         if (currentStreak >= 100) {
@@ -64,7 +63,6 @@ export default function handler(req: Request) {
             accentColor = '#e040fb';
             accentGlow = 'rgba(224, 64, 251, 0.5)';
             meshOverlay = 'radial-gradient(ellipse at 30% 40%, rgba(224, 64, 251, 0.2) 0%, transparent 50%), radial-gradient(ellipse at 70% 70%, rgba(103, 58, 183, 0.25) 0%, transparent 45%), radial-gradient(circle at 50% 10%, rgba(255, 215, 0, 0.1) 0%, transparent 40%)';
-            streakGradient = 'linear-gradient(135deg, #e040fb, #7c4dff, #448aff)';
             cardBorderGradient = 'linear-gradient(135deg, rgba(224,64,251,0.8), rgba(124,77,255,0.3), rgba(255,215,0,0.6), rgba(224,64,251,0.5))';
         } else if (currentStreak >= 30) {
             tierLabel = 'GOLD';
@@ -73,7 +71,6 @@ export default function handler(req: Request) {
             accentColor = '#ffd700';
             accentGlow = 'rgba(255, 215, 0, 0.45)';
             meshOverlay = 'radial-gradient(ellipse at 25% 45%, rgba(255, 215, 0, 0.2) 0%, transparent 55%), radial-gradient(ellipse at 75% 25%, rgba(255, 183, 77, 0.15) 0%, transparent 45%), radial-gradient(circle at 50% 80%, rgba(255, 215, 0, 0.08) 0%, transparent 40%)';
-            streakGradient = 'linear-gradient(135deg, #ffd700, #ffab00, #ff6d00)';
             cardBorderGradient = 'linear-gradient(135deg, rgba(255,215,0,0.8), rgba(255,171,0,0.2), rgba(255,109,0,0.5), rgba(255,215,0,0.6))';
         } else if (currentStreak >= 14) {
             tierLabel = 'SILVER';
@@ -82,7 +79,6 @@ export default function handler(req: Request) {
             accentColor = '#c9d1d9';
             accentGlow = 'rgba(201, 209, 217, 0.35)';
             meshOverlay = 'radial-gradient(ellipse at 30% 50%, rgba(201, 209, 217, 0.12) 0%, transparent 55%), radial-gradient(ellipse at 70% 30%, rgba(139, 148, 158, 0.15) 0%, transparent 50%)';
-            streakGradient = 'linear-gradient(135deg, #e8eaed, #c9d1d9, #8b949e)';
             cardBorderGradient = 'linear-gradient(135deg, rgba(201,209,217,0.6), rgba(139,148,158,0.15), rgba(201,209,217,0.4))';
         } else if (currentStreak >= 4) {
             tierLabel = 'BRONZE';
@@ -91,7 +87,6 @@ export default function handler(req: Request) {
             accentColor = '#cd7f32';
             accentGlow = 'rgba(205, 127, 50, 0.4)';
             meshOverlay = 'radial-gradient(ellipse at 25% 50%, rgba(205, 127, 50, 0.15) 0%, transparent 55%), radial-gradient(ellipse at 75% 30%, rgba(205, 127, 50, 0.1) 0%, transparent 50%)';
-            streakGradient = 'linear-gradient(135deg, #daa06d, #cd7f32, #a0522d)';
             cardBorderGradient = 'linear-gradient(135deg, rgba(205,127,50,0.6), rgba(160,82,45,0.15), rgba(205,127,50,0.4))';
         }
 
@@ -358,10 +353,8 @@ export default function handler(req: Request) {
                                         fontSize: u(280),
                                         fontWeight: '900',
                                         lineHeight: '1',
-                                        background: streakGradient,
-                                        backgroundClip: 'text',
-                                        color: 'transparent',
-                                        textShadow: 'none',
+                                        color: 'white',
+                                        textShadow: `0 ${u(8)} ${u(60)} ${accentGlow}, 0 ${u(2)} ${u(20)} ${accentGlow}`,
                                         letterSpacing: u(-8),
                                     }}
                                 >
@@ -438,6 +431,7 @@ export default function handler(req: Request) {
                                                 fontSize: u(52),
                                                 fontWeight: '900',
                                                 color: accentColor,
+                                                textShadow: `0 ${u(2)} ${u(16)} ${accentGlow}`,
                                             }}
                                         >
                                             {bestStreak}
@@ -487,6 +481,7 @@ export default function handler(req: Request) {
                                                 fontSize: u(52),
                                                 fontWeight: '900',
                                                 color: accentColor,
+                                                textShadow: `0 ${u(2)} ${u(16)} ${accentGlow}`,
                                             }}
                                         >
                                             {level}
@@ -536,6 +531,7 @@ export default function handler(req: Request) {
                                                 fontSize: u(52),
                                                 fontWeight: '900',
                                                 color: accentColor,
+                                                textShadow: `0 ${u(2)} ${u(16)} ${accentGlow}`,
                                             }}
                                         >
                                             {tasks}

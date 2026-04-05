@@ -208,6 +208,8 @@ A comprehensive senior-level audit identified and resolved **17 out of 21** issu
 - **Rock-Solid Recurring Tasks:** Overhauled date-parsing logic to rely on UTC-based day calculations, resolving issues where Daylight Saving Time (DST) shifts previously prevented daily recurring tasks from properly resetting.
 - **Mobile UI Excellence:** Resolved blurry rendering of UI icons and recalibrated absolute positioning throughout the New Task flow, ensuring elements are flawlessly centered on all devices.
 - **Input Alignment (iOS):** Fixed persistent visual clipping of input field borders and tuned text/icon vertical alignment to deliver a refined, native-tier input experience on iOS devices.
+- **Dynamic Share Cards:** Refactored the internal serverless OG image generation logic (`api/og.tsx` & `vite-og-plugin.ts`) to resolve rendering inconsistencies, utilizing precise scaling, layout updates, and robust base64 image caching to ensure generated streak cards look identical to the native UI.
+- **Avatar Shop Consistency:** Replaced native emoji elements with high-quality SVG components from `lucide-react` across the Avatar Shop to dramatically improve visual consistency and scaling boundaries across different operating systems.
 
 ---
 

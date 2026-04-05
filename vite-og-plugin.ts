@@ -100,7 +100,7 @@ function getTier(streak: number): TierConfig {
     };
 }
 
-function buildStatCard(u: (v: number) => string, label: string, value: string, sub: string, accentColor: string) {
+function buildStatCard(u: (v: number) => string, label: string, value: string, sub: string, accentColor: string, accentGlow: string) {
     return h('div', {
         style: {
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -110,7 +110,7 @@ function buildStatCard(u: (v: number) => string, label: string, value: string, s
         }
     },
         h('div', { style: { display: 'flex', fontSize: u(22), fontWeight: '600', color: 'rgba(255,255,255,0.4)', letterSpacing: u(3), textTransform: 'uppercase' } }, label),
-        h('div', { style: { display: 'flex', fontSize: u(52), fontWeight: '900', color: accentColor } }, value),
+        h('div', { style: { display: 'flex', fontSize: u(52), fontWeight: '900', color: accentColor, textShadow: `0 ${u(2)} ${u(16)} ${accentGlow}` } }, value),
         h('div', { style: { display: 'flex', fontSize: u(18), fontWeight: '500', color: 'rgba(255,255,255,0.3)' } }, sub)
     );
 }
@@ -179,15 +179,15 @@ export async function generateOGImage(url: string) {
                     h('div', { style: { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: u(480), height: u(480), borderRadius: '50%', border: `${u(1)} solid rgba(255,255,255,0.04)`, display: 'flex' } }),
                     h('div', { style: { display: 'flex', fontSize: u(56), marginBottom: u(12) } }, emoji),
                     h('div', { style: { display: 'flex', fontSize: u(28), fontWeight: '700', letterSpacing: u(14), textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)', marginBottom: u(4) } }, 'DAY STREAK'),
-                    h('div', { style: { display: 'flex', fontSize: u(280), fontWeight: '900', lineHeight: '1', background: tier.streakGradient, backgroundClip: 'text', color: 'transparent', letterSpacing: u(-8) } }, String(currentStreak)),
+                    h('div', { style: { display: 'flex', fontSize: u(280), fontWeight: '900', lineHeight: '1', color: 'white', textShadow: `0 ${u(8)} ${u(60)} ${tier.accentGlow}, 0 ${u(2)} ${u(20)} ${tier.accentGlow}`, letterSpacing: u(-8) } }, String(currentStreak)),
                     h('div', { style: { display: 'flex', marginTop: u(16), padding: `${u(12)} ${u(36)}`, borderRadius: u(100), backgroundColor: 'rgba(255,255,255,0.05)', border: `${u(1)} solid rgba(255,255,255,0.08)`, fontSize: u(26), fontWeight: '800', letterSpacing: u(5), color: 'rgba(255,255,255,0.6)' } }, motivational)
                 ),
                 // BOTTOM: Stats + Branding
                 h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: u(36) } },
                     h('div', { style: { display: 'flex', width: '100%', gap: u(16) } },
-                        buildStatCard(u, 'BEST', String(bestStreak), 'days', tier.accentColor),
-                        buildStatCard(u, 'LEVEL', String(level), `${xp.toLocaleString()} XP`, tier.accentColor),
-                        buildStatCard(u, 'QUESTS', String(tasks), 'done', tier.accentColor)
+                        buildStatCard(u, 'BEST', String(bestStreak), 'days', tier.accentColor, tier.accentGlow),
+                        buildStatCard(u, 'LEVEL', String(level), `${xp.toLocaleString()} XP`, tier.accentColor, tier.accentGlow),
+                        buildStatCard(u, 'QUESTS', String(tasks), 'done', tier.accentColor, tier.accentGlow)
                     ),
                     h('div', { style: { display: 'flex', width: u(200), height: u(2), background: `linear-gradient(90deg, transparent, ${tier.accentColor}, transparent)`, opacity: 0.3 } }),
                     h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: u(8) } },
