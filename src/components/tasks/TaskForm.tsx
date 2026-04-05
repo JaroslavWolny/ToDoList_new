@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Calendar, Clock, Repeat, Zap, AlertTriangle, Flame, Shield, Check, X, Rocket } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Calendar, Clock, Repeat, Zap, AlertTriangle, Flame, Shield, Check, X, Rocket, Target, CalendarClock, Tags } from 'lucide-react';
 import { Task, Priority, Recurrence } from '../../types';
 import { toDateTimeLocalInputValue } from '../../lib/dates';
 
@@ -12,11 +12,18 @@ interface TaskFormProps {
     editTask?: Task | null;
 }
 
+const STEP_ICONS = [
+    { Icon: Target, gradient: 'from-primary-500 to-violet-500' },
+    { Icon: Zap, gradient: 'from-amber-500 to-orange-500' },
+    { Icon: CalendarClock, gradient: 'from-emerald-500 to-teal-500' },
+    { Icon: Tags, gradient: 'from-pink-500 to-rose-500' },
+];
+
 const STEPS = [
-    { id: 'name', title: "What's the quest?", subtitle: 'Name your mission', emoji: '🎯' },
-    { id: 'priority', title: 'How urgent?', subtitle: 'Set the difficulty level', emoji: '⚡' },
-    { id: 'details', title: 'When & how often?', subtitle: 'Time & schedule', emoji: '📋' },
-    { id: 'tags', title: 'Almost there!', subtitle: 'Tag & review your quest', emoji: '🏷️' },
+    { id: 'name', title: "What's the quest?", subtitle: 'Name your mission' },
+    { id: 'priority', title: 'How urgent?', subtitle: 'Set the difficulty level' },
+    { id: 'details', title: 'When & how often?', subtitle: 'Time & schedule' },
+    { id: 'tags', title: 'Almost there!', subtitle: 'Tag & review your quest' },
 ];
 
 const priorityOptions: { value: Priority; label: string; icon: typeof Zap; color: string; bgColor: string; activeRing: string; description: string; emoji: string }[] = [
@@ -217,12 +224,13 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
 
                 {/* ═══ Main content – vertically centered, scrollable ═══ */}
                 <div
-                    className="flex-1 w-full max-w-md mx-auto flex flex-col justify-center overflow-y-auto overscroll-contain scrollbar-hide px-1"
-                    style={{ WebkitOverflowScrolling: 'touch', paddingTop: 24, paddingBottom: 24 }}
+                    className="flex-1 w-full max-w-md mx-auto flex flex-col items-center justify-center overflow-y-auto overscroll-contain scrollbar-hide"
+                    style={{ WebkitOverflowScrolling: 'touch', paddingTop: 24, paddingBottom: 24, paddingLeft: 4, paddingRight: 4 }}
                 >
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={currentStep}
+                            className="w-full"
                             variants={slideVariants}
                             initial="enter"
                             animate="center"
@@ -236,10 +244,10 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                         initial={{ scale: 0, rotate: -20 }}
                                         animate={{ scale: 1, rotate: 0 }}
                                         transition={{ type: 'spring', damping: 10 }}
-                                        className="select-none"
-                                        style={{ fontSize: 56, lineHeight: 1, width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}
+                                        className={`select-none rounded-3xl bg-gradient-to-br ${STEP_ICONS[0].gradient} shadow-lg`}
+                                        style={{ width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                     >
-                                        🎯
+                                        <Target className="text-white" style={{ width: 36, height: 36 }} strokeWidth={2} />
                                     </motion.div>
 
                                     <div className="text-center">
@@ -329,10 +337,10 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
                                         transition={{ type: 'spring', damping: 10 }}
-                                        className="select-none"
-                                        style={{ fontSize: 56, lineHeight: 1, width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}
+                                        className={`select-none rounded-3xl bg-gradient-to-br ${STEP_ICONS[1].gradient} shadow-lg`}
+                                        style={{ width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                     >
-                                        ⚡
+                                        <Zap className="text-white" style={{ width: 36, height: 36 }} strokeWidth={2} />
                                     </motion.div>
 
                                     <div className="text-center">
@@ -398,10 +406,10 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
                                         transition={{ type: 'spring', damping: 10 }}
-                                        className="select-none"
-                                        style={{ fontSize: 56, lineHeight: 1, width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}
+                                        className={`select-none rounded-3xl bg-gradient-to-br ${STEP_ICONS[2].gradient} shadow-lg`}
+                                        style={{ width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                     >
-                                        📋
+                                        <CalendarClock className="text-white" style={{ width: 36, height: 36 }} strokeWidth={2} />
                                     </motion.div>
 
                                     <div className="text-center">
@@ -480,10 +488,10 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
                                         transition={{ type: 'spring', damping: 10 }}
-                                        className="select-none"
-                                        style={{ fontSize: 56, lineHeight: 1, width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}
+                                        className={`select-none rounded-3xl bg-gradient-to-br ${STEP_ICONS[3].gradient} shadow-lg`}
+                                        style={{ width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                     >
-                                        🏷️
+                                        <Tags className="text-white" style={{ width: 36, height: 36 }} strokeWidth={2} />
                                     </motion.div>
 
                                     <div className="text-center">
