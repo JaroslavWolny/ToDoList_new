@@ -198,6 +198,17 @@ A comprehensive senior-level audit identified and resolved **17 out of 21** issu
 - Added font caching to `vite-og-plugin.ts`, significantly speeding up dynamic OG Share Card generation by avoiding redundant network requests.
 - Polished the `TaskForm` category selection UI to ensure smooth mobile scrolling and perfect overflow handling.
 
+### Latest Improvements (Early April 2026)
+
+**New Features & Enhancements:**
+- **Quick Rituals:** Added a new `QuickRituals` component allowing users to seamlessly log and complete fast, repeatable daily actions without using the full task creation modal.
+- **Strict Task Locking:** Enforced the scheduling logic so that tasks with a future "Reminder" (`startDate`) are explicitly locked and cannot be completed ahead of schedule.
+
+**Robust Fixes & UI Perfection:**
+- **Rock-Solid Recurring Tasks:** Overhauled date-parsing logic to rely on UTC-based day calculations, resolving issues where Daylight Saving Time (DST) shifts previously prevented daily recurring tasks from properly resetting.
+- **Mobile UI Excellence:** Resolved blurry rendering of UI icons and recalibrated absolute positioning throughout the New Task flow, ensuring elements are flawlessly centered on all devices.
+- **Input Alignment (iOS):** Fixed persistent visual clipping of input field borders and tuned text/icon vertical alignment to deliver a refined, native-tier input experience on iOS devices.
+
 ---
 
 ## 💡 The Philosophy

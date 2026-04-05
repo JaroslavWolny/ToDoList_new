@@ -66,6 +66,7 @@ const defaultSettings: UserSettings = {
     workDays: [1, 2, 3, 4, 5, 6, 0],
     dailyMissionsEnabled: true,
     healthBarEnabled: true,
+    quickRitualsEnabled: true,
     notificationMorning: DEFAULT_NOTIFICATION_MORNING,
     notificationEvening: DEFAULT_NOTIFICATION_EVENING,
     notificationsEnabled: true,

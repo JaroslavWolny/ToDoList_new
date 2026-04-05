@@ -31,10 +31,11 @@ export function Dashboard() {
     const [showRituals, setShowRituals] = useState(false);
     const hasInitializedRef = useRef(false);
 
-    const { displayName, dailyMissionsEnabled } = useUserStore(
+    const { displayName, dailyMissionsEnabled, quickRitualsEnabled } = useUserStore(
         useShallow((state) => ({
             displayName: state.displayName,
             dailyMissionsEnabled: state.settings.dailyMissionsEnabled,
+            quickRitualsEnabled: state.settings.quickRitualsEnabled,
         }))
     );
     const { tasks, completions, addTask, updateTask, deleteTask } = useTaskStore(
@@ -210,7 +211,7 @@ export function Dashboard() {
             </div>
 
             {/* Ritual Pill Button */}
-            {ritualStats.total > 0 && (
+            {quickRitualsEnabled && ritualStats.total > 0 && (
                 <motion.button
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}

@@ -68,6 +68,7 @@ export interface UserSettings {
     workDays: number[];
     dailyMissionsEnabled: boolean;
     healthBarEnabled: boolean;
+    quickRitualsEnabled: boolean;
     notificationMorning: string;
     notificationEvening: string;
     notificationsEnabled: boolean;

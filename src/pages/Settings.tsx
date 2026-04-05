@@ -487,6 +487,12 @@ export function Settings() {
                     checked={settings.healthBarEnabled}
                     onChange={(v) => updateSettings({ healthBarEnabled: v })}
                 />
+                <Toggle
+                    label="Quick Rituals"
+                    description="Fast-access drawer for daily routine tasks"
+                    checked={settings.quickRitualsEnabled}
+                    onChange={(v) => updateSettings({ quickRitualsEnabled: v })}
+                />
             </Section>
 
             {/* Data */}
