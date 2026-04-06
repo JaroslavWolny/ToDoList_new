@@ -462,7 +462,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                     {/* ── BOTTOM BAR ──────────────────────────────── */}
                     <div className="border-t border-[var(--color-border)] bg-[var(--color-bg)] flex-shrink-0"
                         style={{ padding: '12px 20px 16px' }}>
-                        <div className="flex items-center justify-between bg-gradient-to-r from-violet-500/5 via-primary-500/5 to-pink-500/5 dark:from-violet-500/10 dark:via-primary-500/10 dark:to-pink-500/10 border border-primary-500/10 rounded-2xl"
+                        <div className="flex items-center justify-between rounded-2xl"
                             style={{ padding: '10px 14px' }}>
                             <div className="flex items-center" style={{ gap: 8 }}>
                                 <Sparkles className="text-primary-400" style={{ width: 16, height: 16 }} />
