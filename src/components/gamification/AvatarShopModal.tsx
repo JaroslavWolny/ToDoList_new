@@ -124,6 +124,10 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
         AVAILABLE_AVATARS.filter(a => isAvatarUnlocked(a.id, a.cost, unlockedAvatars)).length,
         [unlockedAvatars]
     );
+    const collectionProgress = useMemo(() =>
+        Math.round((ownedCount / AVAILABLE_AVATARS.length) * 100),
+        [ownedCount]
+    );
 
     const filteredAvatars = useMemo(() =>
         AVAILABLE_AVATARS.filter(avatar => {
@@ -165,13 +169,12 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                 exit={isMobile ? { y: '100%' } : { x: '100%' }}
                 transition={{ type: 'spring', damping: 28, stiffness: 300 }}
                 className={`fixed z-50 flex flex-col ${
-                    isMobile ? 'inset-0' : 'right-0 top-0 bottom-0 w-[480px] max-w-[85vw]'
+                    isMobile ? 'inset-0 bg-[var(--color-bg)]' : 'right-0 top-0 bottom-0 w-[480px] max-w-[85vw]'
                 }`}
                 style={{
                     paddingTop: isMobile ? 'env(safe-area-inset-top, 0px)' : undefined,
                     paddingLeft: 'env(safe-area-inset-left, 0px)',
                     paddingRight: 'env(safe-area-inset-right, 0px)',
-                    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
                     overscrollBehavior: 'none',
                 }}
             >
@@ -246,7 +249,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                                 <motion.div
                                     className="h-full rounded-full bg-gradient-to-r from-primary-500 via-violet-500 to-pink-500"
                                     initial={{ width: 0 }}
-                                    animate={{ width: `${(ownedCount / AVAILABLE_AVATARS.length) * 100}%` }}
+                                    animate={{ width: `${collectionProgress}%` }}
                                     transition={{ type: 'spring', damping: 20, stiffness: 100, delay: 0.3 }}
                                 />
                             </div>
@@ -460,20 +463,93 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                     </div>
 
                     {/* ── BOTTOM BAR ──────────────────────────────── */}
-                    <div className="border-t border-[var(--color-border)] bg-[var(--color-bg)] flex-shrink-0"
-                        style={{ padding: '12px 20px 32px' }}>
-                        <div className="flex items-center justify-between rounded-2xl"
-                            style={{ padding: '10px 14px' }}>
-                            <div className="flex items-center" style={{ gap: 8 }}>
-                                <Sparkles className="text-primary-400" style={{ width: 16, height: 16 }} />
-                                <span className="font-bold text-[var(--color-text-secondary)]" style={{ fontSize: 12 }}>
-                                    Complete quests to earn coins!
-                                </span>
+                    <div
+                        className="border-t border-white/10 bg-gradient-to-t from-[#060913] via-[var(--color-bg)] to-[var(--color-bg)] flex-shrink-0"
+                        style={{
+                            paddingTop: 14,
+                            paddingLeft: 20,
+                            paddingRight: 20,
+                            paddingBottom: isMobile ? 'calc(16px + env(safe-area-inset-bottom, 0px))' : 20,
+                        }}
+                    >
+                        <div
+                            className="relative overflow-hidden rounded-[28px] border border-white/10 shadow-2xl"
+                            style={{
+                                padding: 16,
+                                background: 'linear-gradient(145deg, rgba(124,58,237,0.18) 0%, rgba(15,23,42,0.96) 48%, rgba(245,158,11,0.16) 100%)',
+                            }}
+                        >
+                            <div className="absolute -right-6 -top-8 h-24 w-24 rounded-full bg-yellow-400/15 blur-2xl" />
+                            <div className="absolute -bottom-8 -left-6 h-24 w-24 rounded-full bg-primary-500/20 blur-2xl" />
+
+                            <div className="relative flex items-start justify-between" style={{ gap: 12 }}>
+                                <div>
+                                    <div
+                                        className="inline-flex items-center rounded-full border border-white/10 bg-white/5 font-bold text-white/80 backdrop-blur-sm"
+                                        style={{ gap: 6, padding: '6px 10px', fontSize: 10, letterSpacing: '0.08em' }}
+                                    >
+                                        <Sparkles style={{ width: 12, height: 12 }} />
+                                        SHOP STATUS
+                                    </div>
+                                    <p className="font-extrabold text-white" style={{ fontSize: 16, lineHeight: '20px', marginTop: 10 }}>
+                                        Ready for your next unlock
+                                    </p>
+                                    <p className="text-white/70" style={{ fontSize: 12, lineHeight: '16px', marginTop: 4 }}>
+                                        Complete quests, stack coins, and keep the collection moving.
+                                    </p>
+                                </div>
+
+                                <div
+                                    className="flex items-center rounded-2xl border border-yellow-400/20 bg-yellow-400/10 text-yellow-300 backdrop-blur-sm"
+                                    style={{ gap: 8, padding: '10px 12px' }}
+                                >
+                                    <Coins style={{ width: 18, height: 18 }} strokeWidth={2.5} />
+                                    <div>
+                                        <p className="font-bold uppercase text-yellow-200/80" style={{ fontSize: 9, letterSpacing: '0.08em' }}>
+                                            Balance
+                                        </p>
+                                        <p className="font-extrabold tabular-nums" style={{ fontSize: 16, lineHeight: '18px' }}>
+                                            {coins}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
-                            <span className="font-extrabold text-yellow-500 flex items-center" style={{ fontSize: 13, gap: 5 }}>
-                                <Coins style={{ width: 15, height: 15 }} strokeWidth={2.5} />
-                                {coins}
-                            </span>
+
+                            <div className="relative grid grid-cols-2" style={{ gap: 10, marginTop: 14 }}>
+                                <div className="rounded-2xl border border-white/10 bg-black/15 backdrop-blur-sm" style={{ padding: '12px 14px' }}>
+                                    <p className="font-bold uppercase text-white/55" style={{ fontSize: 10, letterSpacing: '0.08em' }}>
+                                        Owned
+                                    </p>
+                                    <p className="font-extrabold text-white tabular-nums" style={{ fontSize: 18, lineHeight: '20px', marginTop: 6 }}>
+                                        {ownedCount}/{AVAILABLE_AVATARS.length}
+                                    </p>
+                                    <p className="text-white/65" style={{ fontSize: 11, marginTop: 4 }}>
+                                        avatars unlocked
+                                    </p>
+                                </div>
+
+                                <div className="rounded-2xl border border-white/10 bg-black/15 backdrop-blur-sm" style={{ padding: '12px 14px' }}>
+                                    <p className="font-bold uppercase text-white/55" style={{ fontSize: 10, letterSpacing: '0.08em' }}>
+                                        Progress
+                                    </p>
+                                    <div className="flex items-end justify-between" style={{ marginTop: 6, gap: 8 }}>
+                                        <p className="font-extrabold text-white tabular-nums" style={{ fontSize: 18, lineHeight: '20px' }}>
+                                            {collectionProgress}%
+                                        </p>
+                                        <span className="font-semibold text-emerald-300" style={{ fontSize: 11 }}>
+                                            collection
+                                        </span>
+                                    </div>
+                                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+                                        <motion.div
+                                            className="h-full rounded-full bg-gradient-to-r from-yellow-400 via-primary-400 to-violet-400"
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${collectionProgress}%` }}
+                                            transition={{ type: 'spring', damping: 22, stiffness: 120, delay: 0.2 }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
