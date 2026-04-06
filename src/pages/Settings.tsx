@@ -573,7 +573,7 @@ function Toggle({
             <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={() => onChange(!checked)}
-                className={`relative w-12 h-7 rounded-full transition-colors ${checked ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
+                className={`relative shrink-0 w-12 h-7 rounded-full transition-colors ${checked ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
                     }`}
             >
                 <motion.div
