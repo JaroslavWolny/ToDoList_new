@@ -561,10 +561,10 @@ function Toggle({
     icon?: React.ReactNode;
 }) {
     return (
-        <div className="flex items-center justify-between py-3">
-            <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between py-3 gap-3">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
                 {icon}
-                <div>
+                <div className="min-w-0">
                     <p className="text-sm font-medium">{label}</p>
                     <p className="text-xs text-[var(--color-text-secondary)]">{description}</p>
                 </div>
@@ -572,7 +572,7 @@ function Toggle({
             <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={() => onChange(!checked)}
-                className={`relative w-12 h-7 rounded-full transition-colors ${checked ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
+                className={`relative w-12 h-7 rounded-full transition-colors flex-shrink-0 ${checked ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
                     }`}
             >
                 <motion.div

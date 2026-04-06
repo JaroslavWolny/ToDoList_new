@@ -59,6 +59,13 @@ Visualize your productivity journey:
 - **Hourly Reminder Slots:** 🕐 Reminder selection is normalized to the start of the selected hour so the UI matches the hourly cron delivery model.
 - **Hourly Dispatch via GitHub Actions:** ⚙️ A scheduled GitHub Actions workflow pings a Vercel Serverless Function every hour on the dot. The function securely reads timezone preferences from Firestore via the Firebase Admin SDK and delivers reminders at the correct local slot — a 100% free-tier setup (Vercel Hobby + Firebase Spark + GitHub Actions) with no Pro plan required.
 
+### ⚙️ Smart Settings & Safe Backups
+Tune the app to match your routine instead of forcing your routine to match the app:
+- **Theme Modes:** Switch between Light, Dark, and Auto mode directly from Settings.
+- **Custom Work Days:** Decide which weekdays count toward your streak so weekends don't break your flow.
+- **Feature Toggles:** Enable or disable systems like Daily Missions, Health Bar, and Quick Rituals based on how intense you want the experience to feel.
+- **Data Portability:** Export your full local progress to JSON, import it later, or fully reset the app when you want a clean start.
+
 ### 📱 Perfect PWA Experience
 Install **QuestDo** directly to your phone or desktop.
 - **Offline-First:** Works anywhere, anytime. Your data stays completely private in LocalStorage.
