@@ -110,6 +110,7 @@ export const getNextReminderSchedule = (
 
     const alignedStart = new Date(fromDate.getTime());
     alignedStart.setUTCSeconds(0, 0);
+    alignedStart.setUTCMinutes(Math.floor(alignedStart.getUTCMinutes() / 15) * 15);
 
     const initialTimestamp = alignedStart.getTime();
 
