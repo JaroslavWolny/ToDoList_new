@@ -366,7 +366,6 @@ export function Settings() {
                             }
                         }
                     }}
-                    icon={settings.notificationsEnabled ? <Bell className="w-4 h-4 text-primary-500" /> : <BellOff className="w-4 h-4 text-[var(--color-text-secondary)]" />}
                 />
                 {!hasNotificationConfig && (
                     <motion.div

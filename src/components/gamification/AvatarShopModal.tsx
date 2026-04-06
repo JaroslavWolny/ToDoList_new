@@ -461,7 +461,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
 
                     {/* ── BOTTOM BAR ──────────────────────────────── */}
                     <div className="border-t border-[var(--color-border)] bg-[var(--color-bg)] flex-shrink-0"
-                        style={{ padding: '12px 20px 16px' }}>
+                        style={{ padding: '12px 20px 32px' }}>
                         <div className="flex items-center justify-between rounded-2xl"
                             style={{ padding: '10px 14px' }}>
                             <div className="flex items-center" style={{ gap: 8 }}>
