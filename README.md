@@ -57,7 +57,7 @@ Visualize your productivity journey:
 ### 🔔 Web Push Notifications (Firebase & Vercel)
 - **Background Reminders:** 📲 The app uses Firebase Cloud Messaging (FCM) to deliver morning and evening summaries directly to your device (supports iOS 16.4+ standalone PWAs).
 - **Hourly Reminder Slots:** 🕐 Reminder selection is normalized to the start of the selected hour so the UI matches the hourly cron delivery model.
-- **Vercel Cron Jobs:** ⚙️ A custom Vercel Serverless Function runs automatically every hour, securely reading your timezone preferences from Firestore via the Firebase Admin SDK to ping you at the correct local reminder slot.
+- **Hourly Dispatch via GitHub Actions:** ⚙️ A scheduled GitHub Actions workflow pings a Vercel Serverless Function every hour on the dot. The function securely reads timezone preferences from Firestore via the Firebase Admin SDK and delivers reminders at the correct local slot — a 100% free-tier setup (Vercel Hobby + Firebase Spark + GitHub Actions) with no Pro plan required.
 
 ### 📱 Perfect PWA Experience
 Install **QuestDo** directly to your phone or desktop.
@@ -82,7 +82,8 @@ We forged QuestDo using the most modern web technologies:
 | 📈 **Recharts** | Interactive data visualization |
 | 📱 **Vite PWA** | Native app capabilities & offline mode |
 | 🔥 **Firebase** | Cloud Messaging (FCM) & Firestore Database |
-| ▲ **Vercel** | Serverless API Functions & Daily Cron Jobs |
+| ▲ **Vercel** | Serverless API Functions (Hobby plan) |
+| 🤖 **GitHub Actions** | Hourly cron scheduler for push notifications |
 
 ---
 
@@ -197,6 +198,14 @@ A comprehensive senior-level audit identified and resolved **17 out of 21** issu
 - Optimized date parsing in `taskStore` using `Date.parse()` to improve performance during overdue task processing.
 - Added font caching to `vite-og-plugin.ts`, significantly speeding up dynamic OG Share Card generation by avoiding redundant network requests.
 - Polished the `TaskForm` category selection UI to ensure smooth mobile scrolling and perfect overflow handling.
+
+### Push Notifications Go Live (April 2026)
+
+**End-to-end notification pipeline fully wired up and shipping to iOS PWAs:**
+- **Free-tier cron via GitHub Actions:** Vercel Hobby doesn't support sub-daily crons, so the hourly dispatcher (`.github/workflows/cron-ping.yml`) now pings `/api/cron/notifications` every hour using `CRON_SECRET` as a shared bearer token.
+- **Self-contained API bundle:** Split the `/api` tree from the ESM frontend — added `api/package.json` with `"type": "commonjs"` and vendored a CJS copy of `reminders.ts` into `api/lib/` to eliminate `ERR_REQUIRE_ESM` failures on Vercel's Node runtime.
+- **Firebase Admin wiring:** Documented the full environment-variable set (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `CRON_SECRET`) and the Cloud Firestore + FCM API enablement steps required for a fresh project.
+- **Verified delivery:** Endpoint confirmed returning `200 {"success":true}`; iOS 16.4+ home-screen PWA receives background FCM pushes from the scheduled dispatch.
 
 ### Latest Improvements (Early April 2026)
 
