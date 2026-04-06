@@ -466,24 +466,24 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                     <div
                         className="border-t border-white/10 bg-gradient-to-t from-[#0b1020] via-[var(--color-bg)] to-[var(--color-bg)] flex-shrink-0"
                         style={{
-                            paddingTop: 10,
+                            paddingTop: 8,
                             paddingLeft: 20,
                             paddingRight: 20,
-                            paddingBottom: isMobile ? 'calc(10px + env(safe-area-inset-bottom, 0px))' : 14,
+                            paddingBottom: isMobile ? 'calc(8px + env(safe-area-inset-bottom, 0px))' : 12,
                         }}
                     >
                         <div
-                            className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] shadow-lg backdrop-blur-xl"
+                            className="relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] shadow-md backdrop-blur-xl"
                             style={{
-                                padding: '12px 14px',
+                                padding: '10px 12px',
                             }}
                         >
-                            <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-primary-500/10 to-transparent" />
-                            <div className="relative flex items-center" style={{ gap: 10 }}>
-                                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500/20 to-amber-400/20 text-primary-300">
-                                    <Sparkles style={{ width: 16, height: 16 }} />
+                            <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-primary-500/8 to-transparent" />
+                            <div className="relative flex items-center" style={{ gap: 8 }}>
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500/14 to-amber-400/14 text-primary-300/85">
+                                    <Sparkles style={{ width: 14, height: 14 }} />
                                 </div>
-                                <p className="font-semibold text-white/88" style={{ fontSize: 13, lineHeight: '17px' }}>
+                                <p className="font-medium text-white/68" style={{ fontSize: 12, lineHeight: '15px' }}>
                                     Pick your next flex. Scroll, unlock, equip.
                                 </p>
                             </div>
