@@ -4,7 +4,7 @@ import {
     getNextReminderSchedule,
     isValidReminderSlot,
     isValidTimeZone,
-} from '../../src/lib/reminders';
+} from '../lib/reminders';
 
 type NotificationTokenPayload = {
     deviceId?: unknown;

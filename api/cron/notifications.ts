@@ -5,7 +5,7 @@ import {
     ReminderType,
     isValidReminderSlot,
     isValidTimeZone,
-} from '../../src/lib/reminders';
+} from '../lib/reminders';
 
 type FirebaseMessagingError = { code?: string; message?: string };
 
