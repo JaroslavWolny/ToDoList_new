@@ -573,13 +573,13 @@ function Toggle({
             <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={() => onChange(!checked)}
-                className={`relative shrink-0 w-12 h-7 rounded-full transition-colors overflow-hidden ${checked ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
+                className={`relative shrink-0 w-12 h-7 rounded-full transition-colors ${checked ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
                     }`}
             >
                 <motion.div
-                    animate={{ x: checked ? 22 : 2 }}
+                    animate={{ x: checked ? 20 : 0 }}
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    className="absolute top-1/2 left-0 w-6 h-6 -translate-y-1/2 rounded-full bg-white shadow-md"
+                    className="absolute top-1/2 left-0.5 w-6 h-6 -translate-y-1/2 rounded-full bg-white shadow-md"
                 />
             </motion.button>
         </div>
