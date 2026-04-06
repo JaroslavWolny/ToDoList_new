@@ -579,7 +579,7 @@ function Toggle({
                 <motion.div
                     animate={{ x: checked ? 20 : 0 }}
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    className="absolute top-1/2 left-0.5 w-6 h-6 -translate-y-1/2 rounded-full bg-white shadow-md"
+                    className="absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md"
                 />
             </motion.button>
         </div>
