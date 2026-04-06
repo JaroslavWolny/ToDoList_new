@@ -464,29 +464,39 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
 
                     {/* ── BOTTOM BAR ──────────────────────────────── */}
                     <div
-                        className="border-t border-white/10 bg-gradient-to-t from-[#0b1020] via-[var(--color-bg)] to-[var(--color-bg)] flex-shrink-0"
+                        className="relative flex-shrink-0"
                         style={{
-                            paddingTop: 8,
+                            paddingTop: 6,
                             paddingLeft: 20,
                             paddingRight: 20,
-                            paddingBottom: isMobile ? 'calc(8px + env(safe-area-inset-bottom, 0px))' : 12,
+                            paddingBottom: isMobile ? 'calc(6px + env(safe-area-inset-bottom, 0px))' : 10,
                         }}
                     >
                         <div
-                            className="relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] shadow-md backdrop-blur-xl"
+                            className="pointer-events-none absolute inset-x-0 top-0"
                             style={{
-                                padding: '10px 12px',
+                                height: 36,
+                                background: 'linear-gradient(180deg, transparent 0%, var(--color-bg) 100%)',
                             }}
-                        >
-                            <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-primary-500/8 to-transparent" />
-                            <div className="relative flex items-center" style={{ gap: 8 }}>
-                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500/14 to-amber-400/14 text-primary-300/85">
-                                    <Sparkles style={{ width: 14, height: 14 }} />
-                                </div>
-                                <p className="font-medium text-white/68" style={{ fontSize: 12, lineHeight: '15px' }}>
+                        />
+                        <div className="relative flex items-center justify-center" style={{ gap: 10 }}>
+                            <div
+                                className="h-px w-10 opacity-60"
+                                style={{ background: 'linear-gradient(90deg, transparent 0%, var(--color-border) 100%)' }}
+                            />
+                            <div
+                                className="glass inline-flex items-center rounded-full"
+                                style={{ gap: 6, padding: '6px 10px' }}
+                            >
+                                <Sparkles className="text-primary-400" style={{ width: 11, height: 11, opacity: 0.65 }} />
+                                <p className="font-medium text-[var(--color-text-secondary)]" style={{ fontSize: 11, lineHeight: '14px' }}>
                                     Pick your next flex. Scroll, unlock, equip.
                                 </p>
                             </div>
+                            <div
+                                className="h-px w-10 opacity-60"
+                                style={{ background: 'linear-gradient(90deg, var(--color-border) 0%, transparent 100%)' }}
+                            />
                         </div>
                     </div>
                 </div>
