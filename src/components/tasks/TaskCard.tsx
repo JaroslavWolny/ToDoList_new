@@ -126,7 +126,7 @@ export const TaskCard = memo(function TaskCard({ task, onComplete, onDelete, onE
                         </p>
                     )}
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                         {task.deadline && (
                             <div className={`flex items-center gap-1 text-xs ${isOverdue ? 'text-red-500' : 'text-[var(--color-text-secondary)]'
                                 }`}>
@@ -140,26 +140,26 @@ export const TaskCard = memo(function TaskCard({ task, onComplete, onDelete, onE
                                 <span>Reminder for {formatDeadline(task.startDate)}</span>
                             </div>
                         )}
-                        {task.tags.length > 0 && (
-                            <div className="flex gap-1">
-                                {task.tags.slice(0, 2).map((tag) => (
-                                    <span
-                                        key={tag}
-                                        onClick={(e) => {
-                                            if (onTagClick) {
-                                                e.stopPropagation();
-                                                e.preventDefault();
-                                                onTagClick(tag);
-                                            }
-                                        }}
-                                        className={`px-1.5 py-0.5 rounded-md text-[10px] bg-primary-100/50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400 transition-colors ${onTagClick ? 'cursor-pointer hover:bg-primary-200/60 dark:hover:bg-primary-800/50' : ''}`}
-                                    >
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
                     </div>
+                    {task.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                            {task.tags.map((tag) => (
+                                <span
+                                    key={tag}
+                                    onClick={(e) => {
+                                        if (onTagClick) {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            onTagClick(tag);
+                                        }
+                                    }}
+                                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium leading-tight bg-primary-100/60 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 ring-1 ring-inset ring-primary-200/60 dark:ring-primary-800/40 transition-colors ${onTagClick ? 'cursor-pointer hover:bg-primary-200/70 dark:hover:bg-primary-800/50' : ''}`}
+                                >
+                                    #{tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Actions */}
