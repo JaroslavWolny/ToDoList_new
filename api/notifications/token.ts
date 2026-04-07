@@ -12,11 +12,41 @@ type NotificationTokenPayload = {
     morningTime?: unknown;
     eveningTime?: unknown;
     timezone?: unknown;
+    stats?: unknown;
+};
+
+export type ReminderStats = {
+    tasksDueSoon: number;
+    dailyGoalProgress: number;
+    dailyGoalTarget: number;
+    streakCurrent: number;
+    missionsCompleted: number;
+    missionsTotal: number;
 };
 
 const getString = (value: unknown): string | null => (
     typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
 );
+
+const getNumber = (value: unknown): number => {
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+        return Math.floor(value);
+    }
+    return 0;
+};
+
+const sanitizeStats = (value: unknown): ReminderStats | null => {
+    if (typeof value !== 'object' || value === null) return null;
+    const v = value as Record<string, unknown>;
+    return {
+        tasksDueSoon: getNumber(v.tasksDueSoon),
+        dailyGoalProgress: getNumber(v.dailyGoalProgress),
+        dailyGoalTarget: getNumber(v.dailyGoalTarget),
+        streakCurrent: getNumber(v.streakCurrent),
+        missionsCompleted: getNumber(v.missionsCompleted),
+        missionsTotal: getNumber(v.missionsTotal),
+    };
+};
 
 const getDeviceIdFromRequest = (req: VercelRequest): string | null => {
     const body = (req.body ?? {}) as NotificationTokenPayload;
@@ -62,6 +92,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(400).json({ error: 'Unable to calculate next reminder schedule' });
         }
 
+        const stats = sanitizeStats(body.stats);
+
         await db.collection('notification_tokens').doc(deviceId).set({
             token,
             morningTime,
@@ -69,6 +101,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             timezone,
             nextReminderType: schedule.reminderType,
             nextSendAtUtc: admin.firestore.Timestamp.fromDate(schedule.sendAtUtc),
+            ...(stats ? { stats } : {}),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
 
@@ -77,6 +110,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             nextReminderType: schedule.reminderType,
             nextSendAtUtc: schedule.sendAtUtc.toISOString(),
         });
+    }
+
+    if (req.method === 'PATCH') {
+        const body = (req.body ?? {}) as NotificationTokenPayload;
+        const deviceId = getString(body.deviceId);
+        if (!deviceId) {
+            return res.status(400).json({ error: 'Missing deviceId' });
+        }
+
+        const stats = sanitizeStats(body.stats);
+        if (!stats) {
+            return res.status(400).json({ error: 'Missing or invalid stats payload' });
+        }
+
+        await db.collection('notification_tokens').doc(deviceId).set({
+            stats,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+        return res.status(200).json({ success: true });
     }
 
     if (req.method === 'DELETE') {

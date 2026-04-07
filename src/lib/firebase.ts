@@ -144,6 +144,33 @@ export const saveTokenToFirestore = async (token: string, morningTime: string, e
     }
 };
 
+export type ReminderStats = {
+    tasksDueSoon: number;
+    dailyGoalProgress: number;
+    dailyGoalTarget: number;
+    streakCurrent: number;
+    missionsCompleted: number;
+    missionsTotal: number;
+};
+
+export const updateNotificationStats = async (stats: ReminderStats): Promise<void> => {
+    const deviceId = localStorage.getItem(DEVICE_ID_KEY);
+    if (!deviceId) return; // no token registered yet — nothing to personalize
+
+    try {
+        const response = await fetch(getNotificationsApiUrl(), {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deviceId, stats }),
+        });
+        if (!response.ok) {
+            console.warn(`Failed to sync notification stats: ${response.status}`);
+        }
+    } catch (error) {
+        console.warn('Failed to sync notification stats:', error);
+    }
+};
+
 export const removeTokenFromFirestore = async () => {
     try {
         const deviceId = localStorage.getItem(DEVICE_ID_KEY);

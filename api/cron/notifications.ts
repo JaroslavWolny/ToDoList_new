@@ -9,12 +9,24 @@ import {
 
 type FirebaseMessagingError = { code?: string; message?: string };
 
+type ReminderStats = {
+    tasksDueSoon?: number;
+    dailyGoalProgress?: number;
+    dailyGoalTarget?: number;
+    streakCurrent?: number;
+    missionsCompleted?: number;
+    missionsTotal?: number;
+};
+
 type NotificationTokenDoc = {
     token?: unknown;
     morningTime?: unknown;
     eveningTime?: unknown;
     timezone?: unknown;
+    stats?: ReminderStats;
 };
+
+const n = (v: number | undefined): number => (typeof v === 'number' && v >= 0 ? v : 0);
 
 const getErrorDetails = (error: unknown): FirebaseMessagingError => {
     if (typeof error === 'object' && error !== null) {
@@ -23,24 +35,67 @@ const getErrorDetails = (error: unknown): FirebaseMessagingError => {
     return {};
 };
 
-const getReminderMessage = (reminderType: ReminderType) => {
-    if (reminderType === 'MORNING') {
+const getReminderMessage = (reminderType: ReminderType, stats?: ReminderStats) => {
+    const dueSoon = n(stats?.tasksDueSoon);
+    const goalDone = n(stats?.dailyGoalProgress);
+    const goalTarget = n(stats?.dailyGoalTarget);
+    const streak = n(stats?.streakCurrent);
+    const missionsDone = n(stats?.missionsCompleted);
+    const missionsTotal = n(stats?.missionsTotal);
+
+    // Highest-signal trigger first: deadlines approaching
+    if (dueSoon > 0) {
         return {
-            title: '🌅 Good Morning, Hero!',
-            body: 'A new day, a new quest. Check your daily missions and crush your goals!',
+            title: '⏰ Deadline Alert',
+            body: dueSoon === 1
+                ? 'You have 1 quest before its deadline.'
+                : `You have ${dueSoon} quests before their deadlines.`,
         };
     }
 
     if (reminderType === 'EVENING') {
+        if (goalTarget > 0 && goalDone < goalTarget) {
+            return {
+                title: '🌙 Evening check',
+                body: `${goalDone}/${goalTarget} of your daily goal done. One more push before midnight.`,
+            };
+        }
+        if (streak > 0 && goalDone === 0) {
+            return {
+                title: '🔥 Your streak is alive',
+                body: `${streak}-day streak. One small task is all it takes to keep it going.`,
+            };
+        }
+        if (missionsTotal > 0 && missionsDone < missionsTotal) {
+            return {
+                title: '🌙 Quests still open',
+                body: `${missionsDone}/${missionsTotal} daily quests done. Finish strong tonight.`,
+            };
+        }
         return {
-            title: '🌙 Evening Summary',
-            body: 'Did you complete all your quests today? Open the app to check your streak!',
+            title: '🌙 Evening check',
+            body: 'Lock in your streak before midnight. Open the app for a quick win.',
         };
     }
 
+    // MORNING (default)
+    if (streak > 0) {
+        return {
+            title: `🌅 Day ${streak + 1} starts now`,
+            body: missionsTotal > 0
+                ? `Your ${streak}-day streak is live. ${missionsTotal} fresh quests waiting.`
+                : `Your ${streak}-day streak is live. Pick a quest and grow it.`,
+        };
+    }
+    if (missionsTotal > 0) {
+        return {
+            title: "🌅 Today's quests are ready",
+            body: `${missionsTotal} quests. Crush them, claim your reward, start a streak.`,
+        };
+    }
     return {
-        title: '🔔 QuestDo Reminder',
-        body: 'Time to check your quests, streak, and daily progress.',
+        title: '🌅 Good morning, hero',
+        body: 'A new day, 3 fresh quests. Open the app and claim your XP.',
     };
 };
 
@@ -92,7 +147,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return;
             }
 
-            const messageText = getReminderMessage(reminderType);
+            const messageText = getReminderMessage(reminderType, data.stats);
 
             try {
                 await messaging.send({

@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Zap, Sparkles } from 'lucide-react';
+import { Plus, Zap, Sparkles, Gift } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../stores/userStore';
 import { getCompletionsToday, getTasksForToday, useTaskStore } from '../stores/taskStore';
@@ -17,6 +17,8 @@ import { Task, RandomReward } from '../types';
 import { calculateComboMultiplier } from '../lib/gamification';
 import { completeTaskTransaction } from '../lib/taskCompletion';
 import { toLocalDateKey } from '../lib/dates';
+import { updateNotificationStats } from '../lib/firebase';
+import { DAILY_CHEST_XP, DAILY_CHEST_COINS } from '../stores/missionStore';
 
 const LevelUpOverlay = lazy(() => import('../components/gamification/LevelUpOverlay').then((module) => ({ default: module.LevelUpOverlay })));
 const RandomRewardModal = lazy(() => import('../components/gamification/RandomRewardModal').then((module) => ({ default: module.RandomRewardModal })));
@@ -53,11 +55,21 @@ export function Dashboard() {
             checkAndUnlock: state.checkAndUnlock,
         }))
     );
-    const { missions, lastGeneratedDate, generateDailyMissions } = useMissionStore(
+    const { missions, lastGeneratedDate, dailyChestClaimed, generateDailyMissions, claimDailyChest } = useMissionStore(
         useShallow((state) => ({
             missions: state.missions,
             lastGeneratedDate: state.lastGeneratedDate,
+            dailyChestClaimed: state.dailyChestClaimed,
             generateDailyMissions: state.generateDailyMissions,
+            claimDailyChest: state.claimDailyChest,
+        }))
+    );
+    const { streakCurrent, dailyGoal, addXP, addCoins } = useUserStore(
+        useShallow((state) => ({
+            streakCurrent: state.streakCurrent,
+            dailyGoal: state.settings.dailyGoal,
+            addXP: state.addXP,
+            addCoins: state.addCoins,
         }))
     );
 
@@ -77,6 +89,38 @@ export function Dashboard() {
         const today = toLocalDateKey(new Date());
         return lastGeneratedDate === today ? missions : [];
     }, [lastGeneratedDate, missions]);
+
+    const allMissionsDone = missionsForToday.length > 0 && missionsForToday.every((m) => m.completed);
+
+    const tasksDueSoon = useMemo(() => {
+        const now = Date.now();
+        const horizon = now + 24 * 60 * 60 * 1000;
+        return tasks.filter((t) => {
+            if (t.status !== 'ACTIVE' || !t.deadline) return false;
+            const due = new Date(t.deadline).getTime();
+            return Number.isFinite(due) && due >= now && due <= horizon;
+        }).length;
+    }, [tasks]);
+
+    // Sync personalized stats so server-side notifications can use them.
+    useEffect(() => {
+        updateNotificationStats({
+            tasksDueSoon,
+            dailyGoalProgress: completionsToday.length,
+            dailyGoalTarget: dailyGoal,
+            streakCurrent,
+            missionsCompleted: missionsForToday.filter((m) => m.completed).length,
+            missionsTotal: missionsForToday.length,
+        });
+    }, [tasksDueSoon, completionsToday.length, dailyGoal, streakCurrent, missionsForToday]);
+
+    const handleClaimDailyChest = useCallback(() => {
+        const reward = claimDailyChest();
+        if (!reward) return;
+        addXP(reward.xp);
+        addCoins(reward.coins);
+        setRewardDrop({ type: 'CHEST', amount: reward.xp, currency: 'XP' });
+    }, [claimDailyChest, addXP, addCoins]);
 
     useEffect(() => {
         if (hasInitializedRef.current) return;
@@ -195,6 +239,38 @@ export function Dashboard() {
                             </div>
                         ))}
                     </div>
+                </div>
+            )}
+
+            {/* Daily Loop: chest reward + tomorrow preview */}
+            {dailyMissionsEnabled && missionsForToday.length > 0 && (
+                <div className="mb-4">
+                    {allMissionsDone && !dailyChestClaimed && (
+                        <motion.button
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={handleClaimDailyChest}
+                            className="w-full card-surface rounded-xl p-4 flex items-center gap-3 bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900/30 dark:to-orange-900/30 border-2 border-yellow-400/60"
+                        >
+                            <Gift className="w-7 h-7 text-yellow-600 dark:text-yellow-400" />
+                            <div className="flex-1 text-left">
+                                <p className="text-sm font-bold">Daily goal complete — claim your chest</p>
+                                <p className="text-[11px] text-[var(--color-text-secondary)]">
+                                    +{DAILY_CHEST_XP} XP · +{DAILY_CHEST_COINS} coins · streak secured
+                                </p>
+                            </div>
+                            <span className="text-xs font-bold text-yellow-700 dark:text-yellow-300">OPEN</span>
+                        </motion.button>
+                    )}
+                    {allMissionsDone && dailyChestClaimed && (
+                        <div className="card-surface rounded-xl p-3 text-center">
+                            <p className="text-xs font-semibold">
+                                🔥 Day {streakCurrent} locked in. Tomorrow: 3 fresh quests await.
+                            </p>
+                        </div>
+                    )}
                 </div>
             )}
 

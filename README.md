@@ -214,6 +214,20 @@ A comprehensive senior-level audit identified and resolved **17 out of 21** issu
 - **Firebase Admin wiring:** Documented the full environment-variable set (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `CRON_SECRET`) and the Cloud Firestore + FCM API enablement steps required for a fresh project.
 - **Verified delivery:** Endpoint confirmed returning `200 {"success":true}`; iOS 16.4+ home-screen PWA receives background FCM pushes from the scheduled dispatch.
 
+### Daily Loop & Personalized Notifications (April 2026)
+
+**The "3 quests → reward → streak → tomorrow" loop:**
+- Added a claimable **Daily Goal Chest** to the Dashboard. When all 3 daily missions are complete, users get a one-tap chest worth **+50 XP / +30 coins**, then a follow-up line confirms *"Day N locked in. Tomorrow: 3 fresh quests await."* — closing the daily loop with a clear preview of tomorrow's challenge.
+- Extended `missionStore` with `dailyChestClaimed` state that resets when the next day's missions generate.
+
+**Personalized push notifications (English):**
+- Reminder text is now picked from a priority cascade based on live user state instead of generic "open the app" copy:
+  - Deadline pressure → *"⏰ You have N quests before their deadlines."*
+  - Evening + goal incomplete → *"🌙 1/3 of your daily goal done. One more push before midnight."*
+  - Evening + streak alive but no progress → *"🔥 N-day streak. One small task is all it takes."*
+  - Morning + active streak → *"🌅 Day N+1 starts now. 3 fresh quests waiting."*
+- Client computes stats (`tasksDueSoon`, `dailyGoalProgress/Target`, `streakCurrent`, `missionsCompleted/Total`) on the Dashboard and syncs them to Firestore via a new `PATCH /api/notifications/token` endpoint, where the hourly cron picks them up.
+
 ### Latest Improvements (Early April 2026)
 
 **New Features & Enhancements:**

@@ -5,13 +5,18 @@ import { v4 as uuidv4 } from 'uuid';
 import { toLocalDateKey } from '../lib/dates';
 import { useUserStore } from './userStore';
 
+export const DAILY_CHEST_XP = 50;
+export const DAILY_CHEST_COINS = 30;
+
 interface MissionStore {
     missions: DailyMission[];
     lastGeneratedDate: string | null;
+    dailyChestClaimed: boolean;
     generateDailyMissions: () => void;
     updateMissionProgress: (type: DailyMission['type'], progress: number) => void;
     completeMission: (id: string) => { xp: number; coins: number };
     getMissionsForToday: () => DailyMission[];
+    claimDailyChest: () => { xp: number; coins: number } | null;
 }
 
 const missionTemplates: Array<{
@@ -151,6 +156,7 @@ export const useMissionStore = create<MissionStore>()(
         (set, get) => ({
             missions: [],
             lastGeneratedDate: null,
+            dailyChestClaimed: false,
 
             generateDailyMissions: () => {
                 const today = toLocalDateKey(new Date());
@@ -162,6 +168,7 @@ export const useMissionStore = create<MissionStore>()(
                 set({
                     missions: newMissions,
                     lastGeneratedDate: today,
+                    dailyChestClaimed: false,
                 });
             },
 
@@ -186,6 +193,17 @@ export const useMissionStore = create<MissionStore>()(
                 }));
 
                 return { xp: mission.rewardXP, coins: mission.rewardCoins };
+            },
+
+            claimDailyChest: () => {
+                const { missions, lastGeneratedDate, dailyChestClaimed } = get();
+                const today = toLocalDateKey(new Date());
+                if (lastGeneratedDate !== today) return null;
+                if (dailyChestClaimed) return null;
+                if (missions.length === 0 || missions.some((m) => !m.completed)) return null;
+
+                set({ dailyChestClaimed: true });
+                return { xp: DAILY_CHEST_XP, coins: DAILY_CHEST_COINS };
             },
 
             getMissionsForToday: () => {
