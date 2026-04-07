@@ -96,7 +96,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             try {
                 await messaging.send({
-                    notification: messageText,
+                    data: {
+                        title: messageText.title,
+                        body: messageText.body,
+                        link: '/',
+                    },
                     token,
                     webpush: {
                         fcmOptions: {
