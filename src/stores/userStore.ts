@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { UserState, UserSettings } from '../types';
+import { UserState, UserSettings, DailyThemeId } from '../types';
 import { calculateLevel, calculateStreakBreakPenalty } from '../lib/gamification';
+import { pickRandomTheme } from '../lib/dailyThemes';
 import {
     DEFAULT_NOTIFICATION_EVENING,
     DEFAULT_NOTIFICATION_MORNING,
@@ -55,6 +56,8 @@ interface UserStore extends UserState {
     completeOnboarding: (settings: Partial<UserSettings> & { displayName?: string }) => void;
     resetUser: () => void;
     checkStreakOnLoad: () => void;
+    revealDailyTheme: () => DailyThemeId;
+    markStreakMilestoneShared: (milestone: number) => void;
 }
 
 const defaultSettings: UserSettings = {
@@ -90,6 +93,9 @@ const initialState: UserState = {
     totalXPEarned: 0,
     equippedAvatar: 'default',
     unlockedAvatars: ['default'],
+    lastRevealDate: null,
+    dailyThemeId: null,
+    lastSharedStreakMilestone: 0,
 };
 
 export const useUserStore = create<UserStore>()(
@@ -286,6 +292,19 @@ export const useUserStore = create<UserStore>()(
                         health: Math.max(0, state.health - 1),
                     });
                 }
+            },
+
+            revealDailyTheme: () => {
+                const themeId = pickRandomTheme();
+                const today = toDateOnlyString(new Date());
+                set({ lastRevealDate: today, dailyThemeId: themeId });
+                return themeId;
+            },
+
+            markStreakMilestoneShared: (milestone: number) => {
+                set((state) => ({
+                    lastSharedStreakMilestone: Math.max(state.lastSharedStreakMilestone, milestone),
+                }));
             },
 
             resetUser: () => {

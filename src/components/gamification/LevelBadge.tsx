@@ -12,45 +12,69 @@ export function LevelBadge() {
     const title = getLevelTitle(level);
     const [isShopOpen, setIsShopOpen] = useState(false);
 
-    const getBadgeColor = () => {
-        if (level >= 30) return 'from-yellow-400 via-amber-500 to-yellow-600 shadow-yellow-500/40 text-yellow-900';
-        if (level >= 20) return 'from-purple-400 via-violet-500 to-purple-600 shadow-purple-500/40 text-white';
-        if (level >= 10) return 'from-blue-400 via-cyan-500 to-blue-600 shadow-blue-500/40 text-white';
-        if (level >= 5) return 'from-emerald-400 via-green-500 to-emerald-600 shadow-emerald-500/40 text-white';
-        return 'from-gray-400 via-slate-500 to-gray-600 shadow-gray-500/40 text-white';
-    };
+    const tierGradient =
+        level >= 30 ? 'from-yellow-400 via-amber-500 to-orange-500' :
+        level >= 20 ? 'from-fuchsia-400 via-purple-500 to-indigo-500' :
+        level >= 10 ? 'from-sky-400 via-cyan-500 to-blue-500' :
+        level >= 5  ? 'from-emerald-400 via-green-500 to-teal-500' :
+                      'from-slate-300 via-slate-400 to-slate-500';
 
-    const currentAvatar = AVAILABLE_AVATARS.find(f => f.id === equippedAvatar) || AVAILABLE_AVATARS[0];
+    const tierGlow =
+        level >= 30 ? 'shadow-amber-500/40' :
+        level >= 20 ? 'shadow-purple-500/40' :
+        level >= 10 ? 'shadow-sky-500/40' :
+        level >= 5  ? 'shadow-emerald-500/40' :
+                      'shadow-slate-500/30';
+
+    const currentAvatar = AVAILABLE_AVATARS.find((f) => f.id === equippedAvatar) || AVAILABLE_AVATARS[0];
     const IconComponent = avatarIcons[currentAvatar.icon as keyof typeof avatarIcons];
 
     return (
         <>
             <motion.button
-                className="relative inline-flex items-center gap-3 text-left"
-                whileHover={{ scale: 1.05 }}
+                type="button"
                 onClick={() => setIsShopOpen(true)}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                className="relative inline-flex items-center gap-2.5"
             >
-                <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center shadow-lg border border-white/10">
-                    {IconComponent && <IconComponent className={`w-7 h-7 ${currentAvatar.color}`} strokeWidth={2.5} />}
-                    <div className="absolute inset-0 rounded-2xl bg-white/5 pointer-events-none" />
-
-                    {/* Level Number Indicator */}
-                    <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br ${getBadgeColor()} shadow-md flex items-center justify-center border-2 border-[var(--color-bg)] z-10`}>
-                        <span className="font-bold text-[10px] select-none leading-none">{level}</span>
+                <div className="relative">
+                    {/* Avatar tile */}
+                    <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-800/90 to-slate-900 flex items-center justify-center border border-white/10 shadow-lg overflow-hidden">
+                        <div
+                            className="absolute inset-0 opacity-50"
+                            style={{
+                                background:
+                                    'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.12), transparent 55%)',
+                            }}
+                        />
+                        {IconComponent && (
+                            <IconComponent
+                                className={`relative w-6 h-6 ${currentAvatar.color}`}
+                                strokeWidth={2.5}
+                            />
+                        )}
+                    </div>
+                    {/* Level chip */}
+                    <div
+                        className={`absolute -bottom-1.5 -right-1.5 min-w-[1.4rem] h-[1.4rem] px-1 rounded-full bg-gradient-to-br ${tierGradient} shadow-lg ${tierGlow} flex items-center justify-center border-2 border-[var(--color-bg)] z-10`}
+                    >
+                        <span className="font-black text-[10px] text-white leading-none text-stat select-none">
+                            {level}
+                        </span>
                     </div>
                 </div>
-                <div>
-                    <p className="text-xs font-medium text-[var(--color-text-secondary)] select-none">Level</p>
-                    <p className="text-sm font-bold select-none">{title}</p>
+                <div className="text-right">
+                    <p className="text-[9px] uppercase tracking-[0.16em] font-bold text-[var(--color-text-tertiary)] leading-none">
+                        Rank
+                    </p>
+                    <p className="text-[13px] font-bold leading-tight mt-0.5">{title}</p>
                 </div>
             </motion.button>
 
             {isShopOpen && (
                 <Suspense fallback={null}>
-                    <AvatarShopModal
-                        isOpen={isShopOpen}
-                        onClose={() => setIsShopOpen(false)}
-                    />
+                    <AvatarShopModal isOpen={isShopOpen} onClose={() => setIsShopOpen(false)} />
                 </Suspense>
             )}
         </>

@@ -74,6 +74,23 @@ export interface UserSettings {
     notificationsEnabled: boolean;
 }
 
+export type DailyThemeId =
+    | 'DOUBLE_HIGH'
+    | 'DOUBLE_CHEST'
+    | 'STREAK_SHIELD'
+    | 'COMBO_BOOST'
+    | 'COIN_RAIN'
+    | 'CRITICAL_FOCUS'
+    | 'EARLY_RISER';
+
+export interface DailyTheme {
+    id: DailyThemeId;
+    title: string;
+    description: string;
+    emoji: string;
+    accent: string;
+}
+
 export interface UserState {
     displayName: string;
     level: number;
@@ -92,6 +109,12 @@ export interface UserState {
     totalXPEarned: number;
     equippedAvatar: string | null;
     unlockedAvatars: string[];
+    /** YYYY-MM-DD when the user opened the daily reveal */
+    lastRevealDate: string | null;
+    /** Active daily theme (set when reveal opens) */
+    dailyThemeId: DailyThemeId | null;
+    /** Last streak milestone (7/30/100/365) for which a share takeover was shown */
+    lastSharedStreakMilestone: number;
 }
 
 export type AvatarRarity = 'STARTER' | 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';

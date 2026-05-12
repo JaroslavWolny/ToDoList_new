@@ -6,25 +6,42 @@ export function XPBar() {
     const { xp, level } = useUserStore();
     const progress = xpProgressInLevel(xp, level);
     const nextLevelXP = xpForNextLevel(level);
+    const xpRemaining = Math.max(0, nextLevelXP - xp);
 
     return (
         <div className="w-full">
-            <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold gradient-text">Lv.{level}</span>
+            <div className="flex items-baseline justify-between mb-2">
+                <div className="flex items-baseline gap-1.5">
+                    <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
+                        Level
+                    </span>
+                    <span className="text-base font-black gradient-text text-stat leading-none">
+                        {level}
+                    </span>
                 </div>
-                <span className="text-xs text-[var(--color-text-secondary)]">
-                    {xp} / {nextLevelXP} XP
+                <span className="text-[10px] uppercase tracking-[0.14em] font-semibold text-[var(--color-text-tertiary)] text-stat">
+                    {xpRemaining.toLocaleString()} XP to next
                 </span>
             </div>
-            <div className="relative h-3 rounded-full bg-[var(--color-surface-hover)] overflow-hidden">
+            <div className="relative h-2.5 rounded-full bg-black/5 dark:bg-white/[0.04] overflow-hidden">
                 <motion.div
                     className="absolute inset-y-0 left-0 rounded-full xp-gradient"
                     initial={{ width: 0 }}
                     animate={{ width: `${progress}%` }}
-                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                    transition={{ type: 'spring', stiffness: 80, damping: 18 }}
+                    style={{
+                        boxShadow: '0 0 12px rgba(168, 85, 247, 0.55), inset 0 1px 0 rgba(255,255,255,0.2)',
+                    }}
                 />
-                <div className="absolute inset-0 rounded-full opacity-30 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                {/* Highlight sweep */}
+                <motion.div
+                    className="absolute inset-y-0 w-1/3 pointer-events-none"
+                    style={{
+                        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)',
+                    }}
+                    animate={{ x: ['-100%', '350%'] }}
+                    transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut', repeatDelay: 1.5 }}
+                />
             </div>
         </div>
     );

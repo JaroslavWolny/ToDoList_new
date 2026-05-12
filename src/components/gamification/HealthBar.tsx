@@ -7,26 +7,30 @@ export function HealthBar() {
     if (!settings.healthBarEnabled) return null;
 
     return (
-        <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-[var(--color-text-secondary)] mr-1">HP</span>
-            {Array.from({ length: maxHealth }).map((_, i) => (
-                <motion.div
-                    key={i}
-                    initial={false}
-                    animate={{
-                        scale: i < health ? 1 : 0.8,
-                        opacity: i < health ? 1 : 0.3,
-                    }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                >
-                    <Heart
-                        className={`w-5 h-5 ${i < health
-                                ? 'text-red-500 fill-red-500 drop-shadow-[0_0_4px_rgba(239,68,68,0.5)]'
-                                : 'text-gray-300 dark:text-gray-600'
-                            }`}
-                    />
-                </motion.div>
-            ))}
+        <div className="inline-flex items-center gap-1.5">
+            <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)] mr-0.5">
+                HP
+            </span>
+            {Array.from({ length: maxHealth }).map((_, i) => {
+                const filled = i < health;
+                return (
+                    <motion.div
+                        key={i}
+                        initial={false}
+                        animate={{ scale: filled ? 1 : 0.86, opacity: filled ? 1 : 0.35 }}
+                        transition={{ type: 'spring', stiffness: 320, damping: 18 }}
+                    >
+                        <Heart
+                            className={
+                                filled
+                                    ? 'w-4 h-4 text-red-500 fill-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.55)]'
+                                    : 'w-4 h-4 text-[var(--color-text-tertiary)]'
+                            }
+                            strokeWidth={2.5}
+                        />
+                    </motion.div>
+                );
+            })}
         </div>
     );
 }

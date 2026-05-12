@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Zap, Sparkles, Gift } from 'lucide-react';
+import { Plus, Zap, Sparkles, Gift, ChevronDown } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../stores/userStore';
 import { getCompletionsToday, getTasksForToday, useTaskStore } from '../stores/taskStore';
@@ -11,6 +11,8 @@ import { StreakCounter } from '../components/gamification/StreakCounter';
 import { LevelBadge } from '../components/gamification/LevelBadge';
 import { HealthBar } from '../components/gamification/HealthBar';
 import { ComboIndicator } from '../components/gamification/ComboIndicator';
+import { DailyRevealCard } from '../components/gamification/DailyRevealCard';
+import { MilestoneShareOverlay } from '../components/gamification/MilestoneShareOverlay';
 import { TaskList } from '../components/tasks/TaskList';
 import { QuickRituals, RITUAL_TAG } from '../components/tasks/QuickRituals';
 import { Task, RandomReward } from '../types';
@@ -24,6 +26,14 @@ const LevelUpOverlay = lazy(() => import('../components/gamification/LevelUpOver
 const RandomRewardModal = lazy(() => import('../components/gamification/RandomRewardModal').then((module) => ({ default: module.RandomRewardModal })));
 const TaskForm = lazy(() => import('../components/tasks/TaskForm').then((module) => ({ default: module.TaskForm })));
 
+function getGreeting(): string {
+    const hour = new Date().getHours();
+    if (hour < 6) return 'Good night';
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+}
+
 export function Dashboard() {
     const [showTaskForm, setShowTaskForm] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -31,6 +41,7 @@ export function Dashboard() {
     const [newLevel, setNewLevel] = useState(0);
     const [rewardDrop, setRewardDrop] = useState<RandomReward | null>(null);
     const [showRituals, setShowRituals] = useState(false);
+    const [missionsExpanded, setMissionsExpanded] = useState(false);
     const hasInitializedRef = useRef(false);
 
     const { displayName, dailyMissionsEnabled, quickRitualsEnabled } = useUserStore(
@@ -77,7 +88,6 @@ export function Dashboard() {
     const completionsToday = useMemo(() => getCompletionsToday(completions), [completions]);
     const currentCombo = calculateComboMultiplier(completionsToday.length);
 
-    // Ritual tasks for quick access (all active/completed recurring tasks with 'ritual' tag)
     const ritualStats = useMemo(() => {
         const rituals = tasks.filter(
             (t) => t.tags.includes(RITUAL_TAG) && (t.status === 'ACTIVE' || t.status === 'COMPLETED') && t.recurrence !== 'NONE'
@@ -85,12 +95,17 @@ export function Dashboard() {
         const remaining = rituals.filter((t) => t.status === 'ACTIVE').length;
         return { total: rituals.length, remaining };
     }, [tasks]);
+
     const missionsForToday = useMemo(() => {
         const today = toLocalDateKey(new Date());
         return lastGeneratedDate === today ? missions : [];
     }, [lastGeneratedDate, missions]);
 
-    const allMissionsDone = missionsForToday.length > 0 && missionsForToday.every((m) => m.completed);
+    const missionsCompleted = useMemo(
+        () => missionsForToday.filter((m) => m.completed).length,
+        [missionsForToday]
+    );
+    const allMissionsDone = missionsForToday.length > 0 && missionsCompleted === missionsForToday.length;
 
     const tasksDueSoon = useMemo(() => {
         const now = Date.now();
@@ -102,17 +117,16 @@ export function Dashboard() {
         }).length;
     }, [tasks]);
 
-    // Sync personalized stats so server-side notifications can use them.
     useEffect(() => {
         updateNotificationStats({
             tasksDueSoon,
             dailyGoalProgress: completionsToday.length,
             dailyGoalTarget: dailyGoal,
             streakCurrent,
-            missionsCompleted: missionsForToday.filter((m) => m.completed).length,
+            missionsCompleted,
             missionsTotal: missionsForToday.length,
         });
-    }, [tasksDueSoon, completionsToday.length, dailyGoal, streakCurrent, missionsForToday]);
+    }, [tasksDueSoon, completionsToday.length, dailyGoal, streakCurrent, missionsCompleted, missionsForToday.length]);
 
     const handleClaimDailyChest = useCallback(() => {
         const reward = claimDailyChest();
@@ -134,6 +148,8 @@ export function Dashboard() {
     const handleCompleteTask = useCallback((id: string) => {
         const result = completeTaskTransaction(id);
         if (!result) return;
+
+        try { navigator.vibrate?.(12); } catch { /* noop */ }
 
         const { levelUpTo, reward } = result;
         if (reward) {
@@ -168,125 +184,211 @@ export function Dashboard() {
         }
     }, [editingTask, updateTask]);
 
+    const goalProgress = dailyGoal > 0 ? Math.min(100, (completionsToday.length / dailyGoal) * 100) : 0;
 
     return (
         <div className="page-container">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex flex-col justify-center">
-                    <h1 className="text-2xl font-bold">
-                        {getGreeting()},
+            {/* ============== HEADER ============== */}
+            <div className="flex items-start justify-between mb-5">
+                <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
+                        {getGreeting()}
+                    </span>
+                    <h1 className="mt-0.5 text-3xl font-black leading-none tracking-tight truncate">
+                        <span className="gradient-text">{displayName || 'Hero'}</span>
                     </h1>
-                    <div className="pl-4 mt-0.5">
-                        <span className="text-[1.7rem] font-black gradient-text leading-none tracking-tight">
-                            {displayName || 'Hero'}
-                        </span>
-                    </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                    <LevelBadge />
-                </div>
+                <LevelBadge />
             </div>
 
-            {/* XP Bar */}
-            <div className="mb-4">
+            {/* ============== XP BAR ============== */}
+            <div className="mb-5">
                 <XPBar />
             </div>
 
-            {/* Health & Combo */}
-            <div className="flex items-center justify-between mb-4">
-                <HealthBar />
-                <ComboIndicator multiplier={currentCombo} />
+            {/* ============== DAILY REVEAL ============== */}
+            <div className="mb-4">
+                <DailyRevealCard />
             </div>
 
-            {/* Streak */}
+            {/* ============== STREAK (hero) ============== */}
             <div className="mb-4">
                 <StreakCounter />
             </div>
 
+            {/* ============== STATUS ROW (HP / Combo / Goal pill) ============== */}
+            <div className="mb-6 flex items-center justify-between gap-2">
+                <HealthBar />
+                <div className="flex items-center gap-2">
+                    {currentCombo > 1 && <ComboIndicator multiplier={currentCombo} />}
+                    {dailyGoal > 0 && (
+                        <div className="inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-full bg-white/5 dark:bg-white/[0.04] border border-[var(--color-border)]">
+                            <div className="relative w-3.5 h-3.5">
+                                <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 -rotate-90">
+                                    <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--color-text-tertiary)] opacity-30" />
+                                    <circle
+                                        cx="8" cy="8" r="6" fill="none"
+                                        stroke="url(#goalGrad)" strokeWidth="2" strokeLinecap="round"
+                                        strokeDasharray={`${(goalProgress / 100) * 37.7} 37.7`}
+                                    />
+                                    <defs>
+                                        <linearGradient id="goalGrad" x1="0" y1="0" x2="1" y2="1">
+                                            <stop offset="0%" stopColor="#a855f7" />
+                                            <stop offset="100%" stopColor="#ec4899" />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                            </div>
+                            <span className="text-[10px] font-bold text-stat text-[var(--color-text-secondary)]">
+                                {completionsToday.length}/{dailyGoal}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            </div>
 
-            {/* Daily Missions */}
+            {/* ============== TODAY'S TASKS (primary action) ============== */}
+            <div className="mb-5">
+                <div className="flex items-center justify-between mb-2.5">
+                    <h2 className="text-[11px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
+                        Today's Quests
+                    </h2>
+                    <span className="text-[11px] font-semibold text-[var(--color-text-tertiary)] text-stat">
+                        {todayTasks.length}
+                    </span>
+                </div>
+                <TaskList
+                    tasks={todayTasks}
+                    onComplete={handleCompleteTask}
+                    onDelete={handleDeleteTask}
+                    onEdit={handleEditTask}
+                    emptyMessage="All clear. Tap + to add a quest."
+                />
+            </div>
+
+            {/* ============== DAILY MISSIONS (collapsible) ============== */}
             {dailyMissionsEnabled && missionsForToday.length > 0 && (
                 <div className="mb-4">
-                    <h3 className="text-sm font-bold mb-2 flex items-center gap-1.5">
-                        <Zap className="w-4 h-4 text-yellow-500" />
-                        Daily Missions
-                    </h3>
-                    <div className="space-y-2">
-                        {missionsForToday.map((mission) => (
-                            <div
-                                key={mission.id}
-                                className={`card-surface rounded-xl p-3 flex items-center gap-3 ${mission.completed ? 'opacity-60' : ''
-                                    }`}
-                            >
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${mission.completed
-                                    ? 'bg-green-100 dark:bg-green-900/30'
-                                    : 'bg-yellow-100 dark:bg-yellow-900/30'
-                                    }`}>
-                                    {mission.completed ? '✅' : '⚡'}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className={`text-xs font-semibold ${mission.completed ? 'line-through' : ''}`}>
-                                        {mission.title}
-                                    </p>
-                                    <p className="text-[10px] text-[var(--color-text-secondary)]">
-                                        {mission.description} • +{mission.rewardXP} XP
-                                    </p>
-                                </div>
-                                <span className="text-xs font-bold text-[var(--color-text-secondary)]">
-                                    {mission.progress}/{mission.target}
-                                </span>
-                            </div>
-                        ))}
+                    <button
+                        type="button"
+                        onClick={() => setMissionsExpanded((v) => !v)}
+                        className="w-full flex items-center justify-between mb-2.5 group"
+                    >
+                        <div className="flex items-center gap-1.5">
+                            <Zap className="w-3 h-3 text-amber-500" strokeWidth={3} />
+                            <span className="text-[11px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
+                                Daily Missions
+                            </span>
+                            <span className="text-[10px] font-bold text-amber-500 text-stat">
+                                {missionsCompleted}/{missionsForToday.length}
+                            </span>
+                        </div>
+                        <motion.span
+                            animate={{ rotate: missionsExpanded ? 180 : 0 }}
+                            className="text-[var(--color-text-tertiary)]"
+                        >
+                            <ChevronDown className="w-3.5 h-3.5" />
+                        </motion.span>
+                    </button>
+
+                    {/* Mini progress bar always visible */}
+                    <div className="h-1 rounded-full bg-black/5 dark:bg-white/[0.04] overflow-hidden mb-2.5">
+                        <motion.div
+                            initial={false}
+                            animate={{
+                                width: missionsForToday.length === 0
+                                    ? '0%'
+                                    : `${(missionsCompleted / missionsForToday.length) * 100}%`,
+                            }}
+                            transition={{ type: 'spring', stiffness: 100, damping: 18 }}
+                            className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500"
+                        />
                     </div>
+
+                    <AnimatePresence initial={false}>
+                        {missionsExpanded && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.22 }}
+                                className="overflow-hidden"
+                            >
+                                <div className="space-y-2">
+                                    {missionsForToday.map((mission) => (
+                                        <div
+                                            key={mission.id}
+                                            className={`glass-card px-3.5 py-3 flex items-center gap-3 ${mission.completed ? 'opacity-60' : ''}`}
+                                        >
+                                            <div
+                                                className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm ${mission.completed
+                                                    ? 'bg-green-500/15 text-green-500 border border-green-500/30'
+                                                    : 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
+                                                }`}
+                                            >
+                                                {mission.completed ? '✓' : '⚡'}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`text-[13px] font-bold leading-tight ${mission.completed ? 'line-through text-[var(--color-text-secondary)]' : ''}`}>
+                                                    {mission.title}
+                                                </p>
+                                                <p className="text-[10px] text-[var(--color-text-tertiary)] mt-0.5">
+                                                    {mission.description} · +{mission.rewardXP} XP
+                                                </p>
+                                            </div>
+                                            <span className="text-[11px] font-black text-stat text-[var(--color-text-secondary)]">
+                                                {mission.progress}/{mission.target}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             )}
 
-            {/* Daily Loop: chest reward + tomorrow preview */}
+            {/* ============== DAILY CHEST CLAIM ============== */}
             {dailyMissionsEnabled && missionsForToday.length > 0 && (
                 <div className="mb-4">
-                    {allMissionsDone && !dailyChestClaimed && (
-                        <motion.button
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={handleClaimDailyChest}
-                            className="w-full card-surface rounded-xl p-4 flex items-center gap-3 bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900/30 dark:to-orange-900/30 border-2 border-yellow-400/60"
-                        >
-                            <Gift className="w-7 h-7 text-yellow-600 dark:text-yellow-400" />
-                            <div className="flex-1 text-left">
-                                <p className="text-sm font-bold">Daily goal complete — claim your chest</p>
-                                <p className="text-[11px] text-[var(--color-text-secondary)]">
-                                    +{DAILY_CHEST_XP} XP · +{DAILY_CHEST_COINS} coins · streak secured
-                                </p>
-                            </div>
-                            <span className="text-xs font-bold text-yellow-700 dark:text-yellow-300">OPEN</span>
-                        </motion.button>
-                    )}
+                    <AnimatePresence>
+                        {allMissionsDone && !dailyChestClaimed && (
+                            <motion.button
+                                initial={{ scale: 0.95, opacity: 0, y: 8 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.95, opacity: 0 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={handleClaimDailyChest}
+                                className="reveal-card-shell w-full p-4 flex items-center gap-3"
+                            >
+                                <div className="relative z-10 w-12 h-12 rounded-xl bg-yellow-400/25 backdrop-blur-sm flex items-center justify-center border border-yellow-300/40">
+                                    <Gift className="w-6 h-6 text-yellow-200 drop-shadow" strokeWidth={2.4} />
+                                </div>
+                                <div className="relative z-10 flex-1 text-left">
+                                    <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-yellow-200/90">
+                                        Daily Chest Ready
+                                    </p>
+                                    <p className="text-sm font-bold text-white mt-0.5">
+                                        +{DAILY_CHEST_XP} XP · +{DAILY_CHEST_COINS} coins
+                                    </p>
+                                </div>
+                                <span className="relative z-10 px-3 py-1.5 rounded-full bg-yellow-300/95 text-yellow-950 text-[10px] font-black tracking-wider">
+                                    OPEN
+                                </span>
+                            </motion.button>
+                        )}
+                    </AnimatePresence>
                     {allMissionsDone && dailyChestClaimed && (
-                        <div className="card-surface rounded-xl p-3 text-center">
+                        <div className="glass-card px-4 py-3 text-center">
                             <p className="text-xs font-semibold">
-                                🔥 Day {streakCurrent} locked in. Tomorrow: 3 fresh quests await.
+                                🔥 Day {streakCurrent} locked in. Tomorrow: fresh quests.
                             </p>
                         </div>
                     )}
                 </div>
             )}
 
-            {/* Today's Tasks */}
-            <div className="mb-6">
-                <h3 className="text-sm font-bold mb-3">Today's Tasks</h3>
-                <TaskList
-                    tasks={todayTasks}
-                    onComplete={handleCompleteTask}
-                    onDelete={handleDeleteTask}
-                    onEdit={handleEditTask}
-                    emptyMessage="All clear! Add a task to earn XP 🎯"
-                />
-            </div>
-
-            {/* Ritual Pill Button */}
+            {/* ============== RITUAL PILL ============== */}
             {quickRitualsEnabled && ritualStats.total > 0 && (
                 <motion.button
                     initial={{ scale: 0, opacity: 0 }}
@@ -294,41 +396,44 @@ export function Dashboard() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setShowRituals(true)}
-                    className={`fixed left-6 z-20 flex items-center gap-2 px-4 py-3 rounded-2xl shadow-lg transition-colors ${
+                    className={`fixed z-20 flex items-center gap-2 px-4 py-3 rounded-2xl text-white ${
                         ritualStats.remaining === 0
-                            ? 'bg-green-500 shadow-green-500/30 text-white'
-                            : 'bg-gradient-to-r from-purple-500 to-cyan-500 shadow-purple-500/30 text-white'
+                            ? 'bg-green-500 shadow-lg shadow-green-500/40'
+                            : 'fab-ritual'
                     }`}
                     style={{
-                        bottom: 'calc(6rem + env(safe-area-inset-bottom, 0px) + 0.5rem)',
+                        bottom: 'calc(6.5rem + env(safe-area-inset-bottom, 0px))',
                         left: 'calc(1.5rem + env(safe-area-inset-left, 0px))',
                     }}
                 >
-                    <Sparkles className="w-4 h-4" />
+                    <Sparkles className="w-4 h-4" strokeWidth={2.6} />
                     <span className="text-xs font-bold">
-                        {ritualStats.remaining === 0 ? '✓ Rituals' : `${ritualStats.remaining} rituals`}
+                        {ritualStats.remaining === 0 ? 'Rituals ✓' : `${ritualStats.remaining} rituals`}
                     </span>
                     {ritualStats.remaining > 0 && (
-                        <span className="ritual-pulse w-2 h-2 rounded-full bg-white/80" />
+                        <span className="ritual-pulse w-1.5 h-1.5 rounded-full bg-white/85" />
                     )}
                 </motion.button>
             )}
 
-            {/* FAB */}
+            {/* ============== FAB ============== */}
             <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.92 }}
                 onClick={() => {
                     setEditingTask(null);
                     setShowTaskForm(true);
                 }}
-                className="fixed right-6 w-14 h-14 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-xl shadow-primary-500/40 flex items-center justify-center z-20"
-                style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom, 0px) + 0.5rem)', right: 'calc(1.5rem + env(safe-area-inset-right, 0px))' }}
+                className="fixed w-14 h-14 rounded-2xl text-white flex items-center justify-center z-20 fab-primary"
+                style={{
+                    bottom: 'calc(6.5rem + env(safe-area-inset-bottom, 0px))',
+                    right: 'calc(1.5rem + env(safe-area-inset-right, 0px))',
+                }}
             >
-                <Plus className="w-6 h-6" />
+                <Plus className="w-6 h-6" strokeWidth={2.6} />
             </motion.button>
 
-            {/* Quick Rituals Drawer */}
+            {/* ============== MODALS ============== */}
             <QuickRituals
                 isOpen={showRituals}
                 onClose={() => setShowRituals(false)}
@@ -336,7 +441,6 @@ export function Dashboard() {
                 onComplete={handleCompleteTask}
             />
 
-            {/* Task Form Modal */}
             {showTaskForm && (
                 <Suspense fallback={null}>
                     <TaskForm
@@ -350,7 +454,6 @@ export function Dashboard() {
                 </Suspense>
             )}
 
-            {/* Level Up Overlay */}
             {showLevelUp && (
                 <Suspense fallback={null}>
                     <LevelUpOverlay
@@ -361,7 +464,6 @@ export function Dashboard() {
                 </Suspense>
             )}
 
-            {/* Random Reward Modal */}
             {rewardDrop && (
                 <Suspense fallback={null}>
                     <RandomRewardModal
@@ -370,14 +472,8 @@ export function Dashboard() {
                     />
                 </Suspense>
             )}
+
+            <MilestoneShareOverlay />
         </div>
     );
-}
-
-function getGreeting(): string {
-    const hour = new Date().getHours();
-    if (hour < 6) return 'Good night';
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
 }

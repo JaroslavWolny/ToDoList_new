@@ -46,6 +46,9 @@ export function AchievementGrid() {
             totalXPEarned: state.totalXPEarned,
             equippedAvatar: state.equippedAvatar,
             unlockedAvatars: state.unlockedAvatars,
+            lastRevealDate: state.lastRevealDate,
+            dailyThemeId: state.dailyThemeId,
+            lastSharedStreakMilestone: state.lastSharedStreakMilestone,
         }))
     );
     const completions = useTaskStore((state) => state.completions);

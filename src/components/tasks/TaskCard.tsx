@@ -56,28 +56,28 @@ export const TaskCard = memo(function TaskCard({ task, onComplete, onDelete, onE
 
         completeTimeoutRef.current = window.setTimeout(() => {
             onComplete(task.id);
-        }, 600);
+        }, 550);
     };
 
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, x: -200 }}
-            transition={{ duration: 0.3 }}
-            className={`relative card-surface rounded-2xl p-4 ${isOverdue ? 'border-red-500/40 dark:border-red-500/30' : ''
-                } ${task.status === 'COMPLETED' ? 'opacity-60' : ''}`}
+            exit={{ opacity: 0, x: -160, transition: { duration: 0.25 } }}
+            transition={{ type: 'spring', stiffness: 300, damping: 26 }}
+            className={`glass-card relative px-4 py-3.5 ${
+                isOverdue ? 'border-red-500/50' : ''
+            } ${task.status === 'COMPLETED' ? 'opacity-55' : ''}`}
         >
-            {/* XP particle animation */}
             <AnimatePresence>
                 {showXP && (
                     <motion.div
-                        initial={{ opacity: 1, y: 0 }}
-                        animate={{ opacity: 0, y: -40 }}
+                        initial={{ opacity: 1, y: 0, scale: 1 }}
+                        animate={{ opacity: 0, y: -50, scale: 1.2 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.8 }}
-                        className="absolute top-2 right-4 text-lg font-bold gradient-text z-10"
+                        transition={{ duration: 0.7 }}
+                        className="absolute top-2 right-4 text-base font-black gradient-text z-10 text-stat"
                     >
                         +XP ✨
                     </motion.div>
@@ -91,60 +91,57 @@ export const TaskCard = memo(function TaskCard({ task, onComplete, onDelete, onE
                     whileTap={!isLocked ? { scale: 0.9 } : {}}
                     onClick={handleComplete}
                     disabled={task.status !== 'ACTIVE' || !!isLocked}
-                    className={`mt-0.5 w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${isLocked
-                        ? 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 cursor-not-allowed opacity-60'
-                        : task.status === 'COMPLETED'
-                            ? 'bg-green-500 border-green-500'
-                            : isCompleting
-                                ? 'bg-green-500 border-green-500 animate-bounce-in'
-                                : 'border-gray-300 dark:border-gray-600 hover:border-primary-500'
-                        }`}
+                    className={`mt-0.5 w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-all border-2 ${
+                        isLocked
+                            ? 'bg-white/5 border-white/10 cursor-not-allowed'
+                            : task.status === 'COMPLETED' || isCompleting
+                                ? 'bg-gradient-to-br from-emerald-400 to-green-500 border-transparent shadow-lg shadow-emerald-500/40'
+                                : 'border-[var(--color-border-strong)] hover:border-purple-500 hover:bg-purple-500/10'
+                    }`}
                 >
-                    {isLocked && <Lock className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />}
+                    {isLocked && <Lock className="w-3.5 h-3.5 text-[var(--color-text-tertiary)]" />}
                     {(task.status === 'COMPLETED' || isCompleting) && !isLocked && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                            <Check className="w-4 h-4 text-white" />
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 12 }}>
+                            <Check className="w-4 h-4 text-white" strokeWidth={3} />
                         </motion.div>
                     )}
                 </motion.button>
 
-                {/* Content */}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                        <h3 className={`font-semibold text-sm truncate ${task.status === 'COMPLETED' ? 'line-through text-[var(--color-text-secondary)]' : ''
-                            }`}>
+                        <h3 className={`font-bold text-sm truncate ${task.status === 'COMPLETED' ? 'line-through text-[var(--color-text-secondary)]' : ''}`}>
                             {task.title}
                         </h3>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${getPriorityColor(task.priority)}`}>
+                        <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black tracking-wider uppercase shrink-0 ${getPriorityColor(task.priority)}`}>
                             {getPriorityLabel(task.priority)}
                         </span>
                     </div>
 
                     {task.description && (
-                        <p className="text-xs text-[var(--color-text-secondary)] line-clamp-2 mb-2">
+                        <p className="text-xs text-[var(--color-text-secondary)] line-clamp-2 mb-2 leading-snug">
                             {task.description}
                         </p>
                     )}
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                         {task.deadline && (
-                            <div className={`flex items-center gap-1 text-xs ${isOverdue ? 'text-red-500' : 'text-[var(--color-text-secondary)]'
-                                }`}>
+                            <div className={`inline-flex items-center gap-1 text-[11px] font-medium ${isOverdue ? 'text-red-500' : 'text-[var(--color-text-tertiary)]'}`}>
                                 {isOverdue ? <AlertTriangle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                                <span>{formatDeadline(task.deadline)}</span>
+                                <span className="text-stat">{formatDeadline(task.deadline)}</span>
                             </div>
                         )}
                         {isLocked && task.startDate && (
-                            <div className="flex items-center gap-1 text-xs text-blue-500 opacity-80">
+                            <div className="inline-flex items-center gap-1 text-[11px] text-blue-400">
                                 <Lock className="w-3 h-3" />
-                                <span>Reminder for {formatDeadline(task.startDate)}</span>
+                                <span className="text-stat">Starts {formatDeadline(task.startDate)}</span>
                             </div>
                         )}
                         {task.tags.length > 0 && (
                             <div className="flex gap-1">
                                 {task.tags.slice(0, 2).map((tag) => (
-                                    <span
+                                    <button
                                         key={tag}
+                                        type="button"
                                         onClick={(e) => {
                                             if (onTagClick) {
                                                 e.stopPropagation();
@@ -152,32 +149,31 @@ export const TaskCard = memo(function TaskCard({ task, onComplete, onDelete, onE
                                                 onTagClick(tag);
                                             }
                                         }}
-                                        className={`px-1.5 py-0.5 rounded-md text-[10px] bg-primary-100/50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400 transition-colors ${onTagClick ? 'cursor-pointer hover:bg-primary-200/60 dark:hover:bg-primary-800/50' : ''}`}
+                                        className={`px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-purple-500/12 text-purple-400 border border-purple-500/20 ${onTagClick ? 'hover:bg-purple-500/20 cursor-pointer' : 'cursor-default'}`}
                                     >
                                         {tag}
-                                    </span>
+                                    </button>
                                 ))}
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Actions */}
                 {task.status === 'ACTIVE' && (
                     <div className="flex flex-col gap-1">
                         <motion.button
-                            whileHover={{ scale: 1.1 }}
+                            whileHover={{ scale: 1.12 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={() => onEdit(task)}
-                            className="p-1.5 rounded-lg hover:bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]"
+                            className="p-1.5 rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-text)] hover:bg-white/5"
                         >
                             <Edit3 className="w-3.5 h-3.5" />
                         </motion.button>
                         <motion.button
-                            whileHover={{ scale: 1.1 }}
+                            whileHover={{ scale: 1.12 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={() => onDelete(task.id)}
-                            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-[var(--color-text-secondary)] hover:text-red-500"
+                            className="p-1.5 rounded-lg text-[var(--color-text-tertiary)] hover:text-red-400 hover:bg-red-500/10"
                         >
                             <Trash2 className="w-3.5 h-3.5" />
                         </motion.button>
@@ -187,4 +183,3 @@ export const TaskCard = memo(function TaskCard({ task, onComplete, onDelete, onE
         </motion.div>
     );
 });
-
