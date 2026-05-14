@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Zap, Sparkles, Gift, ChevronDown } from 'lucide-react';
+import { Plus, Zap, Sparkles, Gift, ChevronDown, ArrowUp, Clock, Repeat, Hash } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../stores/userStore';
 import { getCompletionsToday, getTasksForToday, useTaskStore } from '../stores/taskStore';
@@ -19,6 +19,7 @@ import { Task, RandomReward } from '../types';
 import { calculateComboMultiplier } from '../lib/gamification';
 import { completeTaskTransaction } from '../lib/taskCompletion';
 import { toLocalDateKey } from '../lib/dates';
+import { parseQuickInput, formatDeadlineChip } from '../lib/quickParse';
 import { updateNotificationStats } from '../lib/firebase';
 import { DAILY_CHEST_XP, DAILY_CHEST_COINS } from '../stores/missionStore';
 
@@ -34,6 +35,14 @@ function getGreeting(): string {
     return 'Good evening';
 }
 
+function getQuickPlaceholder(): string {
+    const hour = new Date().getHours();
+    if (hour < 6) return 'Plan for tomorrow…';
+    if (hour < 12) return "What's the goal today?";
+    if (hour < 18) return "What's next on your list?";
+    return 'Anything left to conquer?';
+}
+
 export function Dashboard() {
     const [showTaskForm, setShowTaskForm] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -41,8 +50,25 @@ export function Dashboard() {
     const [newLevel, setNewLevel] = useState(0);
     const [rewardDrop, setRewardDrop] = useState<RandomReward | null>(null);
     const [showRituals, setShowRituals] = useState(false);
-    const [missionsExpanded, setMissionsExpanded] = useState(false);
+    const [missionsExpanded, setMissionsExpanded] = useState(true);
+    const [quickTitle, setQuickTitle] = useState('');
+    const [quickFocused, setQuickFocused] = useState(false);
+    const [quickJustAdded, setQuickJustAdded] = useState(false);
     const hasInitializedRef = useRef(false);
+    const quickInputRef = useRef<HTMLInputElement>(null);
+    const quickAddedTimerRef = useRef<number | null>(null);
+    const quickPlaceholder = useMemo(getQuickPlaceholder, []);
+    const quickParsed = useMemo(
+        () => (quickTitle.trim() ? parseQuickInput(quickTitle) : null),
+        [quickTitle]
+    );
+    const hasParsedHints = !!(
+        quickParsed &&
+        (quickParsed.deadline ||
+            quickParsed.priority ||
+            quickParsed.recurrence !== 'NONE' ||
+            quickParsed.tags.length > 0)
+    );
 
     const { displayName, dailyMissionsEnabled, quickRitualsEnabled } = useUserStore(
         useShallow((state) => ({
@@ -166,6 +192,37 @@ export function Dashboard() {
         addTask(taskData);
     }, [addTask]);
 
+    const handleQuickAdd = useCallback(() => {
+        const raw = quickTitle.trim();
+        if (!raw) {
+            setEditingTask(null);
+            setShowTaskForm(true);
+            return;
+        }
+        const parsed = parseQuickInput(raw);
+        if (!parsed.title) return;
+        addTask({
+            title: parsed.title,
+            description: '',
+            priority: parsed.priority ?? 'MEDIUM',
+            deadline: parsed.deadline,
+            startDate: null,
+            recurrence: parsed.recurrence,
+            tags: parsed.tags,
+        });
+        setQuickTitle('');
+        setQuickJustAdded(true);
+        try { navigator.vibrate?.(10); } catch { /* noop */ }
+        if (quickAddedTimerRef.current !== null) window.clearTimeout(quickAddedTimerRef.current);
+        quickAddedTimerRef.current = window.setTimeout(() => setQuickJustAdded(false), 900);
+    }, [addTask, quickTitle]);
+
+    useEffect(() => {
+        return () => {
+            if (quickAddedTimerRef.current !== null) window.clearTimeout(quickAddedTimerRef.current);
+        };
+    }, []);
+
     const handleDeleteTask = useCallback((id: string) => {
         if (window.confirm('Are you sure you want to delete this task?')) {
             deleteTask(id);
@@ -189,8 +246,8 @@ export function Dashboard() {
     return (
         <div className="page-container">
             {/* ============== HEADER ============== */}
-            <div className="flex items-start justify-between mb-5">
-                <div className="flex flex-col min-w-0">
+            <div className="flex items-start justify-between gap-3 mb-4">
+                <div className="flex flex-col min-w-0 flex-1">
                     <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
                         {getGreeting()}
                     </span>
@@ -200,6 +257,130 @@ export function Dashboard() {
                 </div>
                 <LevelBadge />
             </div>
+
+            {/* ============== QUICK-ADD QUEST BAR ============== */}
+            <div
+                onClick={() => quickInputRef.current?.focus()}
+                className={`relative w-full mb-5 flex items-center gap-2.5 pl-3.5 pr-1.5 py-1.5 rounded-2xl cursor-text transition-all duration-200 glass-card ${
+                    quickFocused ? 'border-purple-500/40 shadow-lg shadow-purple-500/10' : ''
+                }`}
+            >
+                <Sparkles
+                    className={`w-4 h-4 shrink-0 transition-colors ${
+                        quickFocused || quickTitle ? 'text-purple-400' : 'text-[var(--color-text-tertiary)]'
+                    }`}
+                    strokeWidth={2.4}
+                />
+                <input
+                    ref={quickInputRef}
+                    type="text"
+                    value={quickTitle}
+                    placeholder={quickPlaceholder}
+                    onChange={(e) => setQuickTitle(e.target.value)}
+                    onFocus={() => setQuickFocused(true)}
+                    onBlur={() => setQuickFocused(false)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleQuickAdd();
+                        } else if (e.key === 'Escape') {
+                            setQuickTitle('');
+                            quickInputRef.current?.blur();
+                        }
+                    }}
+                    enterKeyHint="send"
+                    maxLength={140}
+                    aria-label="Add a quest"
+                    className="flex-1 min-w-0 bg-transparent border-0 outline-none text-sm font-semibold placeholder:font-medium placeholder:text-[var(--color-text-tertiary)]"
+                />
+                <AnimatePresence mode="wait" initial={false}>
+                    {quickTitle.trim() ? (
+                        <motion.button
+                            key="send"
+                            type="button"
+                            initial={{ scale: 0.6, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.6, opacity: 0 }}
+                            transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={(e) => { e.stopPropagation(); handleQuickAdd(); }}
+                            className="shrink-0 w-9 h-9 rounded-xl fab-primary text-white flex items-center justify-center"
+                            aria-label="Add quest"
+                        >
+                            <ArrowUp className="w-4 h-4" strokeWidth={3} />
+                        </motion.button>
+                    ) : (
+                        <motion.button
+                            key="open"
+                            type="button"
+                            initial={{ scale: 0.6, opacity: 0 }}
+                            animate={{ scale: quickJustAdded ? [1, 1.18, 1] : 1, opacity: 1 }}
+                            exit={{ scale: 0.6, opacity: 0 }}
+                            transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingTask(null);
+                                setShowTaskForm(true);
+                            }}
+                            className="shrink-0 w-9 h-9 rounded-xl fab-primary text-white flex items-center justify-center"
+                            aria-label="Open quest form"
+                        >
+                            <Plus className="w-4 h-4" strokeWidth={3} />
+                        </motion.button>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            <AnimatePresence>
+                {hasParsedHints && quickParsed && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -6, height: 0 }}
+                        animate={{ opacity: 1, y: 0, height: 'auto' }}
+                        exit={{ opacity: 0, y: -6, height: 0 }}
+                        transition={{ duration: 0.18 }}
+                        className="-mt-3 mb-4 flex flex-wrap gap-1.5 pl-3 overflow-hidden"
+                    >
+                        {quickParsed.deadline && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/12 border border-purple-500/30 text-[10px] font-bold text-purple-400">
+                                <Clock className="w-2.5 h-2.5" strokeWidth={3} />
+                                {formatDeadlineChip(quickParsed.deadline)}
+                            </span>
+                        )}
+                        {quickParsed.priority && (
+                            <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                    quickParsed.priority === 'CRITICAL'
+                                        ? 'bg-red-500/12 border-red-500/30 text-red-400'
+                                        : quickParsed.priority === 'HIGH'
+                                        ? 'bg-orange-500/12 border-orange-500/30 text-orange-400'
+                                        : quickParsed.priority === 'LOW'
+                                        ? 'bg-slate-500/12 border-slate-500/30 text-slate-400'
+                                        : 'bg-amber-500/12 border-amber-500/30 text-amber-400'
+                                }`}
+                            >
+                                <Zap className="w-2.5 h-2.5" strokeWidth={3} />
+                                {quickParsed.priority.toLowerCase()}
+                            </span>
+                        )}
+                        {quickParsed.recurrence !== 'NONE' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/12 border border-blue-500/30 text-[10px] font-bold text-blue-400">
+                                <Repeat className="w-2.5 h-2.5" strokeWidth={3} />
+                                {quickParsed.recurrence.toLowerCase()}
+                            </span>
+                        )}
+                        {quickParsed.tags.map((t) => (
+                            <span
+                                key={t}
+                                className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-white/5 border border-[var(--color-border)] text-[10px] font-bold text-[var(--color-text-secondary)]"
+                            >
+                                <Hash className="w-2.5 h-2.5" strokeWidth={3} />
+                                {t}
+                            </span>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* ============== XP BAR ============== */}
             <div className="mb-5">
@@ -247,26 +428,7 @@ export function Dashboard() {
                 </div>
             </div>
 
-            {/* ============== TODAY'S TASKS (primary action) ============== */}
-            <div className="mb-5">
-                <div className="flex items-center justify-between mb-2.5">
-                    <h2 className="text-[11px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
-                        Today's Quests
-                    </h2>
-                    <span className="text-[11px] font-semibold text-[var(--color-text-tertiary)] text-stat">
-                        {todayTasks.length}
-                    </span>
-                </div>
-                <TaskList
-                    tasks={todayTasks}
-                    onComplete={handleCompleteTask}
-                    onDelete={handleDeleteTask}
-                    onEdit={handleEditTask}
-                    emptyMessage="All clear. Tap + to add a quest."
-                />
-            </div>
-
-            {/* ============== DAILY MISSIONS (collapsible) ============== */}
+            {/* ============== DAILY MISSIONS (collapsible) — moved above quests so it's always visible ============== */}
             {dailyMissionsEnabled && missionsForToday.length > 0 && (
                 <div className="mb-4">
                     <button
@@ -388,6 +550,25 @@ export function Dashboard() {
                 </div>
             )}
 
+            {/* ============== TODAY'S QUESTS ============== */}
+            <div className="mb-5">
+                <div className="flex items-center justify-between mb-2.5">
+                    <h2 className="text-[11px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
+                        Today's Quests
+                    </h2>
+                    <span className="text-[11px] font-semibold text-[var(--color-text-tertiary)] text-stat">
+                        {todayTasks.length}
+                    </span>
+                </div>
+                <TaskList
+                    tasks={todayTasks}
+                    onComplete={handleCompleteTask}
+                    onDelete={handleDeleteTask}
+                    onEdit={handleEditTask}
+                    emptyMessage="All clear. Tap “New Quest” to add one."
+                />
+            </div>
+
             {/* ============== RITUAL PILL ============== */}
             {quickRitualsEnabled && ritualStats.total > 0 && (
                 <motion.button
@@ -415,23 +596,6 @@ export function Dashboard() {
                     )}
                 </motion.button>
             )}
-
-            {/* ============== FAB ============== */}
-            <motion.button
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.92 }}
-                onClick={() => {
-                    setEditingTask(null);
-                    setShowTaskForm(true);
-                }}
-                className="fixed w-14 h-14 rounded-2xl text-white flex items-center justify-center z-20 fab-primary"
-                style={{
-                    bottom: 'calc(6.5rem + env(safe-area-inset-bottom, 0px))',
-                    right: 'calc(1.5rem + env(safe-area-inset-right, 0px))',
-                }}
-            >
-                <Plus className="w-6 h-6" strokeWidth={2.6} />
-            </motion.button>
 
             {/* ============== MODALS ============== */}
             <QuickRituals

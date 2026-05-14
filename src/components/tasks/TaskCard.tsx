@@ -61,11 +61,10 @@ export const TaskCard = memo(function TaskCard({ task, onComplete, onDelete, onE
 
     return (
         <motion.div
-            layout
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, x: -160, transition: { duration: 0.25 } }}
-            transition={{ type: 'spring', stiffness: 300, damping: 26 }}
+            exit={{ opacity: 0, x: -120, transition: { duration: 0.2 } }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
             className={`glass-card relative px-4 py-3.5 ${
                 isOverdue ? 'border-red-500/50' : ''
             } ${task.status === 'COMPLETED' ? 'opacity-55' : ''}`}

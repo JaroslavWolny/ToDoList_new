@@ -1,4 +1,4 @@
-import { UserState, Completion } from '../types';
+import { UserState, Completion, Task } from '../types';
 import { calculateComboMultiplier } from './gamification';
 import { toLocalDateKey } from './dates';
 
@@ -8,8 +8,8 @@ export interface AchievementDef {
     description: string;
     icon: string;
     category: 'streak' | 'tasks' | 'xp' | 'special';
-    check: (user: UserState, completions: Completion[]) => boolean;
-    getProgress?: (user: UserState, completions: Completion[]) => { current: number; max: number };
+    check: (user: UserState, completions: Completion[], tasks?: Task[]) => boolean;
+    getProgress?: (user: UserState, completions: Completion[], tasks?: Task[]) => { current: number; max: number };
 }
 
 function getCompletionCountByDate(completions: Completion[]) {
@@ -30,8 +30,12 @@ function getUniqueCompletionDays(completions: Completion[]) {
     return new Set(completions.map((completion) => toLocalDateKey(completion.completedAt))).size;
 }
 
+function buildTaskMap(tasks?: Task[]): Map<string, Task> {
+    return new Map((tasks ?? []).map((t) => [t.id, t]));
+}
+
 export const ACHIEVEMENT_DEFS: AchievementDef[] = [
-    // Streak achievements
+    // ── Streak achievements ───────────────────────────────────────────────────
     {
         key: 'streak_starter',
         title: 'Streak Starter',
@@ -96,7 +100,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         getProgress: (u) => ({ current: Math.max(u.streakCurrent, u.streakLongest), max: 365 }),
     },
 
-    // Task achievements
+    // ── Task-count achievements ───────────────────────────────────────────────
     {
         key: 'first_step',
         title: 'First Step',
@@ -181,7 +185,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         getProgress: (_u, completions) => ({ current: getUniqueCompletionDays(completions), max: 14 }),
     },
 
-    // XP achievements
+    // ── XP achievements ───────────────────────────────────────────────────────
     {
         key: 'xp_collector',
         title: 'XP Collector',
@@ -246,7 +250,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         getProgress: (u) => ({ current: u.coins, max: 250 }),
     },
 
-    // Special achievements
+    // ── Special achievements ──────────────────────────────────────────────────
     {
         key: 'combo_king',
         title: 'Combo King',
@@ -356,14 +360,269 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
         check: (_u, completions) => getMaxCompletionsInSingleDay(completions) >= 15,
         getProgress: (_u, completions) => ({ current: getMaxCompletionsInSingleDay(completions), max: 15 }),
     },
+
+    // ── NEW: Time-of-day achievements ─────────────────────────────────────────
+
+    {
+        key: 'early_bird',
+        title: 'Early Bird',
+        description: 'Complete a task before 8:00 AM',
+        icon: '🌅',
+        category: 'special',
+        check: (_u, completions) =>
+            completions.some((c) => new Date(c.completedAt).getHours() < 8),
+        getProgress: (_u, completions) => ({
+            current: completions.some((c) => new Date(c.completedAt).getHours() < 8) ? 1 : 0,
+            max: 1,
+        }),
+    },
+    {
+        key: 'night_owl',
+        title: 'Night Owl',
+        description: 'Complete a task after 10:00 PM',
+        icon: '🦉',
+        category: 'special',
+        check: (_u, completions) =>
+            completions.some((c) => new Date(c.completedAt).getHours() >= 22),
+        getProgress: (_u, completions) => ({
+            current: completions.some((c) => new Date(c.completedAt).getHours() >= 22) ? 1 : 0,
+            max: 1,
+        }),
+    },
+    {
+        key: 'lunchtime_legend',
+        title: 'Lunchtime Legend',
+        description: 'Complete a task between 12:00 PM and 1:00 PM',
+        icon: '🌮',
+        category: 'special',
+        check: (_u, completions) =>
+            completions.some((c) => new Date(c.completedAt).getHours() === 12),
+        getProgress: (_u, completions) => ({
+            current: completions.some((c) => new Date(c.completedAt).getHours() === 12) ? 1 : 0,
+            max: 1,
+        }),
+    },
+
+    // ── NEW: Day-of-week achievement ──────────────────────────────────────────
+
+    {
+        key: 'monday_motivation',
+        title: 'Monday Motivation',
+        description: 'Complete a task on a Monday',
+        icon: '💼',
+        category: 'special',
+        check: (_u, completions) =>
+            completions.some((c) => new Date(c.completedAt).getDay() === 1),
+        getProgress: (_u, completions) => ({
+            current: completions.some((c) => new Date(c.completedAt).getDay() === 1) ? 1 : 0,
+            max: 1,
+        }),
+    },
+
+    // ── NEW: Speed & timing achievements (require tasks) ─────────────────────
+
+    {
+        key: 'speed_runner',
+        title: 'Speed Runner',
+        description: 'Complete a task within 5 minutes of creating it',
+        icon: '⚡',
+        category: 'special',
+        check: (_u, completions, tasks) => {
+            const taskMap = buildTaskMap(tasks);
+            return completions.some((c) => {
+                const task = taskMap.get(c.taskId);
+                if (!task) return false;
+                const diffMs = new Date(c.completedAt).getTime() - new Date(task.createdAt).getTime();
+                return diffMs >= 0 && diffMs <= 5 * 60 * 1000;
+            });
+        },
+        getProgress: (_u, completions, tasks) => {
+            const taskMap = buildTaskMap(tasks);
+            const found = completions.some((c) => {
+                const task = taskMap.get(c.taskId);
+                if (!task) return false;
+                const diffMs = new Date(c.completedAt).getTime() - new Date(task.createdAt).getTime();
+                return diffMs >= 0 && diffMs <= 5 * 60 * 1000;
+            });
+            return { current: found ? 1 : 0, max: 1 };
+        },
+    },
+    {
+        key: 'procrastinator',
+        title: 'Procrastinator',
+        description: 'Complete a task that was 7+ days overdue',
+        icon: '😅',
+        category: 'special',
+        check: (_u, completions, tasks) => {
+            const taskMap = buildTaskMap(tasks);
+            return completions.some((c) => {
+                const task = taskMap.get(c.taskId);
+                if (!task || !task.deadline) return false;
+                const overdueDays =
+                    (new Date(c.completedAt).getTime() - new Date(task.deadline).getTime()) /
+                    (24 * 60 * 60 * 1000);
+                return overdueDays >= 7;
+            });
+        },
+        getProgress: (_u, completions, tasks) => {
+            const taskMap = buildTaskMap(tasks);
+            const maxOverdueDays = completions.reduce((max, c) => {
+                const task = taskMap.get(c.taskId);
+                if (!task || !task.deadline) return max;
+                const days =
+                    (new Date(c.completedAt).getTime() - new Date(task.deadline).getTime()) /
+                    (24 * 60 * 60 * 1000);
+                return Math.max(max, days);
+            }, 0);
+            return { current: Math.min(Math.max(0, Math.floor(maxOverdueDays)), 7), max: 7 };
+        },
+    },
+    {
+        key: 'deadline_dasher',
+        title: 'Deadline Dasher',
+        description: 'Complete 5 tasks on their exact deadline day',
+        icon: '🏁',
+        category: 'tasks',
+        check: (_u, completions, tasks) => {
+            const taskMap = buildTaskMap(tasks);
+            const count = completions.filter((c) => {
+                const task = taskMap.get(c.taskId);
+                if (!task || !task.deadline) return false;
+                return toLocalDateKey(c.completedAt) === toLocalDateKey(task.deadline);
+            }).length;
+            return count >= 5;
+        },
+        getProgress: (_u, completions, tasks) => {
+            const taskMap = buildTaskMap(tasks);
+            const count = completions.filter((c) => {
+                const task = taskMap.get(c.taskId);
+                if (!task || !task.deadline) return false;
+                return toLocalDateKey(c.completedAt) === toLocalDateKey(task.deadline);
+            }).length;
+            return { current: Math.min(count, 5), max: 5 };
+        },
+    },
+
+    // ── NEW: Tag achievement (requires tasks) ─────────────────────────────────
+
+    {
+        key: 'tag_specialist',
+        title: 'Tag Specialist',
+        description: 'Complete 10 tasks sharing the same tag',
+        icon: '🏷️',
+        category: 'tasks',
+        check: (_u, completions, tasks) => {
+            const taskMap = buildTaskMap(tasks);
+            const tagCounts = new Map<string, number>();
+            completions.forEach((c) => {
+                const task = taskMap.get(c.taskId);
+                if (!task) return;
+                task.tags.forEach((tag) => {
+                    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+                });
+            });
+            return Array.from(tagCounts.values()).some((n) => n >= 10);
+        },
+        getProgress: (_u, completions, tasks) => {
+            const taskMap = buildTaskMap(tasks);
+            const tagCounts = new Map<string, number>();
+            completions.forEach((c) => {
+                const task = taskMap.get(c.taskId);
+                if (!task) return;
+                task.tags.forEach((tag) => {
+                    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+                });
+            });
+            const best = Math.max(0, ...Array.from(tagCounts.values()));
+            return { current: Math.min(best, 10), max: 10 };
+        },
+    },
+
+    // ── NEW: Recurring tasks achievement (requires tasks) ─────────────────────
+
+    {
+        key: 'recurring_hero',
+        title: 'Recurring Hero',
+        description: 'Complete 20 recurring tasks',
+        icon: '🔄',
+        category: 'tasks',
+        check: (_u, completions, tasks) => {
+            const taskMap = buildTaskMap(tasks);
+            const count = completions.filter((c) => {
+                const task = taskMap.get(c.taskId);
+                return task?.recurrence !== 'NONE';
+            }).length;
+            return count >= 20;
+        },
+        getProgress: (_u, completions, tasks) => {
+            const taskMap = buildTaskMap(tasks);
+            const count = completions.filter((c) => {
+                const task = taskMap.get(c.taskId);
+                return task?.recurrence !== 'NONE';
+            }).length;
+            return { current: Math.min(count, 20), max: 20 };
+        },
+    },
+
+    // ── NEW: Daily volume achievements ────────────────────────────────────────
+
+    {
+        key: 'daily_dozen',
+        title: 'Daily Dozen',
+        description: 'Complete 12 tasks in a single day',
+        icon: '🥊',
+        category: 'tasks',
+        check: (_u, completions) => getMaxCompletionsInSingleDay(completions) >= 12,
+        getProgress: (_u, completions) => ({ current: getMaxCompletionsInSingleDay(completions), max: 12 }),
+    },
+
+    // ── NEW: Consistency milestone ────────────────────────────────────────────
+
+    {
+        key: 'workaholic',
+        title: 'Workaholic',
+        description: 'Complete tasks on 30 different days',
+        icon: '🗂️',
+        category: 'tasks',
+        check: (_u, completions) => getUniqueCompletionDays(completions) >= 30,
+        getProgress: (_u, completions) => ({ current: getUniqueCompletionDays(completions), max: 30 }),
+    },
+
+    // ── NEW: XP single-day achievement ───────────────────────────────────────
+
+    {
+        key: 'high_roller',
+        title: 'High Roller',
+        description: 'Earn 500 XP in a single day',
+        icon: '🎰',
+        category: 'xp',
+        check: (_u, completions) => {
+            const xpByDate = new Map<string, number>();
+            completions.forEach((c) => {
+                const date = toLocalDateKey(c.completedAt);
+                xpByDate.set(date, (xpByDate.get(date) ?? 0) + c.xpEarned);
+            });
+            return Array.from(xpByDate.values()).some((xp) => xp >= 500);
+        },
+        getProgress: (_u, completions) => {
+            const xpByDate = new Map<string, number>();
+            completions.forEach((c) => {
+                const date = toLocalDateKey(c.completedAt);
+                xpByDate.set(date, (xpByDate.get(date) ?? 0) + c.xpEarned);
+            });
+            const best = Math.max(0, ...Array.from(xpByDate.values()));
+            return { current: Math.min(best, 500), max: 500 };
+        },
+    },
 ];
 
 export function checkAchievements(
     user: UserState,
     completions: Completion[],
-    unlockedKeys: Set<string>
+    unlockedKeys: Set<string>,
+    tasks?: Task[]
 ): AchievementDef[] {
     return ACHIEVEMENT_DEFS.filter(
-        (def) => !unlockedKeys.has(def.key) && def.check(user, completions)
+        (def) => !unlockedKeys.has(def.key) && def.check(user, completions, tasks)
     );
 }

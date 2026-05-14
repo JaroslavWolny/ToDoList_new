@@ -49,13 +49,15 @@ export const useAchievementStore = create<AchievementStore>()(
 
             checkAndUnlock: () => {
                 const userState = useUserStore.getState();
-                const completions = useTaskStore.getState().completions;
+                const taskStoreState = useTaskStore.getState();
+                const completions = taskStoreState.completions;
+                const tasks = taskStoreState.tasks;
                 const { achievements } = get();
                 const unlockedKeys = new Set(
                     achievements.filter((a) => a.unlockedAt).map((a) => a.key)
                 );
 
-                const newlyUnlocked = checkAchievements(userState, completions, unlockedKeys);
+                const newlyUnlocked = checkAchievements(userState, completions, unlockedKeys, tasks);
                 if (newlyUnlocked.length === 0) return [];
 
                 const now = new Date().toISOString();

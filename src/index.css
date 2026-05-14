@@ -93,25 +93,18 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Mesh gradient ambient background — fixed, behind everything */
+  /* Mesh gradient ambient background — fixed, behind everything.
+     Static (no animation) and pre-blurred radials = no per-frame work. */
   body::before {
     content: '';
     position: fixed;
-    inset: -20%;
+    inset: 0;
     z-index: -1;
     pointer-events: none;
     background:
-      radial-gradient(circle at 18% 12%, var(--mesh-1) 0%, transparent 42%),
-      radial-gradient(circle at 82% 18%, var(--mesh-2) 0%, transparent 38%),
-      radial-gradient(circle at 50% 88%, var(--mesh-3) 0%, transparent 45%);
-    filter: blur(60px) saturate(120%);
-    animation: meshDrift 24s ease-in-out infinite alternate;
-  }
-
-  @keyframes meshDrift {
-    0% { transform: translate3d(0, 0, 0) scale(1); }
-    50% { transform: translate3d(2%, -3%, 0) scale(1.05); }
-    100% { transform: translate3d(-2%, 2%, 0) scale(1.02); }
+      radial-gradient(60% 50% at 18% 12%, var(--mesh-1) 0%, transparent 70%),
+      radial-gradient(55% 45% at 82% 18%, var(--mesh-2) 0%, transparent 70%),
+      radial-gradient(65% 55% at 50% 88%, var(--mesh-3) 0%, transparent 70%);
   }
 
   /* Custom scrollbar */
@@ -144,28 +137,26 @@
 
   .glass {
     background: var(--color-surface);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--color-border);
   }
 
   .glass-card {
     background: var(--color-surface);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--color-border);
-    box-shadow: var(--shadow-elev-2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    box-shadow: var(--shadow-elev-2);
     border-radius: 1.25rem;
   }
 
   .glass-hero {
     background: var(--color-surface-strong);
-    backdrop-filter: blur(40px) saturate(180%);
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--color-border-strong);
-    box-shadow: var(--shadow-elev-3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    box-shadow: var(--shadow-elev-3);
     border-radius: 1.75rem;
     position: relative;
     overflow: hidden;
@@ -183,8 +174,8 @@
   /* Legacy alias — keep existing components working */
   .card-surface {
     background: var(--color-surface);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--color-border);
     box-shadow: var(--shadow-elev-2);
   }
@@ -194,15 +185,11 @@
   .gradient-text {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(135deg, var(--color-xp-from), var(--color-xp-via), var(--color-xp-to));
-    background-size: 200% 200%;
-    animation: gradientShift 6s ease-in-out infinite;
   }
 
   .gradient-text-fire {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(135deg, var(--color-fire-from), var(--color-fire-via), var(--color-fire-to));
-    background-size: 200% 200%;
-    animation: gradientShift 4s ease-in-out infinite;
   }
 
   @keyframes gradientShift {
@@ -224,8 +211,6 @@
 
   .xp-gradient {
     background: linear-gradient(90deg, #7c3aed, #a855f7, #ec4899);
-    background-size: 200% 100%;
-    animation: gradientShift 4s ease-in-out infinite;
   }
 
   .streak-gradient {
@@ -357,41 +342,31 @@
     pointer-events: none;
   }
 
+  /* Static highlight — removed continuous shimmer (was a perf hit) */
   .reveal-card-shell::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.08) 50%, transparent 70%);
-    background-size: 200% 100%;
-    animation: shimmer 3.5s ease-in-out infinite;
+    background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.06) 50%, transparent 70%);
     pointer-events: none;
-  }
-
-  @keyframes shimmer {
-    0% { background-position: -100% 0; }
-    100% { background-position: 200% 0; }
   }
 
   /* ============ FAB / FLOATING BUTTONS ============ */
 
   .fab-primary {
     background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
-    background-size: 200% 200%;
     box-shadow:
       0 12px 32px -8px rgba(99, 102, 241, 0.55),
       0 4px 12px -4px rgba(236, 72, 153, 0.35),
       inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    animation: gradientShift 6s ease-in-out infinite;
   }
 
   .fab-ritual {
     background: linear-gradient(135deg, #8b5cf6, #06b6d4);
-    background-size: 200% 200%;
     box-shadow:
       0 12px 32px -8px rgba(139, 92, 246, 0.5),
       0 4px 12px -4px rgba(6, 182, 212, 0.35),
       inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    animation: gradientShift 6s ease-in-out infinite;
   }
 }
 

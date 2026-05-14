@@ -111,6 +111,17 @@ export function Tasks() {
                     >
                         <Filter className="w-4 h-4" />
                     </motion.button>
+                    <motion.button
+                        whileTap={{ scale: 0.94 }}
+                        onClick={() => {
+                            setEditingTask(null);
+                            setShowTaskForm(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 pl-2.5 pr-3 py-2 rounded-xl fab-primary text-white text-xs font-bold"
+                    >
+                        <Plus className="w-4 h-4" strokeWidth={3} />
+                        New Quest
+                    </motion.button>
                 </div>
             </div>
 
@@ -218,20 +229,6 @@ export function Tasks() {
                 }}
                 emptyMessage="No tasks found."
             />
-
-            {/* FAB */}
-            <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => {
-                    setEditingTask(null);
-                    setShowTaskForm(true);
-                }}
-                className="fixed right-6 w-14 h-14 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-xl shadow-primary-500/40 flex items-center justify-center z-20"
-                style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom, 0px) + 0.5rem)', right: 'calc(1.5rem + env(safe-area-inset-right, 0px))' }}
-            >
-                <Plus className="w-6 h-6" />
-            </motion.button>
 
             {showTaskForm && (
                 <Suspense fallback={null}>

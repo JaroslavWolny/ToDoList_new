@@ -117,7 +117,7 @@ export interface UserState {
     lastSharedStreakMilestone: number;
 }
 
-export type AvatarRarity = 'STARTER' | 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+export type AvatarRarity = 'STARTER' | 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY' | 'MYTHIC';
 export type AvatarCategory = 'warriors' | 'cosmic' | 'animals' | 'royalty' | 'mystic';
 
 export interface Avatar {

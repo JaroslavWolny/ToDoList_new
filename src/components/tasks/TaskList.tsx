@@ -26,7 +26,7 @@ export const TaskList = memo(function TaskList({ tasks, onComplete, onDelete, on
 
     return (
         <div className="space-y-3">
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence initial={false}>
                 {tasks.map((task) => (
                     <TaskCard
                         key={task.id}

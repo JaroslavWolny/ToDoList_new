@@ -19,6 +19,7 @@ const RARITY_CONFIG: Record<AvatarRarity, { label: string; color: string; bg: st
     RARE: { label: 'Rare', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', glow: 'shadow-blue-500/10', emoji: '🔵' },
     EPIC: { label: 'Epic', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20', glow: 'shadow-purple-500/20', emoji: '🟣' },
     LEGENDARY: { label: 'Legendary', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', glow: 'shadow-yellow-500/20', emoji: '🌟' },
+    MYTHIC: { label: 'Mythic', color: 'text-fuchsia-300', bg: 'bg-gradient-to-br from-fuchsia-500/15 via-rose-500/10 to-amber-500/15', border: 'border-fuchsia-400/40', glow: 'shadow-fuchsia-500/30', emoji: '🔱' },
 };
 
 type OwnershipFilter = 'all' | 'owned' | 'locked';
