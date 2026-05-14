@@ -28,7 +28,7 @@ Built as a blazing-fast, local-first Progressive Web App (PWA), it seamlessly bl
 Every task is a quest. Earn **XP** for completing your to-dos, fill up your XP bar, and level up just like in your favorite RPG! The progressive XP curve ensures that every new rank feels like a true achievement.
 
 ### 🪙 Modern Avatar Shop & Customization
-Complete Daily Missions (e.g., "Complete 3 Critical Tasks") to earn **Coins**. Spend these newly-earned coins in our sleek, slide-in **Avatar Shop** to unlock premium avatars with distinct **Rarity Tiers** (from Common to Legendary). Track your collection progress, easily browse with filterable tabs, and personalize your Level Badge to flex your progress!
+Complete Daily Missions (e.g., "Complete 3 Critical Tasks") to earn **Coins**. Spend these newly-earned coins in our sleek, slide-in **Avatar Shop** to unlock premium avatars with distinct **Rarity Tiers** — from Common all the way to the brand-new **MYTHIC** tier (Apex Trophy, Atomic Sovereign, Genesis Strand, and more) reserved for the most dedicated heroes. Track your collection progress, easily browse with filterable tabs, and personalize your Level Badge to flex your progress!
 
 ### 🎁 Random Loot Drops
 Every task you complete gives you a chance to discover hidden treasure! You might uncover a common **Lucky Pouch** or a rare, highly valuable **Chest** overflowing with extra Coins and XP. Stay productive and let the RNG reward your hard work!
@@ -39,6 +39,9 @@ Missed a deadline? Procrastinated too long? You'll take damage! **Keep your Heal
 ### ⚡ Unbreakable Streaks & Combos
 Consistency is king. Build daily **Streaks** to unlock powerful XP multipliers. Chain tasks together in quick succession to activate **Combo Multipliers** and sky-rocket your productivity stats!
 - **RPG Share Cards (SSR):** Flex your consistency! Using Vercel Edge functions and `@vercel/og` (Satori), we dynamically generate flawless pixel-perfect (1080x1920) RPG-themed collectible cards representing your exact Streak Tier (Wood, Bronze, Silver, Epic/Gold). Share them directly to your Instagram Story or download the PNG to show everyone you mean business.
+### ⚡ Natural-Language Quick-Add
+Stop tapping through forms — just **type the way you think**. The dashboard quick-add bar parses dates, times, priority, recurrence, and tags from free-form input. Type `buy milk tomorrow 5pm !high #shopping` and QuestDo turns it into a fully-detailed quest in one shot. Live **chip preview** under the input shows exactly how your text was understood (⏰ deadline · ⚡ priority · 🔁 recurrence · #tags), teaching the syntax as you go. Works in **English and Czech** (`zítra`, `dnes`, `každý den`, `za 2 hodiny`, `25.5.`...).
+
 ### 🆕 Innovative Task Management
 Experience a fresh approach to task creation and editing! We've ditched boring forms for a modern, beautiful **bottom-sheet modal** that dynamically slides up, embracing a "think out of the box" design philosophy for blazing-fast input.
 
@@ -240,6 +243,26 @@ A comprehensive senior-level audit identified and resolved **17 out of 21** issu
 - **Input Alignment (iOS):** Fixed persistent visual clipping of input field borders and tuned text/icon vertical alignment to deliver a refined, native-tier input experience on iOS devices.
 - **Dynamic Share Cards:** Refactored the internal serverless OG image generation logic (`api/og.tsx` & `vite-og-plugin.ts`) to resolve rendering inconsistencies, utilizing precise scaling, layout updates, and robust base64 image caching to ensure generated streak cards look identical to the native UI.
 - **Avatar Shop Consistency:** Replaced native emoji elements with high-quality SVG components from `lucide-react` across the Avatar Shop to dramatically improve visual consistency and scaling boundaries across different operating systems.
+
+### Natural-Language Quick-Add & MYTHIC Tier (May 2026)
+
+**Lightning-Fast Task Entry — Type the Way You Think:**
+- **NL Parser (`src/lib/quickParse.ts`):** Dashboard quick-add bar now extracts structured data from free-form input — no need to open the full task form for 90% of new quests. Tokens recognized:
+  - **Dates:** `today` / `dnes`, `tomorrow` / `zítra`, `next monday`, weekday names (EN full + 3-letter, CZ full), `next week` / `příští týden`, `in N days|hours` / `za N dní|hodin`, `DD.MM.[YYYY]`.
+  - **Time:** `HH:MM` or `5pm`, with optional `at` / `v` prefix.
+  - **Priority:** `!low` / `!med` / `!high` / `!crit` (plus `!hi`, `!critical` shorthands).
+  - **Recurrence:** `daily` / `every day` / `každý den`, `weekly` / `every week`, `every monday` → WEEKLY anchored to the named weekday.
+  - **Tags:** `#word` (alphanumeric, dash, underscore).
+- **Live Chip Preview:** As you type, color-coded chips appear under the input showing exactly how each token was interpreted (⏰ purple deadline · ⚡ priority-colored · 🔁 blue recurrence · # tag pills). Zero learning curve — discoverable while typing.
+- **Strict Submit Guard:** If parsing devours the whole input (e.g., the user typed only modifiers like `!high tomorrow`), the quick-add refuses to submit instead of creating a quest with an empty title.
+
+**MYTHIC Avatar Tier:**
+- Introduced a brand-new `MYTHIC` rarity above LEGENDARY with 7 ultra-premium avatars (Apex Trophy, Atomic Sovereign, Mindforge, Apex Predator, World Architect, Eternal Loop, Genesis Strand). Each costs 7,500+ coins — true late-game flex items for the most dedicated heroes.
+- Extended `AvatarRarity` union type and registered new lucide icon entries in `avatarIcons.tsx`.
+
+**Achievement System Expansion:**
+- Added 12+ new achievements covering time-of-day patterns (Early Bird, Night Owl, Lunchtime Legend), weekday consistency (Monday Motivation), speed (Speed Runner, Deadline Dasher), behavioral patterns (Procrastinator, Recurring Hero), and milestones (Daily Dozen, Tag Specialist).
+- Achievement `check` and `getProgress` signatures now accept the full `Task[]` array, unlocking task-shape-aware unlock conditions (e.g., counting unique tags used, tracking recurring-task completions).
 
 ---
 
