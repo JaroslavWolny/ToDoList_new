@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../../stores/userStore';
 import { useTaskStore, getCompletionsToday } from '../../stores/taskStore';
 import { getLevelTitle } from '../../lib/gamification';
+import { computeShareStats, getAvatarHex, slugifyHandle } from '../../lib/shareCard';
 
 const StreakShareModal = lazy(() => import('./StreakShareModal').then((module) => ({ default: module.StreakShareModal })));
 
@@ -30,7 +31,7 @@ function formatTimeRemaining(now: Date): string {
 }
 
 export function StreakCounter() {
-    const { streakCurrent, streakLongest, streakFreezeTokens, displayName, level, xp, totalTasksCompleted } = useUserStore(
+    const { streakCurrent, streakLongest, streakFreezeTokens, displayName, level, xp, totalTasksCompleted, equippedAvatar } = useUserStore(
         useShallow((state) => ({
             streakCurrent: state.streakCurrent,
             streakLongest: state.streakLongest,
@@ -39,9 +40,14 @@ export function StreakCounter() {
             level: state.level,
             xp: state.xp,
             totalTasksCompleted: state.totalTasksCompleted,
+            equippedAvatar: state.equippedAvatar,
         }))
     );
-    const completions = useTaskStore((s) => s.completions);
+    const { tasks, completions } = useTaskStore(
+        useShallow((s) => ({ tasks: s.tasks, completions: s.completions }))
+    );
+    const handle = useMemo(() => slugifyHandle(displayName || 'hero'), [displayName]);
+    const avatarHex = useMemo(() => getAvatarHex(equippedAvatar), [equippedAvatar]);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [now, setNow] = useState(() => new Date());
 
@@ -172,6 +178,9 @@ export function StreakCounter() {
                         level={level}
                         xp={xp}
                         totalTasks={totalTasksCompleted}
+                        handle={handle}
+                        avatarColor={avatarHex}
+                        {...computeShareStats(tasks, completions)}
                     />
                 </Suspense>
             )}

@@ -1,9 +1,21 @@
 import { Suspense, lazy, useEffect, useEffectEvent, useRef } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { AppShell } from './components/layout/AppShell';
 import { useUserStore } from './stores/userStore';
 import { useTaskStore } from './stores/taskStore';
+import { REFERRER_STORAGE_KEY } from './lib/shareCard';
+
+function ReferrerLanding() {
+  const { code } = useParams<{ code: string }>();
+  const onboardingComplete = useUserStore((s) => s.onboardingComplete);
+  useEffect(() => {
+    if (code && !onboardingComplete) {
+      try { window.localStorage.setItem(REFERRER_STORAGE_KEY, code); } catch { /* noop */ }
+    }
+  }, [code, onboardingComplete]);
+  return <Navigate to={onboardingComplete ? '/' : '/onboarding'} replace />;
+}
 
 const Dashboard = lazy(() => import('./pages/Dashboard').then((module) => ({ default: module.Dashboard })));
 const Tasks = lazy(() => import('./pages/Tasks').then((module) => ({ default: module.Tasks })));
@@ -108,6 +120,7 @@ function App() {
     return (
       <Suspense fallback={<RouteLoader />}>
         <Routes>
+          <Route path="/from/:code" element={<ReferrerLanding />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="*" element={<Navigate to="/onboarding" replace />} />
         </Routes>
@@ -123,6 +136,7 @@ function App() {
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/stats" element={<Stats />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/from/:code" element={<ReferrerLanding />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

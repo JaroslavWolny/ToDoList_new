@@ -40,6 +40,13 @@ export default function handler(req: Request) {
         const level = parseInt(searchParams.get('level') || '1', 10);
         const xp = parseInt(searchParams.get('xp') || '0', 10);
         const tasks = parseInt(searchParams.get('tasks') || '0', 10);
+        const handle = (searchParams.get('handle') || '').replace(/[^a-z0-9-]/gi, '').slice(0, 24) || 'hero';
+        const avatarColor = (searchParams.get('avatarColor') || '#a78bfa').slice(0, 7);
+        const topTag = (searchParams.get('topTag') || '').slice(0, 20);
+        const peakHour = (searchParams.get('peakHour') || '').slice(0, 8);
+        const topDay = (searchParams.get('topDay') || '').slice(0, 8);
+        const avatarInitial = (username.trim()[0] || 'Q').toUpperCase();
+        const hasPersonality = !!(topTag || peakHour || topDay);
 
         const requestedWidth = parseInt(searchParams.get('w') || '1080', 10);
         const requestedHeight = parseInt(searchParams.get('h') || '1920', 10);
@@ -215,6 +222,28 @@ export default function handler(req: Request) {
                                     gap: u(16),
                                 }}
                             >
+                                {/* Avatar badge */}
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: u(140),
+                                        height: u(140),
+                                        borderRadius: '50%',
+                                        background: `radial-gradient(circle at 30% 30%, ${avatarColor}40, ${avatarColor}10 70%, transparent 100%)`,
+                                        border: `${u(3)} solid ${avatarColor}`,
+                                        boxShadow: `0 ${u(8)} ${u(40)} ${avatarColor}55, inset 0 ${u(2)} ${u(8)} rgba(255,255,255,0.12)`,
+                                        fontSize: u(72),
+                                        fontWeight: '900',
+                                        color: avatarColor,
+                                        letterSpacing: u(-2),
+                                        textShadow: `0 ${u(2)} ${u(12)} ${avatarColor}88`,
+                                    }}
+                                >
+                                    {avatarInitial}
+                                </div>
+
                                 {/* Tier badge pill */}
                                 <div
                                     style={{
@@ -247,6 +276,20 @@ export default function handler(req: Request) {
                                     }}
                                 >
                                     {username}
+                                </div>
+
+                                {/* Handle */}
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        fontSize: u(28),
+                                        fontWeight: '600',
+                                        color: avatarColor,
+                                        opacity: 0.85,
+                                        marginTop: u(-4),
+                                    }}
+                                >
+                                    @{handle}
                                 </div>
 
                                 {/* Rank subtitle */}
@@ -549,6 +592,76 @@ export default function handler(req: Request) {
                                     </div>
                                 </div>
 
+                                {/* Personality stats strip */}
+                                {hasPersonality && (
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            width: '100%',
+                                            gap: u(10),
+                                            justifyContent: 'center',
+                                        }}
+                                    >
+                                        {topTag && (
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: u(8),
+                                                    padding: `${u(12)} ${u(20)}`,
+                                                    borderRadius: u(100),
+                                                    backgroundColor: 'rgba(255,255,255,0.05)',
+                                                    border: `${u(1)} solid rgba(255,255,255,0.1)`,
+                                                    fontSize: u(22),
+                                                    fontWeight: '700',
+                                                    color: 'rgba(255,255,255,0.7)',
+                                                }}
+                                            >
+                                                <span style={{ display: 'flex', fontSize: u(22), color: accentColor }}>◆</span>
+                                                {topTag}
+                                            </div>
+                                        )}
+                                        {peakHour && (
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: u(8),
+                                                    padding: `${u(12)} ${u(20)}`,
+                                                    borderRadius: u(100),
+                                                    backgroundColor: 'rgba(255,255,255,0.05)',
+                                                    border: `${u(1)} solid rgba(255,255,255,0.1)`,
+                                                    fontSize: u(22),
+                                                    fontWeight: '700',
+                                                    color: 'rgba(255,255,255,0.7)',
+                                                }}
+                                            >
+                                                <span style={{ display: 'flex', fontSize: u(22), color: accentColor }}>◷</span>
+                                                {peakHour}
+                                            </div>
+                                        )}
+                                        {topDay && (
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: u(8),
+                                                    padding: `${u(12)} ${u(20)}`,
+                                                    borderRadius: u(100),
+                                                    backgroundColor: 'rgba(255,255,255,0.05)',
+                                                    border: `${u(1)} solid rgba(255,255,255,0.1)`,
+                                                    fontSize: u(22),
+                                                    fontWeight: '700',
+                                                    color: 'rgba(255,255,255,0.7)',
+                                                }}
+                                            >
+                                                <span style={{ display: 'flex', fontSize: u(22), color: accentColor }}>★</span>
+                                                {topDay}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                                 {/* Divider line */}
                                 <div
                                     style={{
@@ -560,22 +673,22 @@ export default function handler(req: Request) {
                                     }}
                                 />
 
-                                {/* Branding */}
+                                {/* Branding + CTA URL */}
                                 <div
                                     style={{
                                         display: 'flex',
                                         flexDirection: 'column',
                                         alignItems: 'center',
-                                        gap: u(8),
+                                        gap: u(10),
                                     }}
                                 >
                                     <div
                                         style={{
                                             display: 'flex',
-                                            fontSize: u(44),
+                                            fontSize: u(32),
                                             fontWeight: '900',
-                                            letterSpacing: u(8),
-                                            color: 'rgba(255,255,255,0.35)',
+                                            letterSpacing: u(6),
+                                            color: 'rgba(255,255,255,0.3)',
                                         }}
                                     >
                                         QUESTDO
@@ -583,14 +696,17 @@ export default function handler(req: Request) {
                                     <div
                                         style={{
                                             display: 'flex',
-                                            fontSize: u(20),
-                                            fontWeight: '600',
-                                            letterSpacing: u(6),
-                                            color: 'rgba(255,255,255,0.2)',
-                                            textTransform: 'uppercase',
+                                            padding: `${u(14)} ${u(28)}`,
+                                            borderRadius: u(100),
+                                            backgroundColor: 'rgba(255,255,255,0.06)',
+                                            border: `${u(1)} solid ${avatarColor}55`,
+                                            fontSize: u(26),
+                                            fontWeight: '700',
+                                            letterSpacing: u(1),
+                                            color: 'white',
                                         }}
                                     >
-                                        Level up your life
+                                        questdo.app/from/{handle}
                                     </div>
                                 </div>
                             </div>

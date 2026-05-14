@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Share2, Loader2, Sparkles } from 'lucide-react';
+import { SHARE_BASE_URL } from '../../lib/shareCard';
 
 interface StreakShareModalProps {
     isOpen: boolean;
@@ -12,6 +13,11 @@ interface StreakShareModalProps {
     level?: number;
     xp?: number;
     totalTasks?: number;
+    handle?: string;
+    avatarColor?: string;
+    topTag?: string;
+    peakHour?: string;
+    topDay?: string;
 }
 
 export function StreakShareModal({
@@ -24,6 +30,11 @@ export function StreakShareModal({
     level = 1,
     xp = 0,
     totalTasks = 0,
+    handle = 'hero',
+    avatarColor = '#a78bfa',
+    topTag = '',
+    peakHour = '',
+    topDay = '',
 }: StreakShareModalProps) {
     const [isGenerating, setIsGenerating] = useState(false);
 
@@ -34,7 +45,8 @@ export function StreakShareModal({
         };
     }, []);
 
-    const imageUrl = `/api/og?username=${encodeURIComponent(username)}&streak=${currentStreak}&best=${bestStreak}&rank=${encodeURIComponent(rank)}&level=${level}&xp=${xp}&tasks=${totalTasks}&w=${imageWidth}&h=${imageHeight}`;
+    const imageUrl = `/api/og?username=${encodeURIComponent(username)}&streak=${currentStreak}&best=${bestStreak}&rank=${encodeURIComponent(rank)}&level=${level}&xp=${xp}&tasks=${totalTasks}&handle=${encodeURIComponent(handle)}&avatarColor=${encodeURIComponent(avatarColor)}&topTag=${encodeURIComponent(topTag)}&peakHour=${encodeURIComponent(peakHour)}&topDay=${encodeURIComponent(topDay)}&w=${imageWidth}&h=${imageHeight}`;
+    const shareUrl = `${SHARE_BASE_URL}/${handle}`;
 
     const fetchImageBlob = async () => {
         setIsGenerating(true);
@@ -73,7 +85,8 @@ export function StreakShareModal({
             try {
                 await navigator.share({
                     title: 'QuestDo — My Streak',
-                    text: `${currentStreak}-day streak in QuestDo! 🔥 Level ${level} • ${totalTasks} quests done.`,
+                    text: `${currentStreak}-day streak in QuestDo 🔥 Level ${level} · ${totalTasks} quests crushed. Join me → ${shareUrl}`,
+                    url: shareUrl,
                     files: [file],
                 });
             } catch (error) {

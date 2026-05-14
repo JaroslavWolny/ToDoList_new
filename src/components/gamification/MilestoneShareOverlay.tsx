@@ -3,7 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Share2, X, Loader2 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../../stores/userStore';
+import { useTaskStore } from '../../stores/taskStore';
 import { getLevelTitle } from '../../lib/gamification';
+import { computeShareStats, getAvatarHex, slugifyHandle, SHARE_BASE_URL } from '../../lib/shareCard';
 
 const MILESTONES = [7, 14, 30, 60, 100, 200, 365, 500, 1000];
 
@@ -37,6 +39,7 @@ export function MilestoneShareOverlay() {
         level,
         xp,
         totalTasksCompleted,
+        equippedAvatar,
         markStreakMilestoneShared,
     } = useUserStore(
         useShallow((s) => ({
@@ -47,8 +50,12 @@ export function MilestoneShareOverlay() {
             level: s.level,
             xp: s.xp,
             totalTasksCompleted: s.totalTasksCompleted,
+            equippedAvatar: s.equippedAvatar,
             markStreakMilestoneShared: s.markStreakMilestoneShared,
         }))
+    );
+    const { tasks, completions } = useTaskStore(
+        useShallow((s) => ({ tasks: s.tasks, completions: s.completions }))
     );
 
     const passed = getPassedMilestone(streakCurrent);
@@ -67,12 +74,36 @@ export function MilestoneShareOverlay() {
         return undefined;
     }, [shouldShow]);
 
+    const handle = useMemo(() => slugifyHandle(displayName || 'hero'), [displayName]);
+    const avatarHex = useMemo(() => getAvatarHex(equippedAvatar), [equippedAvatar]);
+    const personality = useMemo(
+        () => (passed ? computeShareStats(tasks, completions) : null),
+        [passed, tasks, completions]
+    );
+    const shareUrl = `${SHARE_BASE_URL}/${handle}`;
+
     const imageUrl = useMemo(() => {
-        if (!passed) return '';
+        if (!passed || !personality) return '';
         const username = displayName || 'Quester';
         const rank = getLevelTitle(level);
-        return `/api/og?username=${encodeURIComponent(username)}&streak=${streakCurrent}&best=${streakLongest}&rank=${encodeURIComponent(rank)}&level=${level}&xp=${xp}&tasks=${totalTasksCompleted}&w=1080&h=1920`;
-    }, [passed, displayName, level, streakCurrent, streakLongest, xp, totalTasksCompleted]);
+        const params = new URLSearchParams({
+            username,
+            streak: String(streakCurrent),
+            best: String(streakLongest),
+            rank,
+            level: String(level),
+            xp: String(xp),
+            tasks: String(totalTasksCompleted),
+            handle,
+            avatarColor: avatarHex,
+            topTag: personality.topTag,
+            peakHour: personality.peakHour,
+            topDay: personality.topDay,
+            w: '1080',
+            h: '1920',
+        });
+        return `/api/og?${params.toString()}`;
+    }, [passed, displayName, level, streakCurrent, streakLongest, xp, totalTasksCompleted, handle, avatarHex, personality]);
 
     if (!shouldShow || !passed || !copy) return null;
 
@@ -92,7 +123,8 @@ export function MilestoneShareOverlay() {
             if (navigator.share && navigator.canShare?.({ files: [file] })) {
                 await navigator.share({
                     title: `QuestDo — ${streakCurrent}-day streak`,
-                    text: `${streakCurrent}-day streak in QuestDo 🔥 Level ${level} • ${totalTasksCompleted} quests done.`,
+                    text: `${streakCurrent}-day streak in QuestDo 🔥 Level ${level} · ${totalTasksCompleted} quests crushed. Join me → ${shareUrl}`,
+                    url: shareUrl,
                     files: [file],
                 });
             } else {

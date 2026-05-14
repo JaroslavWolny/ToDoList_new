@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../stores/userStore';
 import { WorkStyle, GamificationLevel, ThemeMode, MainMotivation } from '../types';
-import { Sun, Moon, Smartphone, ChevronRight, ChevronLeft, Rocket } from 'lucide-react';
+import { Sun, Moon, Smartphone, ChevronRight, ChevronLeft, Rocket, Sparkles } from 'lucide-react';
 import {
     DEFAULT_NOTIFICATION_EVENING,
     DEFAULT_NOTIFICATION_MORNING,
     normalizeReminderHour,
 } from '../lib/reminders';
+import { REFERRER_STORAGE_KEY } from '../lib/shareCard';
 
 const TOTAL_STEPS = 5;
 
@@ -24,6 +25,13 @@ export function Onboarding() {
     const [notificationEvening, setNotificationEvening] = useState(DEFAULT_NOTIFICATION_EVENING);
     const navigate = useNavigate();
     const completeOnboarding = useUserStore((s) => s.completeOnboarding);
+    const [referrer] = useState<string | null>(() => {
+        try {
+            return window.localStorage.getItem(REFERRER_STORAGE_KEY);
+        } catch {
+            return null;
+        }
+    });
 
     useEffect(() => {
         const root = document.documentElement;
@@ -53,6 +61,7 @@ export function Onboarding() {
             notificationEvening: normalizeReminderHour(notificationEvening, DEFAULT_NOTIFICATION_EVENING),
             notificationsEnabled: true,
         });
+        try { window.localStorage.removeItem(REFERRER_STORAGE_KEY); } catch { /* noop */ }
         navigate('/');
     };
 
@@ -75,6 +84,19 @@ export function Onboarding() {
                 paddingRight: 'calc(1.5rem + env(safe-area-inset-right, 0px))',
             }}
         >
+            {referrer && (
+                <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full max-w-sm mb-5 flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-fuchsia-500/15 to-purple-500/15 border border-fuchsia-500/30"
+                >
+                    <Sparkles className="w-3.5 h-3.5 text-fuchsia-400 shrink-0" strokeWidth={2.6} />
+                    <p className="text-xs font-semibold text-fuchsia-200 leading-tight">
+                        Joining via <span className="font-black">@{referrer}</span> — welcome, hero.
+                    </p>
+                </motion.div>
+            )}
+
             {/* Progress bar */}
             <div className="w-full max-w-sm mb-8">
                 <div className="flex gap-2">
