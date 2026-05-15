@@ -54,47 +54,47 @@ export default function handler(req: Request) {
         const imageHeight = Number.isFinite(requestedHeight) ? Math.min(Math.max(requestedHeight, 1280), 3200) : 1920;
         const u = (value: number) => `${Math.round((value * imageWidth) / 1080)}px`;
 
-        // Tier system with premium color palettes
+        // Tier system — dark base with restrained accent, not flood-gold
         let tierLabel = 'WOOD';
         let tierIcon = '🪵';
-        let bgMain = 'linear-gradient(145deg, #1a1a2e 0%, #16213e 30%, #0f3460 60%, #1a1a2e 100%)';
-        let accentColor = '#8d6e63';
-        let accentGlow = 'rgba(141, 110, 99, 0.4)';
-        let meshOverlay = 'radial-gradient(ellipse at 20% 50%, rgba(141, 110, 99, 0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(141, 110, 99, 0.1) 0%, transparent 50%)';
-        let cardBorderGradient = `linear-gradient(135deg, rgba(141,110,99,0.6), rgba(141,110,99,0.1), rgba(141,110,99,0.4))`;
+        let bgMain = 'linear-gradient(160deg, #0b0d12 0%, #0e1119 50%, #0a0c11 100%)';
+        let accentColor = '#a78b6f';
+        let accentGlow = 'rgba(167, 139, 111, 0.35)';
+        let meshOverlay = 'radial-gradient(ellipse at 22% 18%, rgba(167, 139, 111, 0.06) 0%, transparent 55%), radial-gradient(ellipse at 78% 82%, rgba(167, 139, 111, 0.04) 0%, transparent 55%)';
+        let cardBorderGradient = 'linear-gradient(135deg, rgba(167,139,111,0.5), rgba(167,139,111,0.05) 40%, rgba(167,139,111,0.08) 70%, rgba(167,139,111,0.35))';
 
         if (currentStreak >= 100) {
             tierLabel = 'MYTHIC';
             tierIcon = '💎';
-            bgMain = 'linear-gradient(145deg, #0a0014 0%, #1a0033 25%, #2d0066 50%, #0a0033 75%, #0a0014 100%)';
-            accentColor = '#e040fb';
-            accentGlow = 'rgba(224, 64, 251, 0.5)';
-            meshOverlay = 'radial-gradient(ellipse at 30% 40%, rgba(224, 64, 251, 0.2) 0%, transparent 50%), radial-gradient(ellipse at 70% 70%, rgba(103, 58, 183, 0.25) 0%, transparent 45%), radial-gradient(circle at 50% 10%, rgba(255, 215, 0, 0.1) 0%, transparent 40%)';
-            cardBorderGradient = 'linear-gradient(135deg, rgba(224,64,251,0.8), rgba(124,77,255,0.3), rgba(255,215,0,0.6), rgba(224,64,251,0.5))';
+            bgMain = 'linear-gradient(160deg, #0a0014 0%, #15021f 50%, #08000f 100%)';
+            accentColor = '#d68bff';
+            accentGlow = 'rgba(214, 139, 255, 0.4)';
+            meshOverlay = 'radial-gradient(ellipse at 25% 18%, rgba(214, 139, 255, 0.09) 0%, transparent 55%), radial-gradient(ellipse at 75% 82%, rgba(124, 77, 255, 0.07) 0%, transparent 55%)';
+            cardBorderGradient = 'linear-gradient(135deg, rgba(214,139,255,0.6), rgba(124,77,255,0.08) 40%, rgba(255,215,0,0.12) 70%, rgba(214,139,255,0.45))';
         } else if (currentStreak >= 30) {
             tierLabel = 'GOLD';
             tierIcon = '👑';
-            bgMain = 'linear-gradient(145deg, #0d0d0d 0%, #1a1000 25%, #2d1b00 50%, #1a1000 75%, #0d0d0d 100%)';
-            accentColor = '#ffd700';
-            accentGlow = 'rgba(255, 215, 0, 0.45)';
-            meshOverlay = 'radial-gradient(ellipse at 25% 45%, rgba(255, 215, 0, 0.2) 0%, transparent 55%), radial-gradient(ellipse at 75% 25%, rgba(255, 183, 77, 0.15) 0%, transparent 45%), radial-gradient(circle at 50% 80%, rgba(255, 215, 0, 0.08) 0%, transparent 40%)';
-            cardBorderGradient = 'linear-gradient(135deg, rgba(255,215,0,0.8), rgba(255,171,0,0.2), rgba(255,109,0,0.5), rgba(255,215,0,0.6))';
+            bgMain = 'linear-gradient(160deg, #0b0a08 0%, #14110a 50%, #08070a 100%)';
+            accentColor = '#ffcb46';
+            accentGlow = 'rgba(255, 203, 70, 0.32)';
+            meshOverlay = 'radial-gradient(ellipse at 25% 18%, rgba(255, 203, 70, 0.07) 0%, transparent 55%), radial-gradient(ellipse at 75% 82%, rgba(255, 168, 50, 0.05) 0%, transparent 55%)';
+            cardBorderGradient = 'linear-gradient(135deg, rgba(255,203,70,0.55), rgba(255,168,50,0.05) 40%, rgba(255,203,70,0.1) 70%, rgba(255,203,70,0.4))';
         } else if (currentStreak >= 14) {
             tierLabel = 'SILVER';
             tierIcon = '⚔️';
-            bgMain = 'linear-gradient(145deg, #0d1117 0%, #161b22 30%, #21262d 60%, #0d1117 100%)';
-            accentColor = '#c9d1d9';
-            accentGlow = 'rgba(201, 209, 217, 0.35)';
-            meshOverlay = 'radial-gradient(ellipse at 30% 50%, rgba(201, 209, 217, 0.12) 0%, transparent 55%), radial-gradient(ellipse at 70% 30%, rgba(139, 148, 158, 0.15) 0%, transparent 50%)';
-            cardBorderGradient = 'linear-gradient(135deg, rgba(201,209,217,0.6), rgba(139,148,158,0.15), rgba(201,209,217,0.4))';
+            bgMain = 'linear-gradient(160deg, #0c0e12 0%, #131820 50%, #0a0c11 100%)';
+            accentColor = '#d6dde6';
+            accentGlow = 'rgba(214, 221, 230, 0.3)';
+            meshOverlay = 'radial-gradient(ellipse at 25% 18%, rgba(214, 221, 230, 0.06) 0%, transparent 55%), radial-gradient(ellipse at 75% 82%, rgba(139, 148, 158, 0.05) 0%, transparent 55%)';
+            cardBorderGradient = 'linear-gradient(135deg, rgba(214,221,230,0.5), rgba(139,148,158,0.05) 40%, rgba(214,221,230,0.08) 70%, rgba(214,221,230,0.35))';
         } else if (currentStreak >= 4) {
             tierLabel = 'BRONZE';
             tierIcon = '🛡️';
-            bgMain = 'linear-gradient(145deg, #1a1210 0%, #2d1f14 30%, #3e2b1a 60%, #1a1210 100%)';
-            accentColor = '#cd7f32';
-            accentGlow = 'rgba(205, 127, 50, 0.4)';
-            meshOverlay = 'radial-gradient(ellipse at 25% 50%, rgba(205, 127, 50, 0.15) 0%, transparent 55%), radial-gradient(ellipse at 75% 30%, rgba(205, 127, 50, 0.1) 0%, transparent 50%)';
-            cardBorderGradient = 'linear-gradient(135deg, rgba(205,127,50,0.6), rgba(160,82,45,0.15), rgba(205,127,50,0.4))';
+            bgMain = 'linear-gradient(160deg, #0d0a08 0%, #15110c 50%, #0a0807 100%)';
+            accentColor = '#d99060';
+            accentGlow = 'rgba(217, 144, 96, 0.32)';
+            meshOverlay = 'radial-gradient(ellipse at 25% 18%, rgba(217, 144, 96, 0.07) 0%, transparent 55%), radial-gradient(ellipse at 75% 82%, rgba(160, 82, 45, 0.05) 0%, transparent 55%)';
+            cardBorderGradient = 'linear-gradient(135deg, rgba(217,144,96,0.55), rgba(160,82,45,0.05) 40%, rgba(217,144,96,0.1) 70%, rgba(217,144,96,0.4))';
         }
 
         const motivational = getMotivationalLine(currentStreak);
@@ -142,30 +142,29 @@ export default function handler(req: Request) {
                         }}
                     />
 
-                    {/* Holographic shine streak */}
+                    {/* Single holographic shine — restrained, off-center */}
                     <div
                         style={{
                             position: 'absolute',
                             top: u(-200),
-                            left: u(200),
-                            width: u(300),
+                            left: u(140),
+                            width: u(240),
                             height: u(2400),
-                            background: `linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.03) 30%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 70%, transparent 100%)`,
-                            transform: 'rotate(25deg)',
+                            background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.025) 45%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.025) 55%, transparent 100%)',
+                            transform: 'rotate(22deg)',
                             display: 'flex',
                         }}
                     />
 
-                    {/* Secondary holographic shine */}
+                    {/* Top vignette to anchor identity */}
                     <div
                         style={{
                             position: 'absolute',
-                            top: u(-100),
-                            right: u(100),
-                            width: u(150),
-                            height: u(2200),
-                            background: `linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.02) 40%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.02) 60%, transparent 100%)`,
-                            transform: 'rotate(20deg)',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: u(700),
+                            background: 'linear-gradient(180deg, rgba(0,0,0,0.35) 0%, transparent 100%)',
                             display: 'flex',
                         }}
                     />
@@ -228,17 +227,16 @@ export default function handler(req: Request) {
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        width: u(140),
-                                        height: u(140),
+                                        width: u(150),
+                                        height: u(150),
                                         borderRadius: '50%',
-                                        background: `radial-gradient(circle at 30% 30%, ${avatarColor}40, ${avatarColor}10 70%, transparent 100%)`,
-                                        border: `${u(3)} solid ${avatarColor}`,
-                                        boxShadow: `0 ${u(8)} ${u(40)} ${avatarColor}55, inset 0 ${u(2)} ${u(8)} rgba(255,255,255,0.12)`,
-                                        fontSize: u(72),
+                                        background: `linear-gradient(150deg, ${avatarColor} 0%, ${avatarColor}cc 100%)`,
+                                        boxShadow: `0 ${u(10)} ${u(40)} ${avatarColor}33, inset 0 ${u(2)} ${u(4)} rgba(255,255,255,0.25), inset 0 -${u(2)} ${u(8)} rgba(0,0,0,0.25)`,
+                                        fontSize: u(76),
                                         fontWeight: '900',
-                                        color: avatarColor,
+                                        color: 'white',
                                         letterSpacing: u(-2),
-                                        textShadow: `0 ${u(2)} ${u(12)} ${avatarColor}88`,
+                                        textShadow: `0 ${u(2)} ${u(4)} rgba(0,0,0,0.35)`,
                                     }}
                                 >
                                     {avatarInitial}
@@ -249,16 +247,17 @@ export default function handler(req: Request) {
                                     style={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: u(12),
-                                        padding: `${u(10)} ${u(30)}`,
+                                        gap: u(10),
+                                        padding: `${u(10)} ${u(28)}`,
                                         borderRadius: u(100),
-                                        backgroundColor: 'rgba(255,255,255,0.06)',
-                                        border: `${u(1)} solid rgba(255,255,255,0.1)`,
+                                        backgroundColor: `${accentColor}14`,
+                                        border: `${u(1)} solid ${accentColor}55`,
                                         fontSize: u(24),
-                                        fontWeight: '700',
+                                        fontWeight: '800',
                                         letterSpacing: u(6),
                                         color: accentColor,
                                         textTransform: 'uppercase',
+                                        marginTop: u(6),
                                     }}
                                 >
                                     {tierIcon} {tierLabel} TIER
@@ -268,11 +267,12 @@ export default function handler(req: Request) {
                                 <div
                                     style={{
                                         display: 'flex',
-                                        fontSize: u(72),
+                                        fontSize: u(82),
                                         fontWeight: '900',
-                                        letterSpacing: u(-1),
-                                        textShadow: `0 ${u(4)} ${u(30)} ${accentGlow}`,
-                                        marginTop: u(12),
+                                        letterSpacing: u(-2),
+                                        color: 'white',
+                                        marginTop: u(14),
+                                        lineHeight: 1,
                                     }}
                                 >
                                     {username}
@@ -282,11 +282,10 @@ export default function handler(req: Request) {
                                 <div
                                     style={{
                                         display: 'flex',
-                                        fontSize: u(28),
+                                        fontSize: u(30),
                                         fontWeight: '600',
-                                        color: avatarColor,
-                                        opacity: 0.85,
-                                        marginTop: u(-4),
+                                        color: accentColor,
+                                        marginTop: u(8),
                                     }}
                                 >
                                     @{handle}
@@ -296,11 +295,12 @@ export default function handler(req: Request) {
                                 <div
                                     style={{
                                         display: 'flex',
-                                        fontSize: u(32),
-                                        fontWeight: '600',
-                                        color: 'rgba(255,255,255,0.5)',
-                                        letterSpacing: u(4),
+                                        fontSize: u(24),
+                                        fontWeight: '700',
+                                        color: 'rgba(255,255,255,0.55)',
+                                        letterSpacing: u(6),
                                         textTransform: 'uppercase',
+                                        marginTop: u(6),
                                     }}
                                 >
                                     {rank}
@@ -319,46 +319,34 @@ export default function handler(req: Request) {
                                     flex: 1,
                                 }}
                             >
-                                {/* Glow behind streak number */}
+                                {/* Subtle, contained glow behind streak number */}
                                 <div
                                     style={{
                                         position: 'absolute',
                                         top: '50%',
                                         left: '50%',
                                         transform: 'translate(-50%, -50%)',
-                                        width: u(500),
-                                        height: u(500),
+                                        width: u(320),
+                                        height: u(320),
                                         borderRadius: '50%',
-                                        background: `radial-gradient(circle, ${accentGlow} 0%, transparent 70%)`,
-                                        filter: `blur(${u(60)})`,
+                                        background: `radial-gradient(circle, ${accentGlow} 0%, transparent 65%)`,
+                                        filter: `blur(${u(30)})`,
+                                        opacity: 0.7,
                                         display: 'flex',
                                     }}
                                 />
 
-                                {/* Concentric ring decoration */}
+                                {/* Single concentric ring */}
                                 <div
                                     style={{
                                         position: 'absolute',
                                         top: '50%',
                                         left: '50%',
                                         transform: 'translate(-50%, -50%)',
-                                        width: u(600),
-                                        height: u(600),
+                                        width: u(560),
+                                        height: u(560),
                                         borderRadius: '50%',
                                         border: `${u(1)} solid rgba(255,255,255,0.05)`,
-                                        display: 'flex',
-                                    }}
-                                />
-                                <div
-                                    style={{
-                                        position: 'absolute',
-                                        top: '50%',
-                                        left: '50%',
-                                        transform: 'translate(-50%, -50%)',
-                                        width: u(480),
-                                        height: u(480),
-                                        borderRadius: '50%',
-                                        border: `${u(1)} solid rgba(255,255,255,0.04)`,
                                         display: 'flex',
                                     }}
                                 />
@@ -367,8 +355,8 @@ export default function handler(req: Request) {
                                 <div
                                     style={{
                                         display: 'flex',
-                                        fontSize: u(56),
-                                        marginBottom: u(12),
+                                        fontSize: u(60),
+                                        marginBottom: u(10),
                                     }}
                                 >
                                     {emoji}
@@ -378,12 +366,12 @@ export default function handler(req: Request) {
                                 <div
                                     style={{
                                         display: 'flex',
-                                        fontSize: u(28),
-                                        fontWeight: '700',
+                                        fontSize: u(26),
+                                        fontWeight: '800',
                                         letterSpacing: u(14),
                                         textTransform: 'uppercase',
-                                        color: 'rgba(255,255,255,0.45)',
-                                        marginBottom: u(4),
+                                        color: 'rgba(255,255,255,0.6)',
+                                        marginBottom: u(2),
                                     }}
                                 >
                                     DAY STREAK
@@ -393,12 +381,12 @@ export default function handler(req: Request) {
                                 <div
                                     style={{
                                         display: 'flex',
-                                        fontSize: u(280),
+                                        fontSize: u(300),
                                         fontWeight: '900',
                                         lineHeight: '1',
                                         color: 'white',
-                                        textShadow: `0 ${u(8)} ${u(60)} ${accentGlow}, 0 ${u(2)} ${u(20)} ${accentGlow}`,
-                                        letterSpacing: u(-8),
+                                        textShadow: `0 ${u(4)} ${u(24)} ${accentGlow}`,
+                                        letterSpacing: u(-12),
                                     }}
                                 >
                                     {currentStreak}
@@ -408,15 +396,15 @@ export default function handler(req: Request) {
                                 <div
                                     style={{
                                         display: 'flex',
-                                        marginTop: u(16),
-                                        padding: `${u(12)} ${u(36)}`,
+                                        marginTop: u(20),
+                                        padding: `${u(12)} ${u(34)}`,
                                         borderRadius: u(100),
-                                        backgroundColor: 'rgba(255,255,255,0.05)',
-                                        border: `${u(1)} solid rgba(255,255,255,0.08)`,
-                                        fontSize: u(26),
+                                        backgroundColor: `${accentColor}1a`,
+                                        border: `${u(1)} solid ${accentColor}44`,
+                                        fontSize: u(24),
                                         fontWeight: '800',
                                         letterSpacing: u(5),
-                                        color: 'rgba(255,255,255,0.6)',
+                                        color: accentColor,
                                     }}
                                 >
                                     {motivational}
@@ -433,163 +421,84 @@ export default function handler(req: Request) {
                                     gap: u(36),
                                 }}
                             >
-                                {/* Stats Grid - glassmorphism cards */}
+                                {/* Stats Grid — glassmorphism cards with white numerics */}
                                 <div
                                     style={{
                                         display: 'flex',
                                         width: '100%',
-                                        gap: u(16),
+                                        gap: u(14),
                                     }}
                                 >
-                                    {/* Best Streak Stat */}
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            flex: 1,
-                                            padding: `${u(28)} ${u(16)}`,
-                                            borderRadius: u(24),
-                                            backgroundColor: 'rgba(255,255,255,0.04)',
-                                            border: `${u(1)} solid rgba(255,255,255,0.08)`,
-                                            gap: u(6),
-                                        }}
-                                    >
+                                    {[
+                                        { label: 'BEST', value: `${bestStreak}`, unit: 'days' },
+                                        { label: 'LEVEL', value: `${level}`, unit: `${xp.toLocaleString()} XP` },
+                                        { label: 'QUESTS', value: `${tasks}`, unit: 'done' },
+                                    ].map((stat) => (
                                         <div
+                                            key={stat.label}
                                             style={{
                                                 display: 'flex',
-                                                fontSize: u(22),
-                                                fontWeight: '600',
-                                                color: 'rgba(255,255,255,0.4)',
-                                                letterSpacing: u(3),
-                                                textTransform: 'uppercase',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                flex: 1,
+                                                padding: `${u(28)} ${u(12)}`,
+                                                borderRadius: u(28),
+                                                background: 'linear-gradient(160deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%)',
+                                                border: `${u(1)} solid rgba(255,255,255,0.09)`,
+                                                gap: u(6),
+                                                position: 'relative',
                                             }}
                                         >
-                                            BEST
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    width: u(28),
+                                                    height: u(2),
+                                                    background: accentColor,
+                                                    borderRadius: u(2),
+                                                    opacity: 0.7,
+                                                    marginBottom: u(4),
+                                                }}
+                                            />
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    fontSize: u(20),
+                                                    fontWeight: '700',
+                                                    color: accentColor,
+                                                    letterSpacing: u(4),
+                                                    textTransform: 'uppercase',
+                                                }}
+                                            >
+                                                {stat.label}
+                                            </div>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    fontSize: u(60),
+                                                    fontWeight: '900',
+                                                    color: 'white',
+                                                    letterSpacing: u(-2),
+                                                    lineHeight: 1,
+                                                    marginTop: u(2),
+                                                }}
+                                            >
+                                                {stat.value}
+                                            </div>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    fontSize: u(18),
+                                                    fontWeight: '600',
+                                                    color: 'rgba(255,255,255,0.5)',
+                                                    marginTop: u(2),
+                                                }}
+                                            >
+                                                {stat.unit}
+                                            </div>
                                         </div>
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                fontSize: u(52),
-                                                fontWeight: '900',
-                                                color: accentColor,
-                                                textShadow: `0 ${u(2)} ${u(16)} ${accentGlow}`,
-                                            }}
-                                        >
-                                            {bestStreak}
-                                        </div>
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                fontSize: u(18),
-                                                fontWeight: '500',
-                                                color: 'rgba(255,255,255,0.3)',
-                                            }}
-                                        >
-                                            days
-                                        </div>
-                                    </div>
-
-                                    {/* Level Stat */}
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            flex: 1,
-                                            padding: `${u(28)} ${u(16)}`,
-                                            borderRadius: u(24),
-                                            backgroundColor: 'rgba(255,255,255,0.04)',
-                                            border: `${u(1)} solid rgba(255,255,255,0.08)`,
-                                            gap: u(6),
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                fontSize: u(22),
-                                                fontWeight: '600',
-                                                color: 'rgba(255,255,255,0.4)',
-                                                letterSpacing: u(3),
-                                                textTransform: 'uppercase',
-                                            }}
-                                        >
-                                            LEVEL
-                                        </div>
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                fontSize: u(52),
-                                                fontWeight: '900',
-                                                color: accentColor,
-                                                textShadow: `0 ${u(2)} ${u(16)} ${accentGlow}`,
-                                            }}
-                                        >
-                                            {level}
-                                        </div>
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                fontSize: u(18),
-                                                fontWeight: '500',
-                                                color: 'rgba(255,255,255,0.3)',
-                                            }}
-                                        >
-                                            {xp.toLocaleString()} XP
-                                        </div>
-                                    </div>
-
-                                    {/* Tasks Completed Stat */}
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            flex: 1,
-                                            padding: `${u(28)} ${u(16)}`,
-                                            borderRadius: u(24),
-                                            backgroundColor: 'rgba(255,255,255,0.04)',
-                                            border: `${u(1)} solid rgba(255,255,255,0.08)`,
-                                            gap: u(6),
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                fontSize: u(22),
-                                                fontWeight: '600',
-                                                color: 'rgba(255,255,255,0.4)',
-                                                letterSpacing: u(3),
-                                                textTransform: 'uppercase',
-                                            }}
-                                        >
-                                            QUESTS
-                                        </div>
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                fontSize: u(52),
-                                                fontWeight: '900',
-                                                color: accentColor,
-                                                textShadow: `0 ${u(2)} ${u(16)} ${accentGlow}`,
-                                            }}
-                                        >
-                                            {tasks}
-                                        </div>
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                fontSize: u(18),
-                                                fontWeight: '500',
-                                                color: 'rgba(255,255,255,0.3)',
-                                            }}
-                                        >
-                                            done
-                                        </div>
-                                    </div>
+                                    ))}
                                 </div>
 
                                 {/* Personality stats strip */}
@@ -602,63 +511,32 @@ export default function handler(req: Request) {
                                             justifyContent: 'center',
                                         }}
                                     >
-                                        {topTag && (
-                                            <div
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: u(8),
-                                                    padding: `${u(12)} ${u(20)}`,
-                                                    borderRadius: u(100),
-                                                    backgroundColor: 'rgba(255,255,255,0.05)',
-                                                    border: `${u(1)} solid rgba(255,255,255,0.1)`,
-                                                    fontSize: u(22),
-                                                    fontWeight: '700',
-                                                    color: 'rgba(255,255,255,0.7)',
-                                                }}
-                                            >
-                                                <span style={{ display: 'flex', fontSize: u(22), color: accentColor }}>◆</span>
-                                                {topTag}
-                                            </div>
-                                        )}
-                                        {peakHour && (
-                                            <div
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: u(8),
-                                                    padding: `${u(12)} ${u(20)}`,
-                                                    borderRadius: u(100),
-                                                    backgroundColor: 'rgba(255,255,255,0.05)',
-                                                    border: `${u(1)} solid rgba(255,255,255,0.1)`,
-                                                    fontSize: u(22),
-                                                    fontWeight: '700',
-                                                    color: 'rgba(255,255,255,0.7)',
-                                                }}
-                                            >
-                                                <span style={{ display: 'flex', fontSize: u(22), color: accentColor }}>◷</span>
-                                                {peakHour}
-                                            </div>
-                                        )}
-                                        {topDay && (
-                                            <div
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: u(8),
-                                                    padding: `${u(12)} ${u(20)}`,
-                                                    borderRadius: u(100),
-                                                    backgroundColor: 'rgba(255,255,255,0.05)',
-                                                    border: `${u(1)} solid rgba(255,255,255,0.1)`,
-                                                    fontSize: u(22),
-                                                    fontWeight: '700',
-                                                    color: 'rgba(255,255,255,0.7)',
-                                                }}
-                                            >
-                                                <span style={{ display: 'flex', fontSize: u(22), color: accentColor }}>★</span>
-                                                {topDay}
-                                            </div>
-                                        )}
+                                        {[
+                                            topTag && { icon: '◆', label: topTag },
+                                            peakHour && { icon: '◷', label: peakHour },
+                                            topDay && { icon: '★', label: topDay },
+                                        ]
+                                            .filter(Boolean)
+                                            .map((item, i) => (
+                                                <div
+                                                    key={i}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: u(8),
+                                                        padding: `${u(11)} ${u(20)}`,
+                                                        borderRadius: u(100),
+                                                        backgroundColor: 'rgba(255,255,255,0.06)',
+                                                        border: `${u(1)} solid rgba(255,255,255,0.12)`,
+                                                        fontSize: u(22),
+                                                        fontWeight: '700',
+                                                        color: 'rgba(255,255,255,0.85)',
+                                                    }}
+                                                >
+                                                    <span style={{ display: 'flex', fontSize: u(22), color: accentColor }}>{(item as { icon: string }).icon}</span>
+                                                    {(item as { label: string }).label}
+                                                </div>
+                                            ))}
                                     </div>
                                 )}
 
@@ -666,10 +544,10 @@ export default function handler(req: Request) {
                                 <div
                                     style={{
                                         display: 'flex',
-                                        width: u(200),
-                                        height: u(2),
+                                        width: u(240),
+                                        height: u(1),
                                         background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)`,
-                                        opacity: 0.3,
+                                        opacity: 0.5,
                                     }}
                                 />
 
@@ -679,27 +557,53 @@ export default function handler(req: Request) {
                                         display: 'flex',
                                         flexDirection: 'column',
                                         alignItems: 'center',
-                                        gap: u(10),
+                                        gap: u(14),
                                     }}
                                 >
                                     <div
                                         style={{
                                             display: 'flex',
-                                            fontSize: u(32),
-                                            fontWeight: '900',
-                                            letterSpacing: u(6),
-                                            color: 'rgba(255,255,255,0.3)',
+                                            alignItems: 'center',
+                                            gap: u(10),
                                         }}
                                     >
-                                        QUESTDO
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                width: u(8),
+                                                height: u(8),
+                                                borderRadius: '50%',
+                                                background: accentColor,
+                                            }}
+                                        />
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                fontSize: u(30),
+                                                fontWeight: '900',
+                                                letterSpacing: u(8),
+                                                color: 'rgba(255,255,255,0.7)',
+                                            }}
+                                        >
+                                            QUESTDO
+                                        </div>
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                width: u(8),
+                                                height: u(8),
+                                                borderRadius: '50%',
+                                                background: accentColor,
+                                            }}
+                                        />
                                     </div>
                                     <div
                                         style={{
                                             display: 'flex',
-                                            padding: `${u(14)} ${u(28)}`,
+                                            padding: `${u(14)} ${u(30)}`,
                                             borderRadius: u(100),
-                                            backgroundColor: 'rgba(255,255,255,0.06)',
-                                            border: `${u(1)} solid ${avatarColor}55`,
+                                            background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%)',
+                                            border: `${u(1)} solid ${accentColor}55`,
                                             fontSize: u(26),
                                             fontWeight: '700',
                                             letterSpacing: u(1),
