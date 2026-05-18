@@ -13,9 +13,16 @@ const FIREBASE_CONFIG_KEYS = [
     'VITE_FIREBASE_APP_ID',
 ] as const;
 
+// Use the app's own origin as the auth domain so OAuth handlers run on the same site
+// as the app — required on iOS Safari 16.4+ and any browser blocking third-party cookies.
+// Vercel rewrites /__/auth/* and /__/firebase/* to the underlying Firebase auth domain.
+const resolvedAuthDomain = typeof window !== 'undefined'
+    ? window.location.host
+    : import.meta.env.VITE_FIREBASE_AUTH_DOMAIN;
+
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    authDomain: resolvedAuthDomain,
     projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
     storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
     messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
