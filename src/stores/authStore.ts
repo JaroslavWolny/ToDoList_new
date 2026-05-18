@@ -5,6 +5,8 @@ import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     signOut as fbSignOut,
     updateProfile,
 } from 'firebase/auth';
@@ -87,6 +89,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             return;
         }
 
+        // Handle return from signInWithRedirect (mobile / standalone PWA flow)
+        getRedirectResult(auth).catch((err) => {
+            const msg = toErrorMessage(err);
+            if (msg) set({ error: msg });
+        });
+
         unsubscribe = onAuthStateChanged(auth, (fbUser) => {
             set({
                 user: toAuthUser(fbUser),
@@ -101,10 +109,40 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             set({ error: getFirebaseAuthConfigError() ?? 'Auth nedostupný' });
             return;
         }
+        set({ error: null });
+
+        // On touch devices / standalone PWAs, popup-based OAuth fails because Safari
+        // blocks cross-origin popups. Use the redirect flow instead.
+        const isStandalone = typeof window !== 'undefined' && (
+            window.matchMedia?.('(display-mode: standalone)').matches
+            || (window.navigator as { standalone?: boolean }).standalone === true
+        );
+        const isMobile = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod/i.test(window.navigator.userAgent);
+
+        if (isStandalone || isMobile) {
+            try {
+                await signInWithRedirect(auth, googleProvider);
+            } catch (err) {
+                set({ error: toErrorMessage(err) });
+                throw err;
+            }
+            return;
+        }
+
         try {
-            set({ error: null });
             await signInWithPopup(auth, googleProvider);
         } catch (err) {
+            // Fall back to redirect if popup is blocked
+            const code = (err as { code?: string })?.code;
+            if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+                try {
+                    await signInWithRedirect(auth, googleProvider);
+                    return;
+                } catch (redirectErr) {
+                    set({ error: toErrorMessage(redirectErr) });
+                    throw redirectErr;
+                }
+            }
             set({ error: toErrorMessage(err) });
             throw err;
         }
