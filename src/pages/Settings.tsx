@@ -8,6 +8,7 @@ import {
     saveTokenToFirestore,
     removeTokenFromFirestore,
 } from '../lib/firebase';
+import { AccountSection } from '../components/account/AccountSection';
 import { Moon, Sun, Smartphone, Download, Trash2, Shield, Snowflake, Bell, BellOff, Upload, AlertTriangle, CheckCircle, XCircle, Info, X } from 'lucide-react';
 import { GamificationLevel, ThemeMode } from '../types';
 import { toLocalDateKey } from '../lib/dates';
@@ -247,6 +248,10 @@ export function Settings() {
             </div>
 
             <h1 className="text-2xl font-bold mb-6">Settings</h1>
+
+            <Section title="Account">
+                <AccountSection />
+            </Section>
 
             {/* Theme */}
             <Section title="Appearance">

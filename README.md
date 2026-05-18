@@ -57,6 +57,20 @@ Visualize your productivity journey:
 - **Dynamic XP & Growth Charts** 📈 Track your growth over the last 7 days.
 - **Achievement Showcase Grid** 🌟 Show off all the badges you've earned.
 
+### ⚔️ Co-Op Boss Raids (Multiplayer)
+Productivity becomes a team sport. After signing in:
+- **Create a Raid** — pick a boss name and HP, share the invite code/link with friends.
+- **Damage on Completion** — every task you finish deals damage to your raid's active boss (LOW=1, MEDIUM=3, HIGH=5, CRITICAL=8; tasks tagged `quest` deal 2× damage).
+- **Live Leaderboard** — see who's dealt the most damage and the last 50 hits in real time.
+- **Boss Progression** — defeat one boss and a tougher one spawns with scaled HP.
+- **Atomic Damage** — all hits go through a Firebase Admin transaction on Vercel, so HP can never go negative or double-tick.
+
+### 🔐 Optional Cloud Account (Firebase Auth + Firestore)
+- **Sign in with Google or Email/Password** to unlock raids and cross-device sync.
+- **Local-First by Default** — unsigned users keep their data 100% in LocalStorage.
+- **Migration Prompt** — when you first sign in with existing local data and existing cloud data, QuestDo asks which side to keep.
+- **Firestore Sync** — tasks, completions, and user state are mirrored to `users/{uid}/state/main` with a tight `firestore.rules`: members read their own raid, all writes go through the API.
+
 ### 🔔 Web Push Notifications (Firebase & Vercel)
 - **Background Reminders:** 📲 The app uses Firebase Cloud Messaging (FCM) to deliver morning and evening summaries directly to your device (supports iOS 16.4+ standalone PWAs).
 - **Hourly Reminder Slots:** 🕐 Reminder selection is normalized to the start of the selected hour so the UI matches the hourly cron delivery model.
@@ -136,6 +150,16 @@ npm install
 # 4. Start the adventure (run dev server)
 npm run dev
 ```
+
+### Enabling Auth & Raids (Optional)
+
+If you want to use the multiplayer raids you need to wire up Firebase:
+
+1. **Firebase Console → Authentication → Sign-in method**: enable `Email/Password` and `Google` providers.
+2. **Firestore Console → Rules**: paste `firestore.rules` (or run `node scripts/setupFirebase.mjs` with `FIREBASE_*` env vars set — it will deploy rules via the Firebase Admin SDK).
+3. Set `VITE_FIREBASE_*` env vars (web SDK config) and `FIREBASE_PROJECT_ID/CLIENT_EMAIL/PRIVATE_KEY` (Admin SDK) — both are already required by the notifications stack.
+
+The `scripts/setupFirebase.mjs` helper script automates rule deployment but cannot enable Auth providers (the public Firebase Auth API doesn't expose that without Identity Platform billing) — those need to be enabled in the console once.
 
 ### Build for Production
 ```bash

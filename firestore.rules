@@ -1,0 +1,53 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isMember(raidData) {
+      return isSignedIn() && request.auth.uid in raidData.memberUids;
+    }
+
+    // Raids: clients can READ raids they are a member of.
+    // All writes go through the Vercel API (Firebase Admin bypasses these rules).
+    match /raids/{raidId} {
+      allow read: if isSignedIn()
+        && resource != null
+        && request.auth.uid in resource.data.memberUids;
+
+      allow create, update, delete: if false;
+
+      match /damageEvents/{eventId} {
+        allow read: if isSignedIn()
+          && get(/databases/$(database)/documents/raids/$(raidId)).data.memberUids
+              .hasAny([request.auth.uid]);
+        allow write: if false;
+      }
+
+      match /bossHistory/{bossId} {
+        allow read: if isSignedIn()
+          && get(/databases/$(database)/documents/raids/$(raidId)).data.memberUids
+              .hasAny([request.auth.uid]);
+        allow write: if false;
+      }
+    }
+
+    // Per-user data (tasks, completions, settings) when cloud sync is enabled.
+    // Users can read/write only their own documents.
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+
+      match /{document=**} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+
+    // Notification tokens are managed exclusively by the Vercel API (admin).
+    match /notification_tokens/{deviceId} {
+      allow read, write: if false;
+    }
+  }
+}

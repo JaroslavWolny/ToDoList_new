@@ -2,8 +2,11 @@ import { Suspense, lazy, useEffect, useEffectEvent, useRef } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { AppShell } from './components/layout/AppShell';
+import { MigrationPromptModal } from './components/account/MigrationPrompt';
 import { useUserStore } from './stores/userStore';
 import { useTaskStore } from './stores/taskStore';
+import { useAuthStore } from './stores/authStore';
+import { initCloudSync } from './lib/cloudSync';
 import { REFERRER_STORAGE_KEY } from './lib/shareCard';
 
 function ReferrerLanding() {
@@ -22,6 +25,9 @@ const Tasks = lazy(() => import('./pages/Tasks').then((module) => ({ default: mo
 const Stats = lazy(() => import('./pages/Stats').then((module) => ({ default: module.Stats })));
 const Settings = lazy(() => import('./pages/Settings').then((module) => ({ default: module.Settings })));
 const Onboarding = lazy(() => import('./pages/Onboarding').then((module) => ({ default: module.Onboarding })));
+const Login = lazy(() => import('./pages/Login').then((module) => ({ default: module.Login })));
+const Raids = lazy(() => import('./pages/Raids').then((module) => ({ default: module.Raids })));
+const RaidDetail = lazy(() => import('./pages/RaidDetail').then((module) => ({ default: module.RaidDetail })));
 
 function RouteLoader() {
   return (
@@ -54,8 +60,14 @@ function App() {
       loseHealth: state.loseHealth,
     }))
   );
+  const initAuth = useAuthStore((s) => s.init);
   const hasInitializedRef = useRef(false);
   const lastMaintenanceDateRef = useRef<string>('');
+
+  useEffect(() => {
+    initAuth();
+    initCloudSync();
+  }, [initAuth]);
 
   const runDailyMaintenance = useEffectEvent(() => {
     resetRecurringTasks();
@@ -118,30 +130,48 @@ function App() {
 
   if (!onboardingComplete) {
     return (
-      <Suspense fallback={<RouteLoader />}>
-        <Routes>
-          <Route path="/from/:code" element={<ReferrerLanding />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="*" element={<Navigate to="/onboarding" replace />} />
-        </Routes>
-      </Suspense>
+      <>
+        <MigrationPromptModal />
+        <Suspense fallback={<RouteLoader />}>
+          <Routes>
+            <Route path="/from/:code" element={<ReferrerLanding />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="*" element={<Navigate to="/onboarding" replace />} />
+          </Routes>
+        </Suspense>
+      </>
     );
   }
 
   return (
     <AppShell>
+      <MigrationPromptModal />
       <Suspense fallback={<RouteLoader />}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/stats" element={<Stats />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/raids" element={<Raids />} />
+          <Route path="/raids/:raidId" element={<RaidDetail />} />
           <Route path="/from/:code" element={<ReferrerLanding />} />
+          <Route path="/join/:code" element={<RaidInviteLanding />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
     </AppShell>
   );
+}
+
+function RaidInviteLanding() {
+  const { code } = useParams<{ code: string }>();
+  const user = useAuthStore((s) => s.user);
+  if (code) {
+    try { window.sessionStorage.setItem('pendingRaidInvite', code); } catch { /* noop */ }
+  }
+  return <Navigate to={user ? `/raids?join=${code ?? ''}` : '/login'} replace />;
 }
 
 export default App;

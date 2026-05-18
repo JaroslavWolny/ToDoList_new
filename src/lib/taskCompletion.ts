@@ -1,5 +1,6 @@
 import { calculateLevel } from './gamification';
 import { getMissionProgressUpdates } from './missions';
+import { dispatchRaidDamage } from './raidDamage';
 import { useAchievementStore } from '../stores/achievementStore';
 import { useMissionStore } from '../stores/missionStore';
 import { useTaskStore } from '../stores/taskStore';
@@ -124,6 +125,15 @@ export const completeTaskTransaction = (
     // ── 4. Check achievements (reads from stores, may produce one set) ──
     const currentLevel = calculateLevel(useUserStore.getState().xp);
     useAchievementStore.getState().checkAndUnlock();
+
+    // ── 5. Co-op raid damage (best-effort, non-blocking) ──
+    if (task) {
+        void dispatchRaidDamage({
+            taskTitle: task.title,
+            priority: task.priority,
+            tags: task.tags,
+        });
+    }
 
     return {
         levelUpTo: currentLevel > prevLevel ? currentLevel : null,

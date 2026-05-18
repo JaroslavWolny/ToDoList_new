@@ -1,4 +1,6 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, type FirebaseApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { DEVICE_ID_KEY } from './storage';
 
@@ -27,9 +29,18 @@ const missingMessagingConfigKeys = [
     ...(!import.meta.env.VITE_FIREBASE_VAPID_KEY ? ['VITE_FIREBASE_VAPID_KEY'] : []),
 ];
 
-const app = missingFirebaseConfigKeys.length === 0 ? initializeApp(firebaseConfig) : null;
+const app: FirebaseApp | null = missingFirebaseConfigKeys.length === 0 ? initializeApp(firebaseConfig) : null;
 
+export const firebaseApp = app;
+export const auth: Auth | null = app ? getAuth(app) : null;
+export const firestore: Firestore | null = app ? getFirestore(app) : null;
+export const googleProvider = new GoogleAuthProvider();
 export const messaging = app ? getMessaging(app) : null;
+
+export const getFirebaseAuthConfigError = (): string | null => {
+    if (missingFirebaseConfigKeys.length === 0) return null;
+    return `Missing Firebase config: ${missingFirebaseConfigKeys.join(', ')}`;
+};
 
 const getNotificationsApiUrl = (): string => '/api/notifications/token';
 
