@@ -288,6 +288,21 @@ A comprehensive senior-level audit identified and resolved **17 out of 21** issu
 - Added 12+ new achievements covering time-of-day patterns (Early Bird, Night Owl, Lunchtime Legend), weekday consistency (Monday Motivation), speed (Speed Runner, Deadline Dasher), behavioral patterns (Procrastinator, Recurring Hero), and milestones (Daily Dozen, Tag Specialist).
 - Achievement `check` and `getProgress` signatures now accept the full `Task[]` array, unlocking task-shape-aware unlock conditions (e.g., counting unique tags used, tracking recurring-task completions).
 
+### Google Sign-In Hardening — Cross-Platform & iOS PWA (May 2026)
+
+A multi-front fix for the Google sign-in flow that had been broken on iOS PWA and intermittently on desktop. Symptoms reported: spinner on the "Pokračovat s Google" button never resolved, or the Settings ACCOUNT card stayed on "Načítám…" after returning from Google.
+
+**Root causes uncovered and fixed:**
+- **Service worker was hijacking `/__/auth/handler`.** Workbox's `generateSW` strategy uses `navigateFallback: index.html` for every same-origin navigation, so the OAuth handler proxy route never reached the network and `signInWithRedirect` could never complete. Added `navigateFallbackDenylist` for `/__/auth/`, `/__/firebase/`, and `/api/` in `vite.config.ts` so those paths fall through to Vercel's rewrites and the API runtime.
+- **`redirect_uri_mismatch` from Google.** The earlier "iOS Safari 16.4+" fix set `authDomain` to `window.location.host`, which Google's OAuth client did not have registered as an authorized redirect URI. Reverted to the default `${project}.firebaseapp.com` unconditionally — Firebase Auth v9.4+ no longer requires third-party storage to complete a redirect (auth state flows back through the URL fragment), so this works in iOS PWA standalone mode too.
+- **IndexedDB persistence could hang on iOS PWA.** Switched to `initializeAuth` with `[browserLocalPersistence, indexedDBLocalPersistence]` so localStorage is preferred — that's the storage layer that actually survives ITP in standalone shells.
+- **Stuck "Načítám…" if `onAuthStateChanged` never fired.** Added an 8 s safety timer in `authStore.init` that flips status to `signed-out` when the listener does not respond, so the UI can never deadlock on the loader.
+- **Hardened `getMessaging`.** Wrapped the constructor in `try/catch` so a missing Push/Notification API on older browsers can no longer kill the firebase module at import time.
+
+**Operational tooling:**
+- `?clear-sw=1` kill-switch in `main.tsx` — unregisters every service worker and wipes Cache Storage, then reloads. Use it to recover an installed PWA that's still serving a stale SW without forcing a full reinstall.
+- `scripts/add-auth-domain.mjs` — pushes hosts into Firebase's Authorized domains list via the Identity Toolkit admin API using the `FIREBASE_*` service-account creds in `.env.local`. Includes a PEM-newline repair so it tolerates the single-line key format Vercel hands back.
+
 ---
 
 ## 💡 The Philosophy
