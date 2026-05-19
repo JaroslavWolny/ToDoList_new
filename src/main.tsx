@@ -11,6 +11,26 @@ if (window.location.search.includes('reset=true')) {
   window.location.href = window.location.pathname; // Remove query params after reset
 }
 
+// Kill-switch for stuck PWA service workers. Visit /?clear-sw=1 to unregister all
+// service workers and clear caches — useful when an old SW is hijacking auth paths
+// and the user can't easily reinstall the PWA.
+if (window.location.search.includes('clear-sw=1')) {
+  void (async () => {
+    try {
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations()
+        await Promise.all(registrations.map((r) => r.unregister()))
+      }
+      if ('caches' in window) {
+        const keys = await caches.keys()
+        await Promise.all(keys.map((k) => caches.delete(k)))
+      }
+    } finally {
+      window.location.replace(window.location.pathname)
+    }
+  })()
+}
+
 const SW_MIGRATION_KEY = 'questdo_sw_migration_v2_done'
 
 const cleanupLegacyRootServiceWorker = async () => {
