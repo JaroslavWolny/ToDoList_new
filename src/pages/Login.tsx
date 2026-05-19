@@ -1,6 +1,7 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { auth } from '../lib/firebase';
 import { Loader2, LogIn, UserPlus } from 'lucide-react';
 
 type Mode = 'sign-in' | 'sign-up';
@@ -14,6 +15,36 @@ export function Login() {
     const [password, setPassword] = useState('');
     const [displayName, setDisplayName] = useState('');
     const [busy, setBusy] = useState(false);
+
+    const debug = typeof window !== 'undefined' && /[?&]auth-debug=1\b/.test(window.location.search);
+    const [debugInfo, setDebugInfo] = useState<Record<string, unknown> | null>(null);
+
+    useEffect(() => {
+        if (!debug) return;
+        const compute = () => {
+            let pending: string | null = null;
+            let persistedErr: string | null = null;
+            try { pending = sessionStorage.getItem('questdo_auth_redirect_pending'); } catch { /* noop */ }
+            try { persistedErr = sessionStorage.getItem('questdo_auth_redirect_error'); } catch { /* noop */ }
+            setDebugInfo({
+                status,
+                hasUser: !!user,
+                currentUserUid: auth?.currentUser?.uid ?? null,
+                authDomain: (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string | undefined) ?? null,
+                origin: window.location.origin,
+                pathname: window.location.pathname,
+                hashLen: window.location.hash.length,
+                hashHead: window.location.hash.slice(0, 60),
+                redirectPending: pending,
+                persistedErr,
+                isStandalone: window.matchMedia?.('(display-mode: standalone)').matches || (window.navigator as { standalone?: boolean }).standalone === true,
+                ua: window.navigator.userAgent.slice(0, 100),
+            });
+        };
+        compute();
+        const id = window.setInterval(compute, 1000);
+        return () => window.clearInterval(id);
+    }, [debug, status, user]);
 
     if (status === 'signed-in' && user) {
         return <Navigate to="/" replace />;
@@ -71,6 +102,26 @@ export function Login() {
                     <div className="rounded-xl p-3 text-sm bg-red-500/10 text-red-300 border border-red-500/20">
                         {configError}
                     </div>
+                )}
+
+                {error && (
+                    <div className="rounded-xl p-3 text-sm bg-red-500/10 text-red-300 border border-red-500/20 space-y-2">
+                        <div className="font-semibold">Přihlášení selhalo</div>
+                        <div className="break-words">{error}</div>
+                        <button
+                            type="button"
+                            onClick={clearError}
+                            className="text-xs underline opacity-80"
+                        >
+                            Skrýt chybu
+                        </button>
+                    </div>
+                )}
+
+                {debug && debugInfo && (
+                    <pre className="rounded-xl p-3 text-[10px] leading-tight bg-black/40 border border-white/10 text-white/80 overflow-x-auto whitespace-pre-wrap">
+                        {JSON.stringify(debugInfo, null, 2)}
+                    </pre>
                 )}
 
                 <button
@@ -150,11 +201,6 @@ export function Login() {
                         />
                     </div>
 
-                    {error && (
-                        <div className="rounded-xl p-3 text-sm bg-red-500/10 text-red-300 border border-red-500/20">
-                            {error}
-                        </div>
-                    )}
 
                     <button
                         type="submit"

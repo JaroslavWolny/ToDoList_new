@@ -65,11 +65,43 @@ const toErrorMessage = (err: unknown): string => {
                 return 'Prohlížeč zablokoval popup. Povolte ho a zkuste to znovu.';
             case 'auth/network-request-failed':
                 return 'Síťová chyba. Zkontrolujte připojení.';
+            case 'auth/unauthorized-domain':
+                return 'Tato doména není v Firebase Authorized domains. Přidej ji v konzoli.';
+            case 'auth/web-storage-unsupported':
+                return 'Prohlížeč blokuje úložiště (cookies / localStorage). Povol je pro tuto stránku.';
+            case 'auth/operation-not-supported-in-this-environment':
+                return 'Tato přihlašovací metoda v tomto prostředí nefunguje.';
+            case 'auth/missing-or-invalid-nonce':
+            case 'auth/invalid-oauth-client-id':
+            case 'auth/invalid-oauth-provider':
+                return `OAuth chyba: ${code}`;
+            case 'auth/credential-already-in-use':
+                return 'Tento Google účet už patří jinému uživateli.';
+            case 'auth/account-exists-with-different-credential':
+                return 'Účet s tímto emailem existuje s jiným způsobem přihlášení.';
             default:
                 return code || 'Neznámá chyba.';
         }
     }
     return err instanceof Error ? err.message : 'Neznámá chyba.';
+};
+
+const REDIRECT_ERROR_KEY = 'questdo_auth_redirect_error';
+const REDIRECT_PENDING_KEY = 'questdo_auth_redirect_pending';
+
+const persistError = (msg: string | null) => {
+    try {
+        if (msg) sessionStorage.setItem(REDIRECT_ERROR_KEY, msg);
+        else sessionStorage.removeItem(REDIRECT_ERROR_KEY);
+    } catch { /* noop */ }
+};
+
+const readPersistedError = (): string | null => {
+    try {
+        return sessionStorage.getItem(REDIRECT_ERROR_KEY);
+    } catch {
+        return null;
+    }
 };
 
 let unsubscribe: (() => void) | null = null;
@@ -89,33 +121,78 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             return;
         }
 
-        // Safety net for iOS PWA: if Firebase's auth state hydration hangs (a known issue
-        // on standalone iOS Safari), flip to 'signed-out' after 8s so the UI never stays
-        // stuck on the "Načítám..." loader. The timeout is cleared only by
-        // onAuthStateChanged firing, since that's what actually moves the UI off
-        // 'initializing'. getRedirectResult is allowed to resolve independently.
+        // Surface any error from the previous redirect attempt that survived the
+        // page reload. Cleared once the user actually signs in or explicitly retries.
+        const persistedErr = readPersistedError();
+        if (persistedErr) {
+            console.warn('[auth] surfacing persisted redirect error:', persistedErr);
+            set({ error: persistedErr });
+        }
+
+        const wasRedirectPending = (() => {
+            try { return sessionStorage.getItem(REDIRECT_PENDING_KEY) === '1'; }
+            catch { return false; }
+        })();
+
+        // Safety net: if Firebase's auth state hydration hangs (known issue on
+        // standalone iOS Safari), flip the UI off 'initializing' so the user can
+        // at least retry. 6s is enough for a healthy round-trip and short enough
+        // not to feel frozen.
         let resolved = false;
         const initTimeout = window.setTimeout(() => {
             if (resolved) return;
-            console.warn('Firebase auth init timed out; falling back to signed-out');
+            console.warn('[auth] init timed out after 6s; falling back to signed-out');
             set({ status: 'signed-out' });
-        }, 8000);
+        }, 6000);
 
-        // Handle return from signInWithRedirect (mobile / standalone PWA flow). Surface
-        // any error to the Login page so the user is not left staring at a dead spinner.
-        getRedirectResult(auth).catch((err) => {
-            const msg = toErrorMessage(err);
-            if (msg) set({ error: msg });
-        });
-
-        unsubscribe = onAuthStateChanged(auth, (fbUser) => {
+        const finalize = (fbUser: User | null, errMsg?: string | null) => {
             resolved = true;
             window.clearTimeout(initTimeout);
-            set({
+            // Clear the pending-redirect marker now that init has run to completion.
+            try { sessionStorage.removeItem(REDIRECT_PENDING_KEY); } catch { /* noop */ }
+            const next: Partial<AuthStore> = {
                 user: toAuthUser(fbUser),
                 status: fbUser ? 'signed-in' : 'signed-out',
-                error: null,
+            };
+            if (errMsg) next.error = errMsg;
+            else if (fbUser) {
+                // Successful sign-in clears any stale error.
+                next.error = null;
+                persistError(null);
+            }
+            set(next);
+        };
+
+        console.log('[auth] init starting', {
+            wasRedirectPending,
+            hasUrlFragment: typeof window !== 'undefined' && window.location.hash.length > 0,
+        });
+
+        // Drive the auth flow off getRedirectResult so we know exactly when the
+        // post-redirect work is done. onAuthStateChanged will keep firing for
+        // subsequent state changes (sign-out, token refresh).
+        getRedirectResult(auth)
+            .then((cred) => {
+                console.log('[auth] getRedirectResult →', cred ? `user ${cred.user.uid}` : 'null (no pending redirect)');
+                if (cred) persistError(null);
+            })
+            .catch((err) => {
+                const msg = toErrorMessage(err);
+                console.error('[auth] getRedirectResult failed:', err, '→', msg);
+                if (msg) {
+                    persistError(msg);
+                    set({ error: msg });
+                }
             });
+
+        unsubscribe = onAuthStateChanged(auth, (fbUser) => {
+            console.log('[auth] onAuthStateChanged →', fbUser ? `signed-in (${fbUser.uid})` : 'signed-out');
+            finalize(fbUser);
+        }, (err) => {
+            console.error('[auth] onAuthStateChanged error:', err);
+            const msg = toErrorMessage(err);
+            persistError(msg);
+            finalize(null, msg);
         });
     },
 
@@ -125,6 +202,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             return;
         }
         set({ error: null });
+        persistError(null);
 
         // On touch devices / standalone PWAs, popup-based OAuth fails because Safari
         // blocks cross-origin popups. Use the redirect flow instead.
@@ -134,11 +212,20 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         );
         const isMobile = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod/i.test(window.navigator.userAgent);
 
+        const beginRedirect = () => {
+            try { sessionStorage.setItem(REDIRECT_PENDING_KEY, '1'); } catch { /* noop */ }
+        };
+
         if (isStandalone || isMobile) {
             try {
+                beginRedirect();
+                console.log('[auth] starting signInWithRedirect (mobile/PWA)');
                 await signInWithRedirect(auth, googleProvider);
             } catch (err) {
-                set({ error: toErrorMessage(err) });
+                try { sessionStorage.removeItem(REDIRECT_PENDING_KEY); } catch { /* noop */ }
+                const msg = toErrorMessage(err);
+                console.error('[auth] signInWithRedirect failed:', err, '→', msg);
+                set({ error: msg });
                 throw err;
             }
             return;
@@ -151,9 +238,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             const code = (err as { code?: string })?.code;
             if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
                 try {
+                    beginRedirect();
                     await signInWithRedirect(auth, googleProvider);
                     return;
                 } catch (redirectErr) {
+                    try { sessionStorage.removeItem(REDIRECT_PENDING_KEY); } catch { /* noop */ }
                     set({ error: toErrorMessage(redirectErr) });
                     throw redirectErr;
                 }
@@ -201,13 +290,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         if (!auth) return;
         try {
             await fbSignOut(auth);
+            persistError(null);
         } catch (err) {
             set({ error: toErrorMessage(err) });
             throw err;
         }
     },
 
-    clearError: () => set({ error: null }),
+    clearError: () => {
+        persistError(null);
+        set({ error: null });
+    },
 
     getIdToken: async () => {
         if (!auth?.currentUser) return null;
