@@ -20,10 +20,29 @@ const FIREBASE_CONFIG_KEYS = [
     'VITE_FIREBASE_APP_ID',
 ] as const;
 
-// Use the app's own origin as the auth domain so OAuth handlers run on the same site
-// as the app — required on iOS Safari 16.4+ and any browser blocking third-party cookies.
-// Vercel rewrites /__/auth/* and /__/firebase/* to the underlying Firebase auth domain.
-const resolvedAuthDomain = typeof window !== 'undefined'
+// authDomain selection is a trade-off:
+//
+// - The default `${project}.firebaseapp.com` is preregistered with Google's
+//   OAuth client out of the box, so signInWithPopup / signInWithRedirect work
+//   on desktop and most mobile browsers without any Cloud Console setup.
+// - But iOS Safari (16.4+) and any browser blocking third-party cookies will
+//   silently drop the auth state when redirecting back from firebaseapp.com,
+//   because the handler iframe runs on a different origin than the app. Per
+//   Firebase's official recipe, that case needs authDomain set to the app's
+//   own host and a Vercel rewrite for `/__/auth/*` → firebaseapp.com.
+//
+// The custom-domain branch additionally requires the app host to be added
+// to the OAuth client's authorized redirect URIs (Firebase syncs this from
+// the Authentication → Authorized domains list).
+//
+// To make the common case "just work" we only switch to the custom domain
+// when the page is running as a standalone PWA — that's the environment
+// where third-party storage is actually blocked.
+const isStandalonePWA = typeof window !== 'undefined' && (
+    window.matchMedia?.('(display-mode: standalone)').matches
+    || (window.navigator as { standalone?: boolean }).standalone === true
+);
+const resolvedAuthDomain = isStandalonePWA && typeof window !== 'undefined'
     ? window.location.host
     : import.meta.env.VITE_FIREBASE_AUTH_DOMAIN;
 
