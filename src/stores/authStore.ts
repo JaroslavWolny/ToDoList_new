@@ -91,28 +91,26 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
         // Safety net for iOS PWA: if Firebase's auth state hydration hangs (a known issue
         // on standalone iOS Safari), flip to 'signed-out' after 8s so the UI never stays
-        // stuck on the "Načítám..." loader.
+        // stuck on the "Načítám..." loader. The timeout is cleared only by
+        // onAuthStateChanged firing, since that's what actually moves the UI off
+        // 'initializing'. getRedirectResult is allowed to resolve independently.
         let resolved = false;
         const initTimeout = window.setTimeout(() => {
             if (resolved) return;
             console.warn('Firebase auth init timed out; falling back to signed-out');
             set({ status: 'signed-out' });
         }, 8000);
-        const markResolved = () => {
-            resolved = true;
-            window.clearTimeout(initTimeout);
-        };
 
-        // Handle return from signInWithRedirect (mobile / standalone PWA flow)
-        getRedirectResult(auth)
-            .catch((err) => {
-                const msg = toErrorMessage(err);
-                if (msg) set({ error: msg });
-            })
-            .finally(markResolved);
+        // Handle return from signInWithRedirect (mobile / standalone PWA flow). Surface
+        // any error to the Login page so the user is not left staring at a dead spinner.
+        getRedirectResult(auth).catch((err) => {
+            const msg = toErrorMessage(err);
+            if (msg) set({ error: msg });
+        });
 
         unsubscribe = onAuthStateChanged(auth, (fbUser) => {
-            markResolved();
+            resolved = true;
+            window.clearTimeout(initTimeout);
             set({
                 user: toAuthUser(fbUser),
                 status: fbUser ? 'signed-in' : 'signed-out',
