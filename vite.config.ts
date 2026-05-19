@@ -85,6 +85,15 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        // Critical: the SW's navigateFallback (index.html) was hijacking the
+        // Firebase auth handler proxy paths, breaking signInWithRedirect on iOS
+        // PWA. Let these requests pass through to the network so the Vercel
+        // rewrite to firebaseapp.com actually takes effect.
+        navigateFallbackDenylist: [
+          /^\/__\/auth\//,
+          /^\/__\/firebase\//,
+          /^\/api\//,
+        ],
       },
     }),
   ],
