@@ -1,7 +1,14 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
+import {
+    initializeAuth,
+    browserLocalPersistence,
+    indexedDBLocalPersistence,
+    browserPopupRedirectResolver,
+    GoogleAuthProvider,
+    type Auth,
+} from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage, type Messaging } from 'firebase/messaging';
 import { DEVICE_ID_KEY } from './storage';
 
 const FIREBASE_CONFIG_KEYS = [
@@ -38,11 +45,32 @@ const missingMessagingConfigKeys = [
 
 const app: FirebaseApp | null = missingFirebaseConfigKeys.length === 0 ? initializeApp(firebaseConfig) : null;
 
+// iOS Safari in PWA standalone mode can hang on the default IndexedDB persistence,
+// which leaves onAuthStateChanged silent and the UI stuck on "Načítám...". Prefer
+// localStorage and fall back to IndexedDB so we still get persistence elsewhere.
+const initAuthForApp = (firebaseApp: FirebaseApp): Auth => {
+    return initializeAuth(firebaseApp, {
+        persistence: [browserLocalPersistence, indexedDBLocalPersistence],
+        popupRedirectResolver: browserPopupRedirectResolver,
+    });
+};
+
 export const firebaseApp = app;
-export const auth: Auth | null = app ? getAuth(app) : null;
+export const auth: Auth | null = app ? initAuthForApp(app) : null;
 export const firestore: Firestore | null = app ? getFirestore(app) : null;
 export const googleProvider = new GoogleAuthProvider();
-export const messaging = app ? getMessaging(app) : null;
+
+let messagingInstance: Messaging | null = null;
+if (app) {
+    try {
+        messagingInstance = getMessaging(app);
+    } catch (err) {
+        // Some browsers (older iOS Safari, certain PWA contexts) throw when constructing
+        // Messaging because the underlying APIs are missing. Keep auth working anyway.
+        console.warn('Firebase Messaging unavailable:', err);
+    }
+}
+export const messaging = messagingInstance;
 
 export const getFirebaseAuthConfigError = (): string | null => {
     if (missingFirebaseConfigKeys.length === 0) return null;
