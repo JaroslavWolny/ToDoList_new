@@ -12,7 +12,7 @@ export function AccountSection() {
         return (
             <div className="card-surface rounded-2xl p-4 flex items-center gap-3">
                 <Loader2 className="w-5 h-5 animate-spin text-[var(--color-text-secondary)]" />
-                <span className="text-sm text-[var(--color-text-secondary)]">Načítám...</span>
+                <span className="text-sm text-[var(--color-text-secondary)]">Loading...</span>
             </div>
         );
     }
@@ -21,7 +21,7 @@ export function AccountSection() {
         return (
             <div className="card-surface rounded-2xl p-4">
                 <p className="text-sm text-[var(--color-text-secondary)]">
-                    Účty a co-op raidy nejsou nakonfigurovány.
+                    Accounts and co-op raids are not configured.
                 </p>
                 {configError && (
                     <p className="text-xs text-red-400 mt-1">{configError}</p>
@@ -41,9 +41,9 @@ export function AccountSection() {
                         <User className="w-5 h-5 text-[var(--color-text-secondary)]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold">Host</p>
+                        <p className="text-sm font-semibold">Guest</p>
                         <p className="text-xs text-[var(--color-text-secondary)]">
-                            Přihlas se a ničte se přáteli bosse
+                            Sign in to take down bosses with friends
                         </p>
                     </div>
                 </div>
@@ -56,7 +56,7 @@ export function AccountSection() {
                     }}
                 >
                     <LogIn className="w-4 h-4" />
-                    Přihlásit / Registrovat
+                    Sign in / Sign up
                 </Link>
             </div>
         );
@@ -113,7 +113,7 @@ export function AccountSection() {
                     className="flex items-center justify-center gap-2 rounded-xl py-2 px-3 text-sm font-semibold transition card-surface hover:opacity-80"
                 >
                     <Swords className="w-4 h-4" />
-                    Raidy
+                    Raids
                 </Link>
                 <motion.button
                     whileTap={{ scale: 0.97 }}
@@ -122,7 +122,7 @@ export function AccountSection() {
                     className="flex items-center justify-center gap-2 rounded-xl py-2 px-3 text-sm font-semibold transition card-surface hover:opacity-80 disabled:opacity-50"
                 >
                     {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
-                    Odhlásit
+                    Sign out
                 </motion.button>
             </div>
         </div>

@@ -49,7 +49,7 @@ const missingMessagingConfigKeys = [
 const app: FirebaseApp | null = missingFirebaseConfigKeys.length === 0 ? initializeApp(firebaseConfig) : null;
 
 // iOS Safari in PWA standalone mode can hang on the default IndexedDB persistence,
-// which leaves onAuthStateChanged silent and the UI stuck on "Načítám...". Prefer
+// which leaves onAuthStateChanged silent and the UI stuck on "Loading...". Prefer
 // localStorage and fall back to IndexedDB so we still get persistence elsewhere.
 const initAuthForApp = (firebaseApp: FirebaseApp): Auth => {
     return initializeAuth(firebaseApp, {

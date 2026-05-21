@@ -35,9 +35,9 @@ export function MigrationPromptModal() {
                         className="card-surface w-full max-w-md rounded-3xl p-6 space-y-4"
                     >
                         <div className="text-center space-y-2">
-                            <h2 className="text-lg font-bold">Která data nechat?</h2>
+                            <h2 className="text-lg font-bold">Which data should we keep?</h2>
                             <p className="text-sm text-[var(--color-text-secondary)]">
-                                Máš lokální data v zařízení i v cloudu. Které chceš použít?
+                                You have local data on this device and data in the cloud. Which one do you want to use?
                             </p>
                         </div>
 
@@ -54,7 +54,7 @@ export function MigrationPromptModal() {
                                 ) : (
                                     <CloudUpload className="w-4 h-4" />
                                 )}
-                                Použít lokální (přepíše cloud)
+                                Use local (overwrites cloud)
                             </button>
                             <button
                                 type="button"
@@ -67,7 +67,7 @@ export function MigrationPromptModal() {
                                 ) : (
                                     <CloudDownload className="w-4 h-4" />
                                 )}
-                                Použít cloud (přepíše lokální)
+                                Use cloud (overwrites local)
                             </button>
                         </div>
                     </motion.div>

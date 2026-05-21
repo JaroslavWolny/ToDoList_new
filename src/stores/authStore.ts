@@ -50,40 +50,40 @@ const toErrorMessage = (err: unknown): string => {
         const code = String((err as { code?: unknown }).code ?? '');
         switch (code) {
             case 'auth/invalid-email':
-                return 'Neplatný email.';
+                return 'Invalid email.';
             case 'auth/user-not-found':
             case 'auth/wrong-password':
             case 'auth/invalid-credential':
-                return 'Špatný email nebo heslo.';
+                return 'Wrong email or password.';
             case 'auth/email-already-in-use':
-                return 'Tento email je už registrovaný.';
+                return 'This email is already registered.';
             case 'auth/weak-password':
-                return 'Heslo musí mít aspoň 6 znaků.';
+                return 'Password must be at least 6 characters.';
             case 'auth/popup-closed-by-user':
-                return 'Přihlášení zrušeno.';
+                return 'Sign-in cancelled.';
             case 'auth/popup-blocked':
-                return 'Prohlížeč zablokoval popup. Povolte ho a zkuste to znovu.';
+                return 'Browser blocked the popup. Allow it and try again.';
             case 'auth/network-request-failed':
-                return 'Síťová chyba. Zkontrolujte připojení.';
+                return 'Network error. Check your connection.';
             case 'auth/unauthorized-domain':
-                return 'Tato doména není v Firebase Authorized domains. Přidej ji v konzoli.';
+                return 'This domain is not in Firebase Authorized domains. Add it in the console.';
             case 'auth/web-storage-unsupported':
-                return 'Prohlížeč blokuje úložiště (cookies / localStorage). Povol je pro tuto stránku.';
+                return 'Browser is blocking storage (cookies / localStorage). Enable it for this site.';
             case 'auth/operation-not-supported-in-this-environment':
-                return 'Tato přihlašovací metoda v tomto prostředí nefunguje.';
+                return 'This sign-in method is not supported in this environment.';
             case 'auth/missing-or-invalid-nonce':
             case 'auth/invalid-oauth-client-id':
             case 'auth/invalid-oauth-provider':
-                return `OAuth chyba: ${code}`;
+                return `OAuth error: ${code}`;
             case 'auth/credential-already-in-use':
-                return 'Tento Google účet už patří jinému uživateli.';
+                return 'This Google account is already linked to another user.';
             case 'auth/account-exists-with-different-credential':
-                return 'Účet s tímto emailem existuje s jiným způsobem přihlášení.';
+                return 'An account with this email already exists with a different sign-in method.';
             default:
-                return code || 'Neznámá chyba.';
+                return code || 'Unknown error.';
         }
     }
-    return err instanceof Error ? err.message : 'Neznámá chyba.';
+    return err instanceof Error ? err.message : 'Unknown error.';
 };
 
 const REDIRECT_ERROR_KEY = 'questdo_auth_redirect_error';
@@ -198,7 +198,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
     signInWithGoogle: async () => {
         if (!auth) {
-            set({ error: getFirebaseAuthConfigError() ?? 'Auth nedostupný' });
+            set({ error: getFirebaseAuthConfigError() ?? 'Auth unavailable' });
             return;
         }
         set({ error: null });
@@ -254,7 +254,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
     signInWithEmail: async (email, password) => {
         if (!auth) {
-            set({ error: getFirebaseAuthConfigError() ?? 'Auth nedostupný' });
+            set({ error: getFirebaseAuthConfigError() ?? 'Auth unavailable' });
             return;
         }
         try {
@@ -268,7 +268,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
     signUpWithEmail: async (email, password, displayName) => {
         if (!auth) {
-            set({ error: getFirebaseAuthConfigError() ?? 'Auth nedostupný' });
+            set({ error: getFirebaseAuthConfigError() ?? 'Auth unavailable' });
             return;
         }
         try {

@@ -89,12 +89,12 @@ export function Login() {
             <div className="card-surface w-full max-w-md rounded-3xl p-6 sm:p-8 space-y-6">
                 <div className="space-y-2 text-center">
                     <h1 className="text-2xl font-bold">
-                        {mode === 'sign-in' ? 'Vítej zpátky' : 'Vytvořit účet'}
+                        {mode === 'sign-in' ? 'Welcome back' : 'Create account'}
                     </h1>
                     <p className="text-sm text-[var(--color-text-secondary)]">
                         {mode === 'sign-in'
-                            ? 'Přihlas se a ničte se svými přáteli bosse'
-                            : 'Zaregistruj se a začni hrát se svými přáteli'}
+                            ? 'Sign in to take down bosses with your friends'
+                            : 'Sign up and start playing with your friends'}
                     </p>
                 </div>
 
@@ -106,14 +106,14 @@ export function Login() {
 
                 {error && (
                     <div className="rounded-xl p-3 text-sm bg-red-500/10 text-red-300 border border-red-500/20 space-y-2">
-                        <div className="font-semibold">Přihlášení selhalo</div>
+                        <div className="font-semibold">Sign-in failed</div>
                         <div className="break-words">{error}</div>
                         <button
                             type="button"
                             onClick={clearError}
                             className="text-xs underline opacity-80"
                         >
-                            Skrýt chybu
+                            Hide error
                         </button>
                     </div>
                 )}
@@ -144,12 +144,12 @@ export function Login() {
                             <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.4l6 5.1C40 35.9 43.5 30.4 43.5 24c0-1.2-.1-2.3-.4-3.5z" />
                         </svg>
                     )}
-                    Pokračovat s Google
+                    Continue with Google
                 </button>
 
                 <div className="flex items-center gap-3">
                     <div className="flex-1 h-px bg-[var(--color-border)]" />
-                    <span className="text-xs text-[var(--color-text-tertiary)] uppercase tracking-wide">nebo</span>
+                    <span className="text-xs text-[var(--color-text-tertiary)] uppercase tracking-wide">or</span>
                     <div className="flex-1 h-px bg-[var(--color-border)]" />
                 </div>
 
@@ -157,7 +157,7 @@ export function Login() {
                     {mode === 'sign-up' && (
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
-                                Přezdívka
+                                Nickname
                             </label>
                             <input
                                 type="text"
@@ -180,14 +180,14 @@ export function Login() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] px-3 py-2.5 text-sm focus:outline-none focus:border-[var(--color-accent)]"
-                            placeholder="ty@email.cz"
+                            placeholder="you@example.com"
                             autoComplete="email"
                         />
                     </div>
 
                     <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
-                            Heslo
+                            Password
                         </label>
                         <input
                             type="password"
@@ -196,7 +196,7 @@ export function Login() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] px-3 py-2.5 text-sm focus:outline-none focus:border-[var(--color-accent)]"
-                            placeholder="Min. 6 znaků"
+                            placeholder="Min. 6 characters"
                             autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
                         />
                     </div>
@@ -218,31 +218,31 @@ export function Login() {
                         ) : (
                             <UserPlus className="w-4 h-4" />
                         )}
-                        {mode === 'sign-in' ? 'Přihlásit se' : 'Zaregistrovat'}
+                        {mode === 'sign-in' ? 'Sign in' : 'Sign up'}
                     </button>
                 </form>
 
                 <div className="text-center text-sm text-[var(--color-text-secondary)]">
                     {mode === 'sign-in' ? (
                         <>
-                            Nemáš účet?{' '}
+                            Don&apos;t have an account?{' '}
                             <button
                                 type="button"
                                 onClick={() => switchMode('sign-up')}
                                 className="font-semibold text-[var(--color-accent)] hover:underline"
                             >
-                                Vytvořit
+                                Create one
                             </button>
                         </>
                     ) : (
                         <>
-                            Už máš účet?{' '}
+                            Already have an account?{' '}
                             <button
                                 type="button"
                                 onClick={() => switchMode('sign-in')}
                                 className="font-semibold text-[var(--color-accent)] hover:underline"
                             >
-                                Přihlásit
+                                Sign in
                             </button>
                         </>
                     )}
