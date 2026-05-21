@@ -54,9 +54,18 @@ export function DailyRevealCard({ onReveal }: DailyRevealCardProps) {
                 className="glass-card w-full px-4 py-3 flex items-center gap-3"
             >
                 <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-gradient-to-br ${activeTheme.accent} shadow-lg`}
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br ${activeTheme.accent} shadow-lg overflow-hidden`}
                 >
-                    {activeTheme.emoji}
+                    {/* Emojis don't sit on the Latin baseline — wrap in a span with
+                        leading-none + an explicit font-size so they render crisply
+                        and centre visually inside the gradient tile. */}
+                    <span
+                        aria-hidden="true"
+                        className="block leading-none text-center select-none"
+                        style={{ fontSize: '22px', lineHeight: 1 }}
+                    >
+                        {activeTheme.emoji}
+                    </span>
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
@@ -142,13 +151,24 @@ export function DailyRevealCard({ onReveal }: DailyRevealCardProps) {
                         className="reveal-card-shell w-full max-w-xs p-7 flex flex-col items-center text-center"
                     >
                         <motion.div
-                            initial={{ scale: 0, rotate: 0 }}
-                            animate={{ scale: 1, rotate: [0, -8, 8, -4, 4, 0] }}
-                            transition={{ duration: 0.9, delay: 0.1 }}
-                            className={`relative w-24 h-24 rounded-3xl flex items-center justify-center text-5xl bg-gradient-to-br ${justRevealedTheme.accent} shadow-2xl mb-5`}
+                            initial={{ scale: 0, rotate: -12 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ type: 'spring', stiffness: 280, damping: 16, delay: 0.1 }}
+                            className={`relative w-24 h-24 rounded-3xl flex items-center justify-center bg-gradient-to-br ${justRevealedTheme.accent} shadow-2xl mb-5 overflow-hidden`}
                             style={{ boxShadow: '0 24px 60px -8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25)' }}
                         >
-                            {justRevealedTheme.emoji}
+                            {/* Emojis don't share Latin baseline metrics — render
+                                inside a sized span with leading-none so the glyph
+                                fills the tile and centres exactly. Avoids the
+                                "small + offset to one side" look caused by flex
+                                centring a text node with a 1.2 line-height. */}
+                            <span
+                                aria-hidden="true"
+                                className="block leading-none text-center select-none"
+                                style={{ fontSize: '64px', lineHeight: 1 }}
+                            >
+                                {justRevealedTheme.emoji}
+                            </span>
                         </motion.div>
                         <p className="text-[10px] uppercase tracking-[0.24em] font-bold text-fuchsia-200/80 mb-1">
                             Today's Buff

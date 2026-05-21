@@ -303,6 +303,16 @@ A multi-front fix for the Google sign-in flow that had been broken on iOS PWA an
 - `?clear-sw=1` kill-switch in `main.tsx` — unregisters every service worker and wipes Cache Storage, then reloads. Use it to recover an installed PWA that's still serving a stale SW without forcing a full reinstall.
 - `scripts/add-auth-domain.mjs` — pushes hosts into Firebase's Authorized domains list via the Identity Toolkit admin API using the `FIREBASE_*` service-account creds in `.env.local`. Includes a PEM-newline repair so it tolerates the single-line key format Vercel hands back.
 
+### Returning-User Sign-In Hydration & Daily Buff Polish (May 2026)
+
+**Sign-in looked broken for returning users on fresh devices.** The Google flow itself completed correctly, but `extractUserSnapshot` in `src/lib/cloudSync.ts` never included `onboardingComplete` or `settings` in the snapshot it round-tripped through Firestore. A returning user signing in on a new device would land on `/onboarding` instead of the dashboard — visually identical to "not signed in" — because `App.tsx` only routes authenticated users past onboarding once `onboardingComplete === true`.
+- Added `onboardingComplete` and `settings` to the cloud snapshot so user-level state actually survives a re-install.
+- Split `cloudHasData` into `cloudHasTaskData` (still gates the local↔cloud migration prompt) and `cloudHasUserData` (new branch that hydrates the user snapshot even when the account has no tasks or completions yet). Returning users now land on the dashboard immediately after Google sign-in.
+
+**"Today's Buff" icon was misaligned and rendered blurry.** Two compounding issues in `src/components/gamification/DailyRevealCard.tsx`:
+- Emoji glyphs (`⚔️`, `🛡️`, `🪙`, `🌅`, …) have asymmetric internal baselines and don't visually center via `flex items-center justify-center` on a bare text node — wrapped them in a `<span>` with explicit `font-size`, `line-height: 1`, `display: block`, `text-align: center` and added `overflow-hidden` to the tile.
+- The celebration modal animated the icon with a keyframe rotation sequence (`rotate: [0, -8, 8, -4, 4, 0]`). Framer Motion promoted the element to a GPU layer that rasterized the color emoji once, then resampled it through every rotation step, leaving the glyph softly sampled at rest. Replaced the keyframe wobble with a single-shot `scale` + `rotate` spring — the icon still pops in, but never gets resampled.
+
 ---
 
 ## 💡 The Philosophy

@@ -81,6 +81,12 @@ const extractUserSnapshot = (state: UserState): Partial<UserState> => ({
     lastRevealDate: state.lastRevealDate,
     dailyThemeId: state.dailyThemeId,
     lastSharedStreakMilestone: state.lastSharedStreakMilestone,
+    // Must round-trip via cloud so that signing in on a fresh device after
+    // onboarding doesn't dump the user back into the onboarding wizard
+    // (which previously masqueraded as "Google sign-in didn't work" since
+    // the dashboard never appeared).
+    onboardingComplete: state.onboardingComplete,
+    settings: state.settings,
 });
 
 const applyCloudSnapshot = (data: CloudState) => {
@@ -156,14 +162,15 @@ const handleSignIn = async (uid: string) => {
     }
 
     const localTasks = useTaskStore.getState().tasks;
-    const cloudHasData = !!cloud && ((cloud.tasks?.length ?? 0) > 0 || (cloud.completions?.length ?? 0) > 0);
+    const cloudHasTaskData = !!cloud && ((cloud.tasks?.length ?? 0) > 0 || (cloud.completions?.length ?? 0) > 0);
+    const cloudHasUserData = !!cloud && !!cloud.user && Object.keys(cloud.user).length > 0;
     const localHasData = localTasks.length > 0;
 
-    if (cloudHasData && localHasData) {
-        // Conflict: ask the user
+    if (cloudHasTaskData && localHasData) {
+        // Conflict on tasks: ask the user
         await new Promise<void>((resolve) => {
             const prompt: MigrationPrompt = {
-                cloudHasData,
+                cloudHasData: cloudHasTaskData,
                 localHasData,
                 apply: async (action) => {
                     migrationPromptListener?.(null);
@@ -184,9 +191,20 @@ const handleSignIn = async (uid: string) => {
             try { window.sessionStorage.setItem(PENDING_MIGRATION_KEY, '1'); } catch { /* noop */ }
         });
         try { window.sessionStorage.removeItem(PENDING_MIGRATION_KEY); } catch { /* noop */ }
-    } else if (cloudHasData && cloud) {
+    } else if (cloudHasTaskData && cloud) {
         applyCloudSnapshot(cloud);
         suppressNextWrite = true;
+    } else if (cloudHasUserData && cloud) {
+        // Returning user signing in on a fresh device: they may have no
+        // tasks yet but already finished onboarding elsewhere. Pull the
+        // user snapshot so onboardingComplete / settings / level carry over
+        // and we don't dump them back into the onboarding wizard.
+        applyCloudSnapshot({ ...cloud, tasks: [], completions: [] });
+        suppressNextWrite = true;
+        if (localHasData) {
+            // We still need to push the local tasks up so they aren't lost.
+            await writeNow();
+        }
     } else if (localHasData) {
         // First-time login with only local data — push to cloud silently
         await writeNow();
