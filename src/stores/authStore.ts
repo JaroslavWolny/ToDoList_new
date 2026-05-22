@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 import {
     type User,
+    GoogleAuthProvider,
     onAuthStateChanged,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
+    signInWithCredential,
     signInWithPopup,
     signInWithRedirect,
     getRedirectResult,
@@ -28,6 +30,7 @@ interface AuthStore {
     configError: string | null;
     init: () => void;
     signInWithGoogle: () => Promise<void>;
+    signInWithGoogleIdToken: (idToken: string) => Promise<void>;
     signInWithEmail: (email: string, password: string) => Promise<void>;
     signUpWithEmail: (email: string, password: string, displayName?: string) => Promise<void>;
     signOut: () => Promise<void>;
@@ -248,6 +251,27 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 }
             }
             set({ error: toErrorMessage(err) });
+            throw err;
+        }
+    },
+
+    // Google Identity Services path — caller passes the ID token returned from
+    // accounts.google.com/gsi/client. signInWithCredential is a pure local API
+    // call so the cross-origin redirect that breaks iOS Safari never happens.
+    signInWithGoogleIdToken: async (idToken: string) => {
+        if (!auth) {
+            set({ error: getFirebaseAuthConfigError() ?? 'Auth unavailable' });
+            return;
+        }
+        set({ error: null });
+        persistError(null);
+        try {
+            const cred = GoogleAuthProvider.credential(idToken);
+            await signInWithCredential(auth, cred);
+        } catch (err) {
+            const msg = toErrorMessage(err);
+            console.error('[auth] signInWithCredential (GIS) failed:', err, '→', msg);
+            set({ error: msg });
             throw err;
         }
     },

@@ -20,36 +20,13 @@ const FIREBASE_CONFIG_KEYS = [
     'VITE_FIREBASE_APP_ID',
 ] as const;
 
-// Use the app's own host as authDomain so the OAuth redirect happens
-// same-origin (via the `/__/auth/*` rewrites in vercel.json that proxy to
-// `${project}.firebaseapp.com`). This is the only configuration that survives
-// iOS Safari 16.4+ ITP: third-party storage is wiped on the cross-origin
-// redirect back from firebaseapp.com, leaving getRedirectResult() with no
-// state to consume even though Firebase Auth v9.4+ ships the auth payload
-// in the URL fragment.
-//
-// Localhost can't be proxied — fall back to the firebaseapp.com host the env
-// var points at so `npm run dev` still works.
-//
-// IMPORTANT (one-time setup): the Google OAuth Web client must list
-//   https://questdo.app/__/auth/handler
-//   https://questdo-eta.vercel.app/__/auth/handler
-// (plus any other production host) in *Authorized redirect URIs*, otherwise
-// Google returns redirect_uri_mismatch. Configure in Google Cloud Console →
-// APIs & Services → Credentials → "Web client (auto created by Google Service)".
-const envAuthDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN;
-// Hosts where the `/__/auth/*` rewrites in vercel.json are wired AND the host
-// is registered as an Authorized redirect URI on the Google OAuth Web client.
-// Anything not on this list (preview deployments, localhost, etc.) falls back
-// to firebaseapp.com so it keeps working without per-deployment OAuth setup.
-const SAME_ORIGIN_AUTH_HOSTS = new Set([
-    'questdo.app',
-    'questdo-eta.vercel.app',
-]);
-const resolvedAuthDomain = (() => {
-    if (typeof window === 'undefined') return envAuthDomain;
-    return SAME_ORIGIN_AUTH_HOSTS.has(window.location.host) ? window.location.host : envAuthDomain;
-})();
+// iOS Safari sign-in no longer goes through signInWithRedirect — Login.tsx
+// drives Google Identity Services and finishes the auth locally with
+// signInWithCredential, which sidesteps the cross-origin storage problem.
+// That means `authDomain` only matters for the legacy popup/redirect fallback,
+// where the Firebase-managed firebaseapp.com host works out of the box
+// because it is the one already registered with Google's OAuth client.
+const resolvedAuthDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN;
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,

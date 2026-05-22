@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, FormEvent, useEffect, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { auth } from '../lib/firebase';
@@ -6,8 +6,56 @@ import { Loader2, LogIn, UserPlus } from 'lucide-react';
 
 type Mode = 'sign-in' | 'sign-up';
 
+// Google Identity Services library — loaded once per page.
+declare global {
+    interface Window {
+        google?: {
+            accounts: {
+                id: {
+                    initialize: (config: {
+                        client_id: string;
+                        callback: (response: { credential: string }) => void;
+                        ux_mode?: 'popup' | 'redirect';
+                        auto_select?: boolean;
+                        use_fedcm_for_prompt?: boolean;
+                    }) => void;
+                    renderButton: (
+                        parent: HTMLElement,
+                        options: Record<string, unknown>,
+                    ) => void;
+                    prompt: () => void;
+                };
+            };
+        };
+    }
+}
+
+const GIS_SCRIPT_URL = 'https://accounts.google.com/gsi/client';
+const GIS_SCRIPT_ID = 'gsi-client-script';
+
+const loadGisScript = (): Promise<void> => new Promise((resolve, reject) => {
+    if (window.google?.accounts?.id) {
+        resolve();
+        return;
+    }
+    const existing = document.getElementById(GIS_SCRIPT_ID);
+    if (existing) {
+        existing.addEventListener('load', () => resolve(), { once: true });
+        existing.addEventListener('error', () => reject(new Error('GIS load failed')), { once: true });
+        return;
+    }
+    const script = document.createElement('script');
+    script.id = GIS_SCRIPT_ID;
+    script.src = GIS_SCRIPT_URL;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('GIS load failed'));
+    document.head.appendChild(script);
+});
+
 export function Login() {
-    const { user, status, error, configError, signInWithGoogle, signInWithEmail, signUpWithEmail, clearError } =
+    const { user, status, error, configError, signInWithGoogle, signInWithGoogleIdToken, signInWithEmail, signUpWithEmail, clearError } =
         useAuthStore();
 
     const [mode, setMode] = useState<Mode>('sign-in');
@@ -16,8 +64,63 @@ export function Login() {
     const [displayName, setDisplayName] = useState('');
     const [busy, setBusy] = useState(false);
 
+    const gisButtonRef = useRef<HTMLDivElement | null>(null);
+    const [gisReady, setGisReady] = useState(false);
+    const gisClientId = import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID as string | undefined;
+
     const debug = typeof window !== 'undefined' && /[?&]auth-debug=1\b/.test(window.location.search);
     const [debugInfo, setDebugInfo] = useState<Record<string, unknown> | null>(null);
+
+    // Boot Google Identity Services: ID-token-based sign-in avoids
+    // signInWithRedirect entirely, which is the only flow that survives iOS
+    // Safari ITP without an OAuth-redirect-URI registration. Falls back to
+    // the legacy popup/redirect button if the script can't load or the env
+    // var is missing.
+    useEffect(() => {
+        if (!gisClientId) return;
+        if (configError) return;
+        if (status === 'signed-in') return;
+        let cancelled = false;
+        loadGisScript()
+            .then(() => {
+                if (cancelled) return;
+                if (!window.google?.accounts?.id) return;
+                window.google.accounts.id.initialize({
+                    client_id: gisClientId,
+                    callback: async (response) => {
+                        if (!response.credential) return;
+                        try {
+                            setBusy(true);
+                            await signInWithGoogleIdToken(response.credential);
+                        } catch {
+                            // surfaced via store error state
+                        } finally {
+                            setBusy(false);
+                        }
+                    },
+                    ux_mode: 'popup',
+                    auto_select: false,
+                    use_fedcm_for_prompt: true,
+                });
+                if (gisButtonRef.current) {
+                    gisButtonRef.current.innerHTML = '';
+                    window.google.accounts.id.renderButton(gisButtonRef.current, {
+                        type: 'standard',
+                        theme: 'outline',
+                        size: 'large',
+                        text: 'continue_with',
+                        shape: 'pill',
+                        logo_alignment: 'center',
+                        width: gisButtonRef.current.clientWidth || 320,
+                    });
+                }
+                setGisReady(true);
+            })
+            .catch((err) => {
+                console.warn('[auth] GIS load failed, falling back to popup/redirect:', err);
+            });
+        return () => { cancelled = true; };
+    }, [gisClientId, configError, status, signInWithGoogleIdToken]);
 
     useEffect(() => {
         if (!debug) return;
@@ -124,28 +227,44 @@ export function Login() {
                     </pre>
                 )}
 
-                <button
-                    type="button"
-                    onClick={handleGoogle}
-                    disabled={busy || !!configError}
-                    className="w-full flex items-center justify-center gap-3 rounded-xl py-3 px-4 font-semibold transition disabled:opacity-50"
-                    style={{
-                        background: 'white',
-                        color: '#1f1f1f',
-                    }}
-                >
-                    {busy ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                        <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
-                            <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35.5 24 35.5c-6.3 0-11.5-5.1-11.5-11.5S17.7 12.5 24 12.5c2.9 0 5.5 1.1 7.5 2.9l5.7-5.7C33.6 6.5 29 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.3-.4-3.5z" />
-                            <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 12.5 24 12.5c2.9 0 5.5 1.1 7.5 2.9l5.7-5.7C33.6 6.5 29 4.5 24 4.5 16.5 4.5 10 8.7 6.3 14.7z" />
-                            <path fill="#4CAF50" d="M24 43.5c5 0 9.5-1.9 12.9-5l-6-5.1c-1.9 1.3-4.3 2.1-6.9 2.1-5.2 0-9.6-3.1-11.3-7.5l-6.5 5C9.5 39.2 16.2 43.5 24 43.5z" />
-                            <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.4l6 5.1C40 35.9 43.5 30.4 43.5 24c0-1.2-.1-2.3-.4-3.5z" />
-                        </svg>
-                    )}
-                    Continue with Google
-                </button>
+                {gisClientId ? (
+                    <div className="space-y-2">
+                        <div
+                            ref={gisButtonRef}
+                            className="w-full flex justify-center min-h-[44px] [&>div]:!w-full"
+                            aria-busy={busy || !gisReady}
+                        />
+                        {!gisReady && (
+                            <div className="flex items-center justify-center gap-2 text-xs text-[var(--color-text-tertiary)]">
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                Loading Google…
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={handleGoogle}
+                        disabled={busy || !!configError}
+                        className="w-full flex items-center justify-center gap-3 rounded-xl py-3 px-4 font-semibold transition disabled:opacity-50"
+                        style={{
+                            background: 'white',
+                            color: '#1f1f1f',
+                        }}
+                    >
+                        {busy ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                            <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+                                <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35.5 24 35.5c-6.3 0-11.5-5.1-11.5-11.5S17.7 12.5 24 12.5c2.9 0 5.5 1.1 7.5 2.9l5.7-5.7C33.6 6.5 29 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.3-.4-3.5z" />
+                                <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 12.5 24 12.5c2.9 0 5.5 1.1 7.5 2.9l5.7-5.7C33.6 6.5 29 4.5 24 4.5 16.5 4.5 10 8.7 6.3 14.7z" />
+                                <path fill="#4CAF50" d="M24 43.5c5 0 9.5-1.9 12.9-5l-6-5.1c-1.9 1.3-4.3 2.1-6.9 2.1-5.2 0-9.6-3.1-11.3-7.5l-6.5 5C9.5 39.2 16.2 43.5 24 43.5z" />
+                                <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.4l6 5.1C40 35.9 43.5 30.4 43.5 24c0-1.2-.1-2.3-.4-3.5z" />
+                            </svg>
+                        )}
+                        Continue with Google
+                    </button>
+                )}
 
                 <div className="flex items-center gap-3">
                     <div className="flex-1 h-px bg-[var(--color-border)]" />
