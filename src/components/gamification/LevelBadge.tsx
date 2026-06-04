@@ -13,16 +13,16 @@ export function LevelBadge() {
     const [isShopOpen, setIsShopOpen] = useState(false);
 
     const tierGradient =
-        level >= 30 ? 'from-yellow-400 via-amber-500 to-orange-500' :
-        level >= 20 ? 'from-fuchsia-400 via-purple-500 to-indigo-500' :
-        level >= 10 ? 'from-sky-400 via-cyan-500 to-blue-500' :
+        level >= 30 ? 'from-yellow-300 via-amber-400 to-orange-500' :
+        level >= 20 ? 'from-cyan-300 via-blue-500 to-blue-700' :
+        level >= 10 ? 'from-sky-300 via-cyan-400 to-teal-500' :
         level >= 5  ? 'from-emerald-400 via-green-500 to-teal-500' :
                       'from-slate-300 via-slate-400 to-slate-500';
 
     const tierGlow =
         level >= 30 ? 'shadow-amber-500/40' :
-        level >= 20 ? 'shadow-purple-500/40' :
-        level >= 10 ? 'shadow-sky-500/40' :
+        level >= 20 ? 'shadow-blue-500/40' :
+        level >= 10 ? 'shadow-cyan-500/40' :
         level >= 5  ? 'shadow-emerald-500/40' :
                       'shadow-slate-500/30';
 

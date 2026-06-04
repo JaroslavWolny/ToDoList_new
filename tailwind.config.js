@@ -8,44 +8,53 @@ export default {
   theme: {
     extend: {
       colors: {
+        // QuestDo-style primary: bright azure/cyan
         primary: {
-          50: '#f0f4ff',
-          100: '#dbe4ff',
-          200: '#bac8ff',
-          300: '#91a7ff',
-          400: '#748ffc',
-          500: '#5c7cfa',
-          600: '#4c6ef5',
-          700: '#4263eb',
-          800: '#3b5bdb',
-          900: '#364fc7',
+          50: '#ecfeff',
+          100: '#cffafe',
+          200: '#a5f3fc',
+          300: '#67e8f9',
+          400: '#22d3ee',
+          500: '#06b6d4',
+          600: '#0891b2',
+          700: '#0e7490',
+          800: '#155e75',
+          900: '#164e63',
         },
+        // Energetic gold/amber for XP, coins, rewards
         accent: {
-          50: '#fff3e0',
-          100: '#ffe0b2',
-          200: '#ffcc80',
-          300: '#ffb74d',
-          400: '#ffa726',
-          500: '#ff9800',
-          600: '#fb8c00',
-          700: '#f57c00',
-          800: '#ef6c00',
-          900: '#e65100',
+          50: '#fffbeb',
+          100: '#fef3c7',
+          200: '#fde68a',
+          300: '#fcd34d',
+          400: '#fbbf24',
+          500: '#f59e0b',
+          600: '#d97706',
+          700: '#b45309',
+          800: '#92400e',
+          900: '#78350f',
         },
         success: {
-          400: '#69db7c',
-          500: '#51cf66',
-          600: '#40c057',
+          400: '#34d399',
+          500: '#10b981',
+          600: '#059669',
         },
         danger: {
           400: '#ff6b6b',
           500: '#fa5252',
           600: '#f03e3e',
         },
+        // XP gradient: cyan → blue → violet (cool energy)
         xp: {
-          from: '#7c3aed',
-          via: '#a855f7',
-          to: '#c084fc',
+          from: '#06b6d4',
+          via: '#3b82f6',
+          to: '#8b5cf6',
+        },
+        // Loot/reward gradient: amber → orange (chest gold)
+        loot: {
+          from: '#fbbf24',
+          via: '#f59e0b',
+          to: '#f97316',
         },
         surface: {
           50: '#f8fafc',
@@ -57,7 +66,8 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -65,6 +75,7 @@ export default {
         'shake': 'shake 0.5s ease-in-out',
         'float': 'float 3s ease-in-out infinite',
         'glow': 'glow 2s ease-in-out infinite alternate',
+        'wiggle': 'wiggle 0.6s ease-in-out',
       },
       keyframes: {
         bounceIn: {
@@ -82,8 +93,12 @@ export default {
           '50%': { transform: 'translateY(-10px)' },
         },
         glow: {
-          '0%': { boxShadow: '0 0 5px rgba(92, 124, 250, 0.3)' },
-          '100%': { boxShadow: '0 0 20px rgba(92, 124, 250, 0.6)' },
+          '0%': { boxShadow: '0 0 5px rgba(6, 182, 212, 0.35)' },
+          '100%': { boxShadow: '0 0 24px rgba(6, 182, 212, 0.7)' },
+        },
+        wiggle: {
+          '0%, 100%': { transform: 'rotate(-3deg)' },
+          '50%': { transform: 'rotate(3deg)' },
         },
       },
     },

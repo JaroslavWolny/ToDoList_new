@@ -16,40 +16,38 @@ const RARITY = {
         stars: 3,
         title: 'EPIC CHEST',
         tag: 'LEGENDARY DROP',
-        // Wooden chest palette
-        woodLight: '#c97a3a',
-        woodMid: '#a85a23',
-        woodDark: '#6b3712',
-        woodDarker: '#3d1f08',
-        bandLight: '#fde68a',
-        bandMid: '#f59e0b',
-        bandDark: '#92400e',
-        gradient: 'linear-gradient(135deg, #f59e0b 0%, #f97316 35%, #ef4444 70%, #ec4899 100%)',
+        // Modern vault surface (warm gold) — clean gradient faces, no skeuomorphism
+        faceLight: '#fef3c7',
+        faceMid: '#fbbf24',
+        faceDeep: '#d97706',
+        side: '#b45309',
+        rim: '#fffbeb',
+        interior: '#3a2406',
+        gradient: 'linear-gradient(135deg, #f59e0b 0%, #f97316 35%, #ef4444 70%, #fbbf24 100%)',
         glow: 'rgba(249, 115, 22, 0.65)',
         glowSoft: 'rgba(244, 114, 182, 0.45)',
         rayColor: '#fbbf24',
-        particleColors: ['#fbbf24', '#f97316', '#ef4444', '#ec4899', '#fde68a'],
-        conic: 'conic-gradient(from 0deg, #fbbf24, #f97316, #ef4444, #ec4899, #f59e0b, #fbbf24)',
+        particleColors: ['#fbbf24', '#f97316', '#ef4444', '#fbbf24', '#fde68a'],
+        conic: 'conic-gradient(from 0deg, #fbbf24, #f97316, #ef4444, #fbbf24, #f59e0b, #fbbf24)',
     },
     POUCH: {
         label: 'RARE',
         stars: 2,
         title: 'LUCKY POUCH',
         tag: 'MYSTERY DROP',
-        // Purple-magic chest palette
-        woodLight: '#a78bfa',
-        woodMid: '#8b5cf6',
-        woodDark: '#5b21b6',
-        woodDarker: '#2e1065',
-        bandLight: '#f0abfc',
-        bandMid: '#c084fc',
-        bandDark: '#7e22ce',
-        gradient: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 35%, #a855f7 70%, #ec4899 100%)',
+        // Modern vault surface (electric cyan) — clean gradient faces
+        faceLight: '#cffafe',
+        faceMid: '#22d3ee',
+        faceDeep: '#0891b2',
+        side: '#1d4ed8',
+        rim: '#ecfeff',
+        interior: '#0a1c3a',
+        gradient: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 35%, #22d3ee 70%, #fbbf24 100%)',
         glow: 'rgba(139, 92, 246, 0.65)',
         glowSoft: 'rgba(99, 102, 241, 0.45)',
-        rayColor: '#a78bfa',
-        particleColors: ['#a78bfa', '#818cf8', '#c084fc', '#f0abfc', '#ddd6fe'],
-        conic: 'conic-gradient(from 0deg, #a78bfa, #818cf8, #c084fc, #ec4899, #6366f1, #a78bfa)',
+        rayColor: '#67e8f9',
+        particleColors: ['#67e8f9', '#818cf8', '#67e8f9', '#f0abfc', '#ddd6fe'],
+        conic: 'conic-gradient(from 0deg, #67e8f9, #818cf8, #67e8f9, #fbbf24, #06b6d4, #67e8f9)',
     },
 } as const;
 
@@ -188,7 +186,7 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                             className="relative rounded-[calc(2rem-2px)] overflow-hidden px-7 pt-9 pb-7 text-center"
                             style={{
                                 background:
-                                    'linear-gradient(160deg, #15102b 0%, #1b1442 40%, #2a1547 70%, #15102b 100%)',
+                                    'linear-gradient(160deg, #0a1626 0%, #0f2138 42%, #122a45 70%, #0a1626 100%)',
                             }}
                         >
                             {/* Star-field background */}
@@ -647,7 +645,7 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                                             whileHover={{ scale: 1.03 }}
                                             whileTap={{ scale: 0.96 }}
                                             onClick={onClose}
-                                            className="mt-6 w-full py-3.5 rounded-2xl font-black text-sm tracking-[0.18em] uppercase text-[#15102b] relative overflow-hidden"
+                                            className="mt-6 w-full py-3.5 rounded-2xl font-black text-sm tracking-[0.18em] uppercase text-[#0a1626] relative overflow-hidden"
                                             style={{
                                                 background: 'linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%)',
                                                 boxShadow: `0 8px 24px -6px ${cfg.glow}, inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -2px 0 rgba(0,0,0,0.08)`,
@@ -709,165 +707,104 @@ function RarityStars({ count, color }: { count: number; color: string }) {
 type ChestCfg = (typeof RARITY)[keyof typeof RARITY];
 
 function ChestBodySvg({ cfg }: { cfg: ChestCfg }) {
+    const id = cfg.label;
     return (
         <svg viewBox="0 0 160 100" className="w-full h-full block overflow-visible" xmlns="http://www.w3.org/2000/svg">
             <defs>
-                <linearGradient id={`bodyWood-${cfg.label}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stopColor={cfg.woodLight} />
-                    <stop offset="0.45" stopColor={cfg.woodMid} />
-                    <stop offset="1" stopColor={cfg.woodDarker} />
+                {/* Front face — soft top-lit gradient */}
+                <linearGradient id={`face-${id}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor={cfg.faceLight} />
+                    <stop offset="0.5" stopColor={cfg.faceMid} />
+                    <stop offset="1" stopColor={cfg.faceDeep} />
                 </linearGradient>
-                <linearGradient id={`bodyGold-${cfg.label}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stopColor={cfg.bandLight} />
-                    <stop offset="0.5" stopColor={cfg.bandMid} />
-                    <stop offset="1" stopColor={cfg.bandDark} />
+                {/* Dark interior gradient (revealed when the lid swings open) */}
+                <linearGradient id={`inside-${id}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor="#000000" stopOpacity="0.85" />
+                    <stop offset="1" stopColor={cfg.interior} />
                 </linearGradient>
-                <linearGradient id={`bodyInside-${cfg.label}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stopColor="#1a0a04" />
-                    <stop offset="1" stopColor={cfg.woodDarker} />
+                {/* Glossy left-to-right sheen */}
+                <linearGradient id={`sheen-${id}`} x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0" stopColor="#ffffff" stopOpacity="0.55" />
+                    <stop offset="0.35" stopColor="#ffffff" stopOpacity="0.08" />
+                    <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
                 </linearGradient>
+                <radialGradient id={`emblem-${id}`} cx="0.5" cy="0.35" r="0.75">
+                    <stop offset="0" stopColor="#ffffff" />
+                    <stop offset="0.55" stopColor={cfg.rim} />
+                    <stop offset="1" stopColor={cfg.faceMid} />
+                </radialGradient>
+                <clipPath id={`faceClip-${id}`}>
+                    <rect x="8" y="14" width="144" height="82" rx="18" />
+                </clipPath>
             </defs>
 
-            {/* Back wall of chest interior (shows when lid is open) */}
-            <rect x="14" y="2" width="132" height="20" rx="3" fill={`url(#bodyInside-${cfg.label})`} />
+            {/* Open interior back wall — sits behind the front face */}
+            <rect x="16" y="2" width="128" height="22" rx="8" fill={`url(#inside-${id})`} />
 
-            {/* Main body (front face) */}
-            <path
-                d="M6 14 L154 14 L150 92 Q150 96 146 96 L14 96 Q10 96 10 92 Z"
-                fill={`url(#bodyWood-${cfg.label})`}
-                stroke={cfg.woodDarker}
-                strokeWidth="2"
-                strokeLinejoin="round"
+            {/* Front face — single clean rounded slab */}
+            <rect x="8" y="14" width="144" height="82" rx="18" fill={`url(#face-${id})`} />
+
+            {/* Crisp rim highlight along the top + sides */}
+            <rect
+                x="8" y="14" width="144" height="82" rx="18"
+                fill="none" stroke={cfg.rim} strokeWidth="1.6" strokeOpacity="0.7"
             />
+            {/* Inner contact shadow at the very bottom for depth */}
+            <rect x="18" y="80" width="124" height="14" rx="7" fill={cfg.side} opacity="0.45" />
 
-            {/* Wood grain planks - subtle vertical lines */}
-            <g opacity="0.35" stroke={cfg.woodDarker} strokeWidth="1.2" strokeLinecap="round">
-                <line x1="42" y1="22" x2="42" y2="92" />
-                <line x1="80" y1="22" x2="80" y2="92" />
-                <line x1="118" y1="22" x2="118" y2="92" />
+            {/* Diagonal glossy sheen clipped to the face */}
+            <g clipPath={`url(#faceClip-${id})`}>
+                <path d="M8 14 L70 14 L34 96 L8 96 Z" fill={`url(#sheen-${id})`} />
             </g>
 
-            {/* Wood texture highlights */}
-            <path
-                d="M14 18 Q80 22 146 18"
-                fill="none"
-                stroke={cfg.woodLight}
-                strokeWidth="1.4"
-                opacity="0.55"
-            />
+            {/* Seam where lid meets body */}
+            <rect x="8" y="14" width="144" height="3" rx="1.5" fill="#ffffff" opacity="0.35" />
 
-            {/* Top edge highlight where lid sits */}
-            <rect x="6" y="12" width="148" height="4" rx="1" fill={cfg.woodDark} />
-
-            {/* Gold horizontal band */}
-            <rect x="4" y="48" width="152" height="10" fill={`url(#bodyGold-${cfg.label})`} stroke={cfg.bandDark} strokeWidth="1" />
-            {/* Studs on band */}
-            {[20, 50, 80, 110, 140].map((x) => (
-                <circle key={x} cx={x} cy={53} r={1.8} fill={cfg.bandLight} stroke={cfg.bandDark} strokeWidth="0.6" />
-            ))}
-
-            {/* Gold vertical bands (corners + center) */}
-            <rect x="4" y="14" width="9" height="82" fill={`url(#bodyGold-${cfg.label})`} stroke={cfg.bandDark} strokeWidth="0.8" />
-            <rect x="147" y="14" width="9" height="82" fill={`url(#bodyGold-${cfg.label})`} stroke={cfg.bandDark} strokeWidth="0.8" />
-            <rect x="75" y="14" width="10" height="82" fill={`url(#bodyGold-${cfg.label})`} stroke={cfg.bandDark} strokeWidth="0.8" />
-
-            {/* Lock plate */}
-            <rect x="68" y="40" width="24" height="32" rx="3" fill={`url(#bodyGold-${cfg.label})`} stroke={cfg.bandDark} strokeWidth="1.2" />
-            {/* Keyhole */}
-            <circle cx="80" cy="54" r="3.4" fill={cfg.woodDarker} />
-            <rect x="78.5" y="54" width="3" height="8" rx="0.6" fill={cfg.woodDarker} />
-            {/* Lock highlight */}
-            <rect x="70" y="42" width="20" height="2" rx="1" fill={cfg.bandLight} opacity="0.7" />
-
-            {/* Bottom shadow */}
-            <rect x="14" y="88" width="132" height="6" rx="1" fill={cfg.woodDarker} opacity="0.6" />
+            {/* Centered emblem — clean rounded diamond, no keyhole clutter */}
+            <g transform="translate(80 56)">
+                <rect x="-15" y="-15" width="30" height="30" rx="9" transform="rotate(45)" fill={cfg.side} opacity="0.35" />
+                <rect x="-12" y="-12" width="24" height="24" rx="7" transform="rotate(45)" fill={`url(#emblem-${id})`} />
+                <rect x="-12" y="-12" width="24" height="24" rx="7" transform="rotate(45)" fill="none" stroke="#ffffff" strokeWidth="1" strokeOpacity="0.6" />
+            </g>
         </svg>
     );
 }
 
 function ChestLidSvg({ cfg }: { cfg: ChestCfg }) {
+    const id = cfg.label;
     return (
         <svg viewBox="0 0 160 70" className="w-full h-full block overflow-visible" xmlns="http://www.w3.org/2000/svg">
             <defs>
-                <linearGradient id={`lidWood-${cfg.label}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stopColor={cfg.woodLight} />
-                    <stop offset="0.6" stopColor={cfg.woodMid} />
-                    <stop offset="1" stopColor={cfg.woodDark} />
+                <linearGradient id={`lid-${id}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor={cfg.faceLight} />
+                    <stop offset="0.55" stopColor={cfg.faceMid} />
+                    <stop offset="1" stopColor={cfg.faceDeep} />
                 </linearGradient>
-                <linearGradient id={`lidGold-${cfg.label}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stopColor={cfg.bandLight} />
-                    <stop offset="0.55" stopColor={cfg.bandMid} />
-                    <stop offset="1" stopColor={cfg.bandDark} />
+                <linearGradient id={`lidGloss-${id}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor="#ffffff" stopOpacity="0.7" />
+                    <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
                 </linearGradient>
             </defs>
 
-            {/* Curved lid dome */}
+            {/* Smooth rounded dome — no studs, no grain */}
             <path
-                d="M6 64 L6 36 Q6 6 80 6 Q154 6 154 36 L154 64 Z"
-                fill={`url(#lidWood-${cfg.label})`}
-                stroke={cfg.woodDarker}
-                strokeWidth="2"
-                strokeLinejoin="round"
+                d="M8 66 L8 34 Q8 8 80 8 Q152 8 152 34 L152 66 Z"
+                fill={`url(#lid-${id})`}
+            />
+            {/* Crisp rim outline */}
+            <path
+                d="M8 66 L8 34 Q8 8 80 8 Q152 8 152 34 L152 66 Z"
+                fill="none" stroke={cfg.rim} strokeWidth="1.6" strokeOpacity="0.7"
             />
 
-            {/* Wood grain on lid */}
-            <g opacity="0.35" stroke={cfg.woodDarker} strokeWidth="1.2" strokeLinecap="round" fill="none">
-                <path d="M42 16 Q42 40 42 62" />
-                <path d="M80 10 Q80 36 80 62" />
-                <path d="M118 16 Q118 40 118 62" />
-            </g>
-
-            {/* Top sheen / highlight */}
+            {/* Soft top gloss band following the dome curve */}
             <path
-                d="M22 18 Q80 6 138 18"
-                fill="none"
-                stroke={cfg.woodLight}
-                strokeWidth="2"
-                strokeLinecap="round"
-                opacity="0.7"
-            />
-            <path
-                d="M30 12 Q80 0 130 12"
-                fill="none"
-                stroke="rgba(255,255,255,0.5)"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                opacity="0.6"
+                d="M16 32 Q16 16 80 16 Q144 16 144 32 L144 40 Q144 26 80 26 Q16 26 16 40 Z"
+                fill={`url(#lidGloss-${id})`}
             />
 
-            {/* Gold corner caps */}
-            <path
-                d="M6 64 L6 36 Q6 18 22 10 L22 64 Z"
-                fill={`url(#lidGold-${cfg.label})`}
-                stroke={cfg.bandDark}
-                strokeWidth="1"
-            />
-            <path
-                d="M154 64 L154 36 Q154 18 138 10 L138 64 Z"
-                fill={`url(#lidGold-${cfg.label})`}
-                stroke={cfg.bandDark}
-                strokeWidth="1"
-            />
-
-            {/* Gold center vertical band */}
-            <path
-                d="M75 8 L85 8 L85 64 L75 64 Z"
-                fill={`url(#lidGold-${cfg.label})`}
-                stroke={cfg.bandDark}
-                strokeWidth="0.8"
-            />
-
-            {/* Lock latch on the lid */}
-            <rect x="71" y="50" width="18" height="18" rx="2.5" fill={`url(#lidGold-${cfg.label})`} stroke={cfg.bandDark} strokeWidth="1.2" />
-            <rect x="73" y="52" width="14" height="2" rx="1" fill={cfg.bandLight} opacity="0.8" />
-
-            {/* Studs around the lid */}
-            {[14, 80, 146].map((x) => (
-                <circle key={x} cx={x} cy={58} r={1.8} fill={cfg.bandLight} stroke={cfg.bandDark} strokeWidth="0.6" />
-            ))}
-
-            {/* Bottom edge dark line */}
-            <rect x="6" y="62" width="148" height="4" rx="1" fill={cfg.woodDarker} opacity="0.7" />
+            {/* Bottom seam shadow */}
+            <rect x="8" y="60" width="144" height="6" rx="3" fill={cfg.side} opacity="0.4" />
         </svg>
     );
 }

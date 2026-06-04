@@ -47,7 +47,7 @@ export function MigrationPromptModal() {
                                 onClick={() => handle('migrate-local')}
                                 disabled={!!busy}
                                 className="w-full rounded-xl py-3 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition disabled:opacity-50"
-                                style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)', color: 'white' }}
+                                style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', color: 'white' }}
                             >
                                 {busy === 'migrate-local' ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />

@@ -82,8 +82,8 @@ function ProgressRing({ completed, total }: ProgressRingProps) {
                     />
                     <defs>
                         <linearGradient id="ritualGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="#7c3aed" />
-                            <stop offset="50%" stopColor="#a855f7" />
+                            <stop offset="0%" stopColor="#06b6d4" />
+                            <stop offset="50%" stopColor="#3b82f6" />
                             <stop offset="100%" stopColor="#06b6d4" />
                         </linearGradient>
                     </defs>
@@ -293,7 +293,7 @@ export const QuickRituals = memo(function QuickRituals({
                         {/* Header */}
                         <div className="flex items-center justify-between px-5 pb-3">
                             <div className="flex items-center gap-2">
-                                <Sparkles className="w-5 h-5 text-purple-500" />
+                                <Sparkles className="w-5 h-5 text-cyan-500" />
                                 <h2 className="text-lg font-bold">Quick Rituals</h2>
                             </div>
                             <motion.button
@@ -321,7 +321,7 @@ export const QuickRituals = memo(function QuickRituals({
                                         No rituals yet
                                     </p>
                                     <p className="text-xs text-[var(--color-text-secondary)] opacity-70">
-                                        Add the tag <span className="font-semibold text-purple-500">#{RITUAL_TAG}</span> to any recurring task
+                                        Add the tag <span className="font-semibold text-cyan-500">#{RITUAL_TAG}</span> to any recurring task
                                     </p>
                                 </div>
                             ) : (

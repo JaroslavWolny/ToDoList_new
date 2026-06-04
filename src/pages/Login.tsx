@@ -326,7 +326,7 @@ export function Login() {
                         disabled={busy || !!configError}
                         className="w-full flex items-center justify-center gap-2 rounded-xl py-3 px-4 font-semibold transition disabled:opacity-50"
                         style={{
-                            background: 'linear-gradient(135deg, #a855f7, #ec4899)',
+                            background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
                             color: 'white',
                         }}
                     >

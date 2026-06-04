@@ -60,10 +60,10 @@ export function HeatmapCalendar({ months = 5 }: HeatmapCalendarProps) {
 
     const getFillColor = (count: number) => {
         if (count === 0) return 'fill-gray-100 dark:fill-[#2a2b36]';
-        if (count <= 1) return 'fill-purple-200 dark:fill-purple-900/60';
-        if (count <= 3) return 'fill-purple-400 dark:fill-purple-700';
-        if (count <= 5) return 'fill-purple-500 dark:fill-purple-500';
-        return 'fill-purple-600 dark:fill-purple-400';
+        if (count <= 1) return 'fill-cyan-200 dark:fill-cyan-900/60';
+        if (count <= 3) return 'fill-cyan-400 dark:fill-cyan-700';
+        if (count <= 5) return 'fill-cyan-500 dark:fill-cyan-500';
+        return 'fill-cyan-600 dark:fill-cyan-400';
     };
 
     const CELL_SIZE = 11;

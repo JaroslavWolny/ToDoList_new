@@ -13,10 +13,10 @@ interface TaskFormProps {
 }
 
 const STEP_ICONS = [
-    { Icon: Target, gradient: 'from-primary-500 to-violet-500' },
+    { Icon: Target, gradient: 'from-primary-500 to-blue-500' },
     { Icon: Zap, gradient: 'from-amber-500 to-orange-500' },
     { Icon: CalendarClock, gradient: 'from-emerald-500 to-teal-500' },
-    { Icon: Tags, gradient: 'from-pink-500 to-rose-500' },
+    { Icon: Tags, gradient: 'from-amber-400 to-orange-500' },
 ];
 
 const STEPS = [
@@ -437,7 +437,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                     {/* Reminder */}
                                     <div className="w-full">
                                         <label className="flex items-center font-semibold" style={{ gap: 8, fontSize: 15, marginBottom: 8 }}>
-                                            <Clock className="text-violet-500" style={{ width: 18, height: 18 }} />
+                                            <Clock className="text-blue-500" style={{ width: 18, height: 18 }} />
                                             Reminder
                                         </label>
                                         <div className="card-surface rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-primary-500/50 transition-all">
@@ -533,7 +533,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                                     initial={{ scale: 0 }}
                                                     animate={{ scale: 1 }}
                                                     transition={{ delay: i * 0.04, type: 'spring', damping: 15 }}
-                                                    className="inline-flex items-center font-bold bg-gradient-to-r from-pink-500/10 to-violet-500/10 dark:from-pink-500/20 dark:to-violet-500/20 text-pink-600 dark:text-pink-400 border border-pink-500/20 rounded-xl"
+                                                    className="inline-flex items-center font-bold bg-gradient-to-r from-cyan-500/10 to-blue-500/10 dark:from-cyan-500/20 dark:to-blue-500/20 text-cyan-600 dark:text-cyan-300 border border-cyan-500/25 rounded-xl"
                                                     style={{ height: 36, paddingLeft: 12, paddingRight: 6, fontSize: 13, gap: 6 }}
                                                 >
                                                     #{tag}
@@ -567,7 +567,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                                         onClick={() => setTags(prev => [...prev, s])}
                                                         className={`rounded-xl transition-all ${
                                                             isRitual
-                                                                ? 'bg-gradient-to-r from-purple-500/15 to-cyan-500/15 dark:from-purple-500/25 dark:to-cyan-500/25 border border-purple-500/30 text-purple-600 dark:text-purple-400 font-bold'
+                                                                ? 'bg-gradient-to-r from-cyan-500/15 to-cyan-500/15 dark:from-cyan-500/25 dark:to-cyan-500/25 border border-cyan-500/30 text-cyan-600 dark:text-cyan-400 font-bold'
                                                                 : 'border border-dashed border-[var(--color-border)] text-[var(--color-text-secondary)] active:border-primary-500/50 active:text-primary-500'
                                                         }`}
                                                         style={{ height: 36, paddingLeft: 14, paddingRight: 14, fontSize: 13 }}
@@ -584,7 +584,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: 0.15 }}
-                                        className="w-full rounded-2xl bg-gradient-to-br from-primary-500/5 via-violet-500/5 to-pink-500/5 dark:from-primary-500/10 dark:via-violet-500/10 dark:to-pink-500/10 border border-primary-500/10"
+                                        className="w-full rounded-2xl bg-gradient-to-br from-primary-500/5 via-blue-500/5 to-amber-400/5 dark:from-primary-500/10 dark:via-blue-500/10 dark:to-amber-400/10 border border-primary-500/15"
                                         style={{ padding: 16 }}
                                     >
                                         <p className="font-bold text-[var(--color-text-secondary)] uppercase tracking-wider"

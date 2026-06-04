@@ -44,8 +44,8 @@ export function XPChart({ days = 14 }: XPChartProps) {
                     <AreaChart data={data}>
                         <defs>
                             <linearGradient id="xpGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                             </linearGradient>
                         </defs>
                         <XAxis
@@ -71,7 +71,7 @@ export function XPChart({ days = 14 }: XPChartProps) {
                         <Area
                             type="monotone"
                             dataKey="xp"
-                            stroke="#a855f7"
+                            stroke="#06b6d4"
                             strokeWidth={2}
                             fill="url(#xpGradient)"
                         />

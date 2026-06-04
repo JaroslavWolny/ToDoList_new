@@ -17,9 +17,9 @@ const RARITY_CONFIG: Record<AvatarRarity, { label: string; color: string; bg: st
     STARTER: { label: 'Starter', color: 'text-gray-400', bg: 'bg-gray-500/10', border: 'border-gray-500/20', glow: '', emoji: '⚪' },
     COMMON: { label: 'Common', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', glow: 'shadow-emerald-500/10', emoji: '🟢' },
     RARE: { label: 'Rare', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', glow: 'shadow-blue-500/10', emoji: '🔵' },
-    EPIC: { label: 'Epic', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20', glow: 'shadow-purple-500/20', emoji: '🟣' },
+    EPIC: { label: 'Epic', color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', glow: 'shadow-cyan-500/20', emoji: '💎' },
     LEGENDARY: { label: 'Legendary', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', glow: 'shadow-yellow-500/20', emoji: '🌟' },
-    MYTHIC: { label: 'Mythic', color: 'text-fuchsia-300', bg: 'bg-gradient-to-br from-fuchsia-500/15 via-rose-500/10 to-amber-500/15', border: 'border-fuchsia-400/40', glow: 'shadow-fuchsia-500/30', emoji: '🔱' },
+    MYTHIC: { label: 'Mythic', color: 'text-amber-300', bg: 'bg-gradient-to-br from-amber-500/20 via-orange-500/15 to-amber-500/20', border: 'border-amber-400/50', glow: 'shadow-amber-500/40', emoji: '🔱' },
 };
 
 type OwnershipFilter = 'all' | 'owned' | 'locked';
@@ -220,7 +220,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                                 initial={{ scale: 0, rotate: -180 }}
                                 animate={{ scale: 1, rotate: 0 }}
                                 transition={{ type: 'spring', damping: 12, stiffness: 200 }}
-                                className="select-none flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500/20 to-violet-500/20"
+                                className="select-none flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500/20 to-blue-500/20"
                                 style={{ width: 48, height: 48 }}
                             >
                                 <ShoppingBag className="text-primary-400" style={{ width: 26, height: 26 }} strokeWidth={2} />
@@ -248,7 +248,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                             </div>
                             <div className="bg-[var(--color-border)] rounded-full overflow-hidden" style={{ height: 8 }}>
                                 <motion.div
-                                    className="h-full rounded-full bg-gradient-to-r from-primary-500 via-violet-500 to-pink-500"
+                                    className="h-full rounded-full bg-gradient-to-r from-primary-400 via-blue-500 to-amber-400"
                                     initial={{ width: 0 }}
                                     animate={{ width: `${collectionProgress}%` }}
                                     transition={{ type: 'spring', damping: 20, stiffness: 100, delay: 0.3 }}
@@ -290,7 +290,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                                     onClick={() => setCategoryFilter(cat.id)}
                                     className={`flex-shrink-0 flex items-center rounded-xl font-bold transition-all ${
                                         categoryFilter === cat.id
-                                            ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30'
+                                            ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
                                             : 'text-[var(--color-text-secondary)] active:text-[var(--color-text)] border border-transparent'
                                     }`}
                                     style={{ height: 36, paddingLeft: 12, paddingRight: 14, fontSize: 12, gap: 5 }}
@@ -375,7 +375,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                                                     >
                                                         <div className={`flex items-center justify-center rounded-2xl transition-all ${
                                                             isEquipped
-                                                                ? 'bg-gradient-to-br from-primary-500/20 to-violet-500/20 shadow-lg'
+                                                                ? 'bg-gradient-to-br from-primary-500/20 to-blue-500/20 shadow-lg'
                                                                 : unlocked
                                                                 ? 'bg-gradient-to-br from-gray-700 to-gray-900'
                                                                 : 'bg-gradient-to-br from-gray-800 to-gray-950'

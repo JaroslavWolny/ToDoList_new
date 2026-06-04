@@ -28,8 +28,8 @@ export function Stats() {
             icon: <Zap className="w-5 h-5" />,
             label: 'Total XP',
             value: totalXPEarned.toLocaleString(),
-            color: 'from-purple-500 to-violet-600',
-            shadow: 'shadow-purple-500/20',
+            color: 'from-cyan-500 to-blue-600',
+            shadow: 'shadow-cyan-500/20',
         },
         {
             icon: <CheckCircle2 className="w-5 h-5" />,

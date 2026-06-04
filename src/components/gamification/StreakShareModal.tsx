@@ -31,7 +31,7 @@ export function StreakShareModal({
     xp = 0,
     totalTasks = 0,
     handle = 'hero',
-    avatarColor = '#a78bfa',
+    avatarColor = '#67e8f9',
     topTag = '',
     peakHour = '',
     topDay = '',
@@ -119,7 +119,7 @@ export function StreakShareModal({
                         {/* Header */}
                         <div className="flex w-full shrink-0 items-center justify-between border-b border-white/[0.06] px-5 py-4">
                             <div className="flex items-center gap-2">
-                                <Sparkles className="h-4 w-4 text-purple-400" />
+                                <Sparkles className="h-4 w-4 text-cyan-400" />
                                 <p className="text-sm font-bold text-white/80">Share Your Progress</p>
                             </div>
                             <button
@@ -178,7 +178,7 @@ export function StreakShareModal({
                                 disabled={isGenerating}
                                 className="flex h-[52px] items-center justify-center gap-2 rounded-2xl px-4 text-sm font-semibold text-white shadow-lg transition-all hover:opacity-90 disabled:opacity-50"
                                 style={{
-                                    background: 'linear-gradient(135deg, #7c3aed, #a855f7, #ec4899)',
+                                    background: 'linear-gradient(135deg, #06b6d4, #22d3ee, #fbbf24)',
                                 }}
                             >
                                 {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}

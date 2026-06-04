@@ -92,7 +92,7 @@ export function Raids() {
                         to="/login"
                         className="inline-flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-sm font-semibold transition"
                         style={{
-                            background: 'linear-gradient(135deg, #a855f7, #ec4899)',
+                            background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
                             color: 'white',
                         }}
                     >
@@ -161,7 +161,7 @@ export function Raids() {
                         type="button"
                         onClick={() => { setShowCreate(true); setActionError(null); }}
                         className="rounded-xl px-3 py-2 text-xs font-semibold flex items-center gap-1.5"
-                        style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)', color: 'white' }}
+                        style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', color: 'white' }}
                     >
                         <Plus className="w-4 h-4" /> Nový
                     </button>
@@ -250,7 +250,7 @@ export function Raids() {
                                 onClick={handleCreate}
                                 disabled={creating}
                                 className="w-full rounded-xl py-2.5 px-4 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
-                                style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)', color: 'white' }}
+                                style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', color: 'white' }}
                             >
                                 {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                                 Vytvořit raid
@@ -282,7 +282,7 @@ export function Raids() {
                                 onClick={handleJoin}
                                 disabled={joining || joinCode.length < 4}
                                 className="w-full rounded-xl py-2.5 px-4 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
-                                style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)', color: 'white' }}
+                                style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', color: 'white' }}
                             >
                                 {joining ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
                                 Připojit

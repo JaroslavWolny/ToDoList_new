@@ -17,7 +17,7 @@ type EnhancedAchievement = Achievement & {
 const categories = [
     { key: 'streak', label: 'Streak', tint: 'from-orange-500/15 to-red-500/5', accent: 'text-orange-500', activeBg: 'bg-orange-500 shadow-orange-500/25', activeText: 'text-orange-100' },
     { key: 'tasks', label: 'Tasks', tint: 'from-emerald-500/15 to-green-500/5', accent: 'text-emerald-500', activeBg: 'bg-emerald-500 shadow-emerald-500/25', activeText: 'text-emerald-100' },
-    { key: 'xp', label: 'XP', tint: 'from-violet-500/15 to-indigo-500/5', accent: 'text-violet-500', activeBg: 'bg-violet-500 shadow-violet-500/25', activeText: 'text-violet-100' },
+    { key: 'xp', label: 'XP', tint: 'from-blue-500/15 to-blue-500/5', accent: 'text-blue-500', activeBg: 'bg-blue-500 shadow-blue-500/25', activeText: 'text-blue-100' },
     { key: 'special', label: 'Special', tint: 'from-sky-500/15 to-cyan-500/5', accent: 'text-sky-500', activeBg: 'bg-sky-500 shadow-sky-500/25', activeText: 'text-sky-100' },
 ] as const;
 
@@ -160,7 +160,7 @@ export function AchievementGrid() {
                 </div>
                 <div className={`w-full rounded-full overflow-hidden ${compact ? 'h-1.5' : 'h-2'} bg-black/5 dark:bg-white/10`}>
                     <motion.div
-                        className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"
+                        className="h-full bg-gradient-to-r from-blue-500 to-blue-500 rounded-full"
                         initial={{ width: 0 }}
                         animate={{ width: `${pct}%` }}
                         transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -223,7 +223,7 @@ export function AchievementGrid() {
         <div className="space-y-5 pb-6">
             {focusAchievement && (
                 <div className="card-surface rounded-[28px] p-4 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent" />
                     <div className="relative">
                         <div className="flex items-center gap-2 text-blue-500 mb-2">
                             <Target className="w-4 h-4" />

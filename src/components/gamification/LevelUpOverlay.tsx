@@ -16,7 +16,7 @@ export function LevelUpOverlay({ show, newLevel, onDismiss }: LevelUpOverlayProp
         x: (i * 37 + newLevel * 7) % 100,
         y: (i * 29 + newLevel * 11) % 100,
         delay: (i % 5) * 0.1,
-        color: ['#7c3aed', '#a855f7', '#c084fc', '#f59e0b', '#fbbf24'][i % 5],
+        color: ['#06b6d4', '#22d3ee', '#67e8f9', '#f59e0b', '#fbbf24'][i % 5],
     }));
 
     useEffect(() => {
@@ -62,7 +62,7 @@ export function LevelUpOverlay({ show, newLevel, onDismiss }: LevelUpOverlayProp
                         <motion.div
                             animate={{ rotate: 360 }}
                             transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-                            className="absolute -inset-8 rounded-full border-2 border-dashed border-purple-400/30"
+                            className="absolute -inset-8 rounded-full border-2 border-dashed border-cyan-400/30"
                         />
 
                         <div className="relative z-10 flex flex-col items-center gap-4">
@@ -77,7 +77,7 @@ export function LevelUpOverlay({ show, newLevel, onDismiss }: LevelUpOverlayProp
                                 initial={{ y: 20, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
                                 transition={{ delay: 0.3 }}
-                                className="text-lg font-bold uppercase tracking-widest text-purple-300"
+                                className="text-lg font-bold uppercase tracking-widest text-cyan-300"
                             >
                                 Level Up!
                             </motion.h2>
@@ -86,7 +86,7 @@ export function LevelUpOverlay({ show, newLevel, onDismiss }: LevelUpOverlayProp
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
                                 transition={{ delay: 0.5, type: 'spring' }}
-                                className="w-24 h-24 rounded-2xl bg-gradient-to-br from-purple-500 via-violet-500 to-indigo-600 flex items-center justify-center shadow-2xl shadow-purple-500/50"
+                                className="w-24 h-24 rounded-2xl bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600 flex items-center justify-center shadow-2xl shadow-cyan-500/50"
                             >
                                 <span className="text-4xl font-black text-white">{newLevel}</span>
                             </motion.div>

@@ -51,7 +51,7 @@ export function AccountSection() {
                     to="/login"
                     className="flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-sm font-semibold transition"
                     style={{
-                        background: 'linear-gradient(135deg, #a855f7, #ec4899)',
+                        background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
                         color: 'white',
                     }}
                 >
@@ -91,7 +91,7 @@ export function AccountSection() {
                 ) : (
                     <div
                         className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                        style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)' }}
+                        style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)' }}
                     >
                         {initials}
                     </div>

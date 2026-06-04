@@ -262,12 +262,12 @@ export function Dashboard() {
             <div
                 onClick={() => quickInputRef.current?.focus()}
                 className={`relative w-full mb-5 flex items-center gap-2.5 pl-3.5 pr-1.5 py-1.5 rounded-2xl cursor-text transition-all duration-200 glass-card ${
-                    quickFocused ? 'border-purple-500/40 shadow-lg shadow-purple-500/10' : ''
+                    quickFocused ? 'border-cyan-400/50 shadow-lg shadow-cyan-400/10' : ''
                 }`}
             >
                 <Sparkles
                     className={`w-4 h-4 shrink-0 transition-colors ${
-                        quickFocused || quickTitle ? 'text-purple-400' : 'text-[var(--color-text-tertiary)]'
+                        quickFocused || quickTitle ? 'text-cyan-400' : 'text-[var(--color-text-tertiary)]'
                     }`}
                     strokeWidth={2.4}
                 />
@@ -342,7 +342,7 @@ export function Dashboard() {
                         className="-mt-3 mb-4 flex flex-wrap gap-1.5 pl-3 overflow-hidden"
                     >
                         {quickParsed.deadline && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/12 border border-purple-500/30 text-[10px] font-bold text-purple-400">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/12 border border-cyan-500/30 text-[10px] font-bold text-cyan-500">
                                 <Clock className="w-2.5 h-2.5" strokeWidth={3} />
                                 {formatDeadlineChip(quickParsed.deadline)}
                             </span>
@@ -414,8 +414,8 @@ export function Dashboard() {
                                     />
                                     <defs>
                                         <linearGradient id="goalGrad" x1="0" y1="0" x2="1" y2="1">
-                                            <stop offset="0%" stopColor="#a855f7" />
-                                            <stop offset="100%" stopColor="#ec4899" />
+                                            <stop offset="0%" stopColor="#06b6d4" />
+                                            <stop offset="100%" stopColor="#3b82f6" />
                                         </linearGradient>
                                     </defs>
                                 </svg>

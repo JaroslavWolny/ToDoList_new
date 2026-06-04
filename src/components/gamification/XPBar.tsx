@@ -30,7 +30,7 @@ export function XPBar() {
                     animate={{ width: `${progress}%` }}
                     transition={{ type: 'spring', stiffness: 80, damping: 18 }}
                     style={{
-                        boxShadow: '0 0 12px rgba(168, 85, 247, 0.55), inset 0 1px 0 rgba(255,255,255,0.2)',
+                        boxShadow: '0 0 14px rgba(34, 211, 238, 0.6), inset 0 1px 0 rgba(255,255,255,0.25)',
                     }}
                 />
                 {/* Highlight sweep */}

@@ -164,8 +164,8 @@ export function MilestoneShareOverlay() {
                     >
                         <div className="relative z-10 flex items-center justify-between mb-4">
                             <div className="flex items-center gap-1.5">
-                                <Sparkles className="w-3.5 h-3.5 text-fuchsia-300" />
-                                <span className="text-[10px] uppercase tracking-[0.22em] font-black text-fuchsia-200">
+                                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                                <span className="text-[10px] uppercase tracking-[0.22em] font-black text-amber-200">
                                     {copy.tier} TIER UNLOCKED
                                 </span>
                             </div>
@@ -188,7 +188,7 @@ export function MilestoneShareOverlay() {
                             >
                                 <div className="text-[7rem] leading-none">🔥</div>
                             </motion.div>
-                            <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-fuchsia-200/80 mb-1">
+                            <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-amber-200/80 mb-1">
                                 {streakCurrent}-day streak
                             </p>
                             <h2 className="text-2xl font-black text-white tracking-tight">
@@ -207,7 +207,7 @@ export function MilestoneShareOverlay() {
                                 whileTap={{ scale: 0.97 }}
                                 className="w-full h-13 py-3.5 rounded-2xl text-sm font-bold text-white shadow-xl flex items-center justify-center gap-2 disabled:opacity-60"
                                 style={{
-                                    background: 'linear-gradient(135deg, #7c3aed, #a855f7, #ec4899)',
+                                    background: 'linear-gradient(135deg, #06b6d4, #22d3ee, #fbbf24)',
                                     boxShadow: '0 12px 32px -8px rgba(168, 85, 247, 0.55), inset 0 1px 0 rgba(255,255,255,0.2)',
                                 }}
                             >

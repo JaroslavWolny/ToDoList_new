@@ -88,10 +88,10 @@ export function Onboarding() {
                 <motion.div
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="w-full max-w-sm mb-5 flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-fuchsia-500/15 to-purple-500/15 border border-fuchsia-500/30"
+                    className="w-full max-w-sm mb-5 flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-amber-400/15 to-cyan-500/15 border border-cyan-400/30"
                 >
-                    <Sparkles className="w-3.5 h-3.5 text-fuchsia-400 shrink-0" strokeWidth={2.6} />
-                    <p className="text-xs font-semibold text-fuchsia-200 leading-tight">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" strokeWidth={2.6} />
+                    <p className="text-xs font-semibold text-cyan-200 leading-tight">
                         Joining via <span className="font-black">@{referrer}</span> — welcome, hero.
                     </p>
                 </motion.div>

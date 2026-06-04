@@ -53,8 +53,8 @@ export function BottomNav() {
                                     layoutId="navIndicator"
                                     className="absolute -top-2 w-1.5 h-1.5 rounded-full"
                                     style={{
-                                        background: 'linear-gradient(135deg, #a855f7, #ec4899)',
-                                        boxShadow: '0 0 12px rgba(168, 85, 247, 0.65)',
+                                        background: 'linear-gradient(135deg, #22d3ee, #3b82f6)',
+                                        boxShadow: '0 0 14px rgba(34, 211, 238, 0.7)',
                                     }}
                                     transition={{ type: 'spring', stiffness: 360, damping: 28 }}
                                 />

@@ -95,7 +95,7 @@ export const TaskCard = memo(function TaskCard({ task, onComplete, onDelete, onE
                             ? 'bg-white/5 border-white/10 cursor-not-allowed'
                             : task.status === 'COMPLETED' || isCompleting
                                 ? 'bg-gradient-to-br from-emerald-400 to-green-500 border-transparent shadow-lg shadow-emerald-500/40'
-                                : 'border-[var(--color-border-strong)] hover:border-purple-500 hover:bg-purple-500/10'
+                                : 'border-[var(--color-border-strong)] hover:border-cyan-400 hover:bg-cyan-400/10'
                     }`}
                 >
                     {isLocked && <Lock className="w-3.5 h-3.5 text-[var(--color-text-tertiary)]" />}
@@ -148,7 +148,7 @@ export const TaskCard = memo(function TaskCard({ task, onComplete, onDelete, onE
                                                 onTagClick(tag);
                                             }
                                         }}
-                                        className={`px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-purple-500/12 text-purple-400 border border-purple-500/20 ${onTagClick ? 'hover:bg-purple-500/20 cursor-pointer' : 'cursor-default'}`}
+                                        className={`px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-cyan-500/12 text-cyan-500 border border-cyan-500/25 ${onTagClick ? 'hover:bg-cyan-500/20 cursor-pointer' : 'cursor-default'}`}
                                     >
                                         {tag}
                                     </button>
