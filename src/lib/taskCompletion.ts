@@ -25,7 +25,6 @@ export const completeTaskTransaction = (
     // ── 1. Compute all user-store deltas up front ──────────────────
     let xpDelta = result.xpEarned;
     let coinsDelta = 0;
-    const healthDelta = 1; // gainHealth
 
     if (result.reward) {
         if (result.reward.currency === 'XP') {
@@ -38,11 +37,19 @@ export const completeTaskTransaction = (
     // ── 2. Mission progress (updates mission store only) ───────────
     const latestTaskStore = useTaskStore.getState();
     const task = latestTaskStore.tasks.find((item) => item.id === taskId);
+    const completionsToday = latestTaskStore.getCompletionsToday();
     const missionUpdates = getMissionProgressUpdates(
         task,
-        latestTaskStore.getCompletionsToday(),
+        completionsToday,
         latestTaskStore.tasks
     );
+
+    // ── HP economy: heal ONLY on the completion that reaches the daily goal,
+    // i.e. once per day. Previously every completion did health+1, which pinned
+    // HP at max and neutralised the overdue-deadline damage mechanic entirely.
+    // Now small slips actually hurt and finishing the day's goal restores 1 HP.
+    const dailyGoal = Math.max(1, userState.settings.dailyGoal);
+    const healthDelta = completionsToday.length === dailyGoal ? 1 : 0;
 
     const missionStore = useMissionStore.getState();
     Object.entries(missionUpdates).forEach(([missionType, progress]) => {
