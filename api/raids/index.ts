@@ -33,6 +33,7 @@ const generateUniqueInviteCode = async (db: FirebaseFirestore.Firestore): Promis
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
     const auth = await verifyAuth(req);
     if (!auth.ok) {
         return res.status(auth.status).json({ error: auth.error });
@@ -44,14 +45,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (req.method === 'GET') {
+        // NOTE: no orderBy here on purpose. Combining `array-contains` with
+        // `orderBy` on a different field requires a composite Firestore index.
+        // We sort in memory instead (a user has at most MAX_RAIDS_PER_USER raids).
         const snapshot = await db
             .collection('raids')
             .where('memberUids', 'array-contains', auth.user.uid)
-            .orderBy('createdAt', 'desc')
             .limit(50)
             .get();
 
-        const raids = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        const raids = snapshot.docs
+            .map((doc) => ({ id: doc.id, ...(doc.data() as { createdAt?: string }) }))
+            .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
         return res.status(200).json({ raids });
     }
 
@@ -60,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const raidName = sanitizeName(body.name, 'Boss Raid', 60);
         const description = sanitizeName(body.description, '', 240);
-        const bossName = sanitizeName(body.bossName, 'Stínový obr', 60);
+        const bossName = sanitizeName(body.bossName, 'Shadow Giant', 60);
         const bossHp = clampHp(typeof body.bossHp === 'number' ? body.bossHp : DEFAULT_BOSS_HP);
 
         const ownerCountSnap = await db
@@ -69,7 +74,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .count()
             .get();
         if (ownerCountSnap.data().count >= MAX_RAIDS_PER_USER) {
-            return res.status(429).json({ error: `Max ${MAX_RAIDS_PER_USER} raidů na uživatele` });
+            return res.status(429).json({ error: `Max ${MAX_RAIDS_PER_USER} raids per user` });
         }
 
         const inviteCode = await generateUniqueInviteCode(db);
@@ -116,4 +121,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.status(405).json({ error: 'Method Not Allowed' });
+  } catch (err) {
+    console.error('[api/raids] unhandled error', err);
+    const message = err instanceof Error ? err.message : 'Internal Server Error';
+    return res.status(500).json({ error: message });
+  }
 }

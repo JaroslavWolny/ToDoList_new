@@ -24,7 +24,7 @@ export function Raids() {
     // Form state
     const [name, setName] = useState('Boss Raid');
     const [description, setDescription] = useState('');
-    const [bossName, setBossName] = useState('Stínový obr');
+    const [bossName, setBossName] = useState('Shadow Giant');
     const [bossHp, setBossHp] = useState(50);
     const [joinCode, setJoinCode] = useState('');
     const [actionError, setActionError] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export function Raids() {
         let alive = true;
         listRaids()
             .then((rs) => { if (alive) setRaids(rs); })
-            .catch((err) => { if (alive) setLoadError(err instanceof Error ? err.message : 'Načtení selhalo'); });
+            .catch((err) => { if (alive) setLoadError(err instanceof Error ? err.message : 'Failed to load'); });
         return () => { alive = false; };
     }, [status]);
 
@@ -64,9 +64,9 @@ export function Raids() {
     if (status === 'unavailable') {
         return (
             <div className="page-container">
-                <h1 className="text-2xl font-bold mb-4">Raidy</h1>
+                <h1 className="text-2xl font-bold mb-4">Raids</h1>
                 <div className="card-surface rounded-2xl p-4 text-sm text-[var(--color-text-secondary)]">
-                    Účty a co-op raidy nejsou nakonfigurovány.
+                    Accounts and co-op raids are not configured.
                 </div>
             </div>
         );
@@ -83,10 +83,10 @@ export function Raids() {
     if (!user) {
         return (
             <div className="page-container">
-                <h1 className="text-2xl font-bold mb-4">Raidy</h1>
+                <h1 className="text-2xl font-bold mb-4">Raids</h1>
                 <div className="card-surface rounded-2xl p-5 text-center space-y-3">
                     <p className="text-sm text-[var(--color-text-secondary)]">
-                        Pro hraní co-op raidů se musíš nejdřív přihlásit.
+                        Sign in first to play co-op raids.
                     </p>
                     <Link
                         to="/login"
@@ -96,7 +96,7 @@ export function Raids() {
                             color: 'white',
                         }}
                     >
-                        Přihlásit se
+                        Sign in
                     </Link>
                 </div>
             </div>
@@ -118,7 +118,7 @@ export function Raids() {
             setShowCreate(false);
             navigate(`/raids/${raid.id}`);
         } catch (err) {
-            setActionError(err instanceof Error ? err.message : 'Vytvoření selhalo');
+            setActionError(err instanceof Error ? err.message : 'Failed to create');
         } finally {
             setCreating(false);
         }
@@ -139,7 +139,7 @@ export function Raids() {
             setShowJoin(false);
             navigate(`/raids/${raid.id}`);
         } catch (err) {
-            setActionError(err instanceof Error ? err.message : 'Připojení selhalo');
+            setActionError(err instanceof Error ? err.message : 'Failed to join');
         } finally {
             setJoining(false);
         }
@@ -148,14 +148,14 @@ export function Raids() {
     return (
         <div className="page-container">
             <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-bold">Raidy</h1>
+                <h1 className="text-2xl font-bold">Raids</h1>
                 <div className="flex gap-2">
                     <button
                         type="button"
                         onClick={() => { setShowJoin(true); setActionError(null); }}
                         className="card-surface rounded-xl px-3 py-2 text-xs font-semibold flex items-center gap-1.5"
                     >
-                        <Users className="w-4 h-4" /> Připojit
+                        <Users className="w-4 h-4" /> Join
                     </button>
                     <button
                         type="button"
@@ -163,7 +163,7 @@ export function Raids() {
                         className="rounded-xl px-3 py-2 text-xs font-semibold flex items-center gap-1.5"
                         style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', color: 'white' }}
                     >
-                        <Plus className="w-4 h-4" /> Nový
+                        <Plus className="w-4 h-4" /> New
                     </button>
                 </div>
             </div>
@@ -177,7 +177,7 @@ export function Raids() {
             {sortedRaids === null && !loadError && (
                 <div className="card-surface rounded-2xl p-5 flex items-center gap-3">
                     <Loader2 className="w-5 h-5 animate-spin text-[var(--color-text-secondary)]" />
-                    <span className="text-sm text-[var(--color-text-secondary)]">Načítám raidy...</span>
+                    <span className="text-sm text-[var(--color-text-secondary)]">Loading raids...</span>
                 </div>
             )}
 
@@ -185,7 +185,7 @@ export function Raids() {
                 <div className="card-surface rounded-2xl p-5 text-center space-y-2">
                     <Swords className="w-10 h-10 mx-auto text-[var(--color-text-tertiary)]" />
                     <p className="text-sm text-[var(--color-text-secondary)]">
-                        Zatím žádný raid. Vytvoř první nebo se připoj pozvánkou od kámoše.
+                        No raids yet. Create your first one or join with a friend's invite code.
                     </p>
                 </div>
             )}
@@ -200,9 +200,9 @@ export function Raids() {
 
             <AnimatePresence>
                 {showCreate && (
-                    <Modal title="Vytvořit raid" onClose={() => setShowCreate(false)}>
+                    <Modal title="Create raid" onClose={() => setShowCreate(false)}>
                         <div className="space-y-3">
-                            <FormField label="Název raidu">
+                            <FormField label="Raid name">
                                 <input
                                     type="text"
                                     value={name}
@@ -211,7 +211,7 @@ export function Raids() {
                                     className="form-input"
                                 />
                             </FormField>
-                            <FormField label="Popis (volitelně)">
+                            <FormField label="Description (optional)">
                                 <textarea
                                     rows={2}
                                     value={description}
@@ -220,7 +220,7 @@ export function Raids() {
                                     className="form-input resize-none"
                                 />
                             </FormField>
-                            <FormField label="Boss název">
+                            <FormField label="Boss name">
                                 <input
                                     type="text"
                                     value={bossName}
@@ -253,16 +253,16 @@ export function Raids() {
                                 style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', color: 'white' }}
                             >
                                 {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                                Vytvořit raid
+                                Create raid
                             </button>
                         </div>
                     </Modal>
                 )}
 
                 {showJoin && (
-                    <Modal title="Připojit do raidu" onClose={() => setShowJoin(false)}>
+                    <Modal title="Join a raid" onClose={() => setShowJoin(false)}>
                         <div className="space-y-3">
-                            <FormField label="Kód pozvánky">
+                            <FormField label="Invite code">
                                 <input
                                     type="text"
                                     value={joinCode}
@@ -285,7 +285,7 @@ export function Raids() {
                                 style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', color: 'white' }}
                             >
                                 {joining ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
-                                Připojit
+                                Join
                             </button>
                         </div>
                     </Modal>
@@ -339,7 +339,7 @@ function RaidCard({ raid }: { raid: Raid }) {
             )}
             <div className="mt-2.5 flex items-center justify-between text-[11px] text-[var(--color-text-tertiary)]">
                 <span className="flex items-center gap-1"><Users className="w-3 h-3" />{memberCount}</span>
-                <span>{raid.bossesDefeated} pora­žených</span>
+                <span>{raid.bossesDefeated} defeated</span>
                 <span className="font-mono">{raid.inviteCode}</span>
             </div>
         </Link>

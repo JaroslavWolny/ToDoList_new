@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             await messaging.send({
                 notification: {
                     title: '🧪 QuestDo Test',
-                    body: 'Push notifications jedou! Můžeš jít dál hrdino.',
+                    body: 'Push notifications are live! Carry on, hero.',
                 },
                 token: data.token,
                 webpush: { fcmOptions: { link: '/' } },

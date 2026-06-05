@@ -27,7 +27,7 @@ export function RaidDetail() {
             setEvents(data.events);
             setError(null);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Načtení selhalo');
+            setError(err instanceof Error ? err.message : 'Failed to load');
         } finally {
             setLoading(false);
         }
@@ -45,8 +45,8 @@ export function RaidDetail() {
             <div className="page-container">
                 <BackLink />
                 <div className="card-surface rounded-2xl p-5 text-center">
-                    <p className="text-sm mb-3">Pro zobrazení raidu se přihlas.</p>
-                    <Link to="/login" className="text-sm font-semibold underline">Přihlásit se</Link>
+                    <p className="text-sm mb-3">Sign in to view this raid.</p>
+                    <Link to="/login" className="text-sm font-semibold underline">Sign in</Link>
                 </div>
             </div>
         );
@@ -65,7 +65,7 @@ export function RaidDetail() {
             <div className="page-container">
                 <BackLink />
                 <div className="rounded-xl p-4 text-sm bg-red-500/10 text-red-300 border border-red-500/20">
-                    {error ?? 'Raid nenalezen'}
+                    {error ?? 'Raid not found'}
                 </div>
             </div>
         );
@@ -89,13 +89,13 @@ export function RaidDetail() {
     };
 
     const handleArchive = async () => {
-        if (!window.confirm('Opravdu archivovat tento raid? Damage se přestane počítat.')) return;
+        if (!window.confirm('Archive this raid? Damage will no longer be counted.')) return;
         setArchiving(true);
         try {
             await archiveRaid(raid.id);
             navigate('/raids');
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Archivace selhala');
+            setError(err instanceof Error ? err.message : 'Failed to archive');
         } finally {
             setArchiving(false);
         }
@@ -127,7 +127,7 @@ export function RaidDetail() {
                     className="w-full mt-2 flex items-center justify-between rounded-xl px-3 py-2 text-xs font-mono bg-[var(--color-surface)] border border-[var(--color-border)]"
                 >
                     <span className="text-[var(--color-text-secondary)] normal-case">
-                        Pozvánka: <span className="font-bold tracking-widest">{raid.inviteCode}</span>
+                        Invite: <span className="font-bold tracking-widest">{raid.inviteCode}</span>
                     </span>
                     {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
@@ -163,11 +163,11 @@ export function RaidDetail() {
             ) : (
                 <div className="card-surface rounded-2xl p-5 mb-4 text-center">
                     <Trophy className="w-10 h-10 mx-auto mb-2 text-amber-400" />
-                    <p className="text-sm font-semibold">Žádný aktivní boss</p>
+                    <p className="text-sm font-semibold">No active boss</p>
                 </div>
             )}
 
-            <Section title={`Členové (${members.length})`}>
+            <Section title={`Members (${members.length})`}>
                 <div className="space-y-1.5">
                     {sortedMembers.map((m, idx) => (
                         <div key={m.uid} className="card-surface rounded-xl p-2.5 flex items-center gap-3">
@@ -191,7 +191,7 @@ export function RaidDetail() {
                                 <p className="text-sm font-semibold truncate flex items-center gap-1.5">
                                     {m.displayName}
                                     {m.uid === raid.ownerUid && <Crown className="w-3 h-3 text-amber-400" />}
-                                    {m.uid === user?.uid && <span className="text-[10px] text-[var(--color-text-tertiary)]">(ty)</span>}
+                                    {m.uid === user?.uid && <span className="text-[10px] text-[var(--color-text-tertiary)]">(you)</span>}
                                 </p>
                             </div>
                             <div className="text-sm font-bold flex items-center gap-1 text-[var(--color-accent)] flex-shrink-0">
@@ -202,10 +202,10 @@ export function RaidDetail() {
                 </div>
             </Section>
 
-            <Section title="Posledních 50 úderů">
+            <Section title="Last 50 hits">
                 {events.length === 0 ? (
                     <div className="card-surface rounded-xl p-4 text-center text-xs text-[var(--color-text-secondary)]">
-                        Zatím žádný damage. Dokonči task a uvidíš ho tady.
+                        No damage yet. Complete a task and you'll see it here.
                     </div>
                 ) : (
                     <div className="space-y-1.5">
@@ -229,14 +229,14 @@ export function RaidDetail() {
             </Section>
 
             {isOwner && (
-                <Section title="Správa">
+                <Section title="Management">
                     <button
                         type="button"
                         onClick={handleArchive}
                         disabled={archiving}
                         className="w-full rounded-xl py-2.5 px-4 text-sm font-semibold bg-red-500/10 text-red-300 border border-red-500/20 disabled:opacity-50"
                     >
-                        {archiving ? 'Archivuji...' : 'Archivovat raid'}
+                        {archiving ? 'Archiving...' : 'Archive raid'}
                     </button>
                 </Section>
             )}
@@ -247,7 +247,7 @@ export function RaidDetail() {
 function BackLink() {
     return (
         <Link to="/raids" className="inline-flex items-center gap-1 mb-3 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
-            <ArrowLeft className="w-4 h-4" /> Zpět
+            <ArrowLeft className="w-4 h-4" /> Back
         </Link>
     );
 }

@@ -23,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const body = (req.body ?? {}) as { inviteCode?: unknown };
     const inviteCode = typeof body.inviteCode === 'string' ? body.inviteCode.trim().toUpperCase() : '';
     if (!inviteCode || inviteCode.length < 4 || inviteCode.length > 12) {
-        return res.status(400).json({ error: 'Neplatný kód pozvánky' });
+        return res.status(400).json({ error: 'Invalid invite code' });
     }
 
     const snapshot = await db
@@ -33,14 +33,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .get();
 
     if (snapshot.empty) {
-        return res.status(404).json({ error: 'Pozvánka neexistuje' });
+        return res.status(404).json({ error: 'Invite not found' });
     }
 
     const raidDoc = snapshot.docs[0];
     const data = raidDoc.data() as { memberUids?: string[]; status?: string };
 
     if (data.status === 'ARCHIVED') {
-        return res.status(410).json({ error: 'Raid je archivován' });
+        return res.status(410).json({ error: 'Raid is archived' });
     }
 
     if (Array.isArray(data.memberUids) && data.memberUids.includes(auth.user.uid)) {
@@ -48,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (Array.isArray(data.memberUids) && data.memberUids.length >= MAX_MEMBERS) {
-        return res.status(429).json({ error: `Maximum ${MAX_MEMBERS} členů` });
+        return res.status(429).json({ error: `Maximum ${MAX_MEMBERS} members` });
     }
 
     const now = new Date().toISOString();

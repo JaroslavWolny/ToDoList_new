@@ -5,16 +5,16 @@ import { calculateDamage, calculateNextBossHp, isValidPriority, sanitizeName } f
 
 const MAX_DAMAGE_PER_EVENT = 200;
 const DEFAULT_BOSS_NAMES = [
-    'Stínový obr',
-    'Korouvský drak',
-    'Ledový titán',
-    'Mor temnoty',
-    'Vyhořelý lich',
-    'Ohnivý kolos',
-    'Železný moloch',
-    'Hladový kraken',
-    'Hřímající čaroděj',
-    'Zatemněný král',
+    'Shadow Giant',
+    'Crimson Dragon',
+    'Frost Titan',
+    'Dark Plague',
+    'Burnt-Out Lich',
+    'Flame Colossus',
+    'Iron Moloch',
+    'Hungry Kraken',
+    'Thundering Sorcerer',
+    'Eclipsed King',
 ];
 
 type RaidData = {
@@ -42,6 +42,7 @@ const pickBossName = (tier: number): string => {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
     const auth = await verifyAuth(req);
     if (!auth.ok) {
         return res.status(auth.status).json({ error: auth.error });
@@ -61,10 +62,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (req.method === 'GET') {
         const snap = await raidRef.get();
-        if (!snap.exists) return res.status(404).json({ error: 'Raid neexistuje' });
+        if (!snap.exists) return res.status(404).json({ error: 'Raid not found' });
         const data = snap.data() as RaidData;
         if (!data.memberUids?.includes(auth.user.uid)) {
-            return res.status(403).json({ error: 'Nejsi členem tohoto raidu' });
+            return res.status(403).json({ error: 'You are not a member of this raid' });
         }
 
         const eventsSnap = await raidRef
@@ -85,7 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const body = (req.body ?? {}) as { priority?: unknown; isQuest?: unknown; taskTitle?: unknown };
 
         if (!isValidPriority(body.priority)) {
-            return res.status(400).json({ error: 'Neplatná priorita' });
+            return res.status(400).json({ error: 'Invalid priority' });
         }
         const priority = body.priority;
         const isQuest = body.isQuest === true;
@@ -189,20 +190,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         } catch (err) {
             const code = err instanceof Error ? err.message : 'UNKNOWN';
-            if (code === 'NOT_FOUND') return res.status(404).json({ error: 'Raid neexistuje' });
-            if (code === 'FORBIDDEN') return res.status(403).json({ error: 'Nejsi členem tohoto raidu' });
-            if (code === 'ARCHIVED') return res.status(410).json({ error: 'Raid je archivován' });
-            if (code === 'NO_ACTIVE_BOSS') return res.status(409).json({ error: 'Žádný aktivní boss' });
-            return res.status(500).json({ error: 'Damage selhal' });
+            if (code === 'NOT_FOUND') return res.status(404).json({ error: 'Raid not found' });
+            if (code === 'FORBIDDEN') return res.status(403).json({ error: 'You are not a member of this raid' });
+            if (code === 'ARCHIVED') return res.status(410).json({ error: 'Raid is archived' });
+            if (code === 'NO_ACTIVE_BOSS') return res.status(409).json({ error: 'No active boss' });
+            return res.status(500).json({ error: 'Damage failed' });
         }
     }
 
     if (req.method === 'DELETE') {
         const snap = await raidRef.get();
-        if (!snap.exists) return res.status(404).json({ error: 'Raid neexistuje' });
+        if (!snap.exists) return res.status(404).json({ error: 'Raid not found' });
         const data = snap.data() as RaidData;
         if (data.ownerUid !== auth.user.uid) {
-            return res.status(403).json({ error: 'Pouze tvůrce může smazat raid' });
+            return res.status(403).json({ error: 'Only the creator can delete this raid' });
         }
         await raidRef.update({
             status: 'ARCHIVED',
@@ -212,4 +213,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.status(405).json({ error: 'Method Not Allowed' });
+  } catch (err) {
+    console.error('[api/raids/[raidId]] unhandled error', err);
+    const message = err instanceof Error ? err.message : 'Internal Server Error';
+    return res.status(500).json({ error: message });
+  }
 }
