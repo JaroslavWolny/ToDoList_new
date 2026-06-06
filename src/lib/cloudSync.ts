@@ -36,6 +36,23 @@ let debounceTimer: number | null = null;
 let activeUid: string | null = null;
 let hydrating = false;
 let suppressNextWrite = false;
+// Server time (ms) of the most recent cloud snapshot we have applied or written.
+// Used for last-write-wins: we never let an older snapshot overwrite state we
+// already hold, and we never re-apply our own echoed write.
+let lastSyncedAtMs = 0;
+
+// Firestore stamps `updatedAt` with serverTimestamp(); read back it is a
+// Timestamp. Returns null when the value isn't a resolved server timestamp yet.
+const timestampToMillis = (value: unknown): number | null => {
+    if (value && typeof (value as { toMillis?: unknown }).toMillis === 'function') {
+        try {
+            return (value as { toMillis: () => number }).toMillis();
+        } catch {
+            return null;
+        }
+    }
+    return null;
+};
 
 const getDocRef = (uid: string) => {
     if (!firestore) return null;
@@ -169,7 +186,12 @@ const handleSignIn = async (uid: string) => {
     let cloud: CloudState | null = null;
     try {
         const snap = await getDoc(ref);
-        if (snap.exists()) cloud = snap.data() as CloudState;
+        if (snap.exists()) {
+            cloud = snap.data() as CloudState;
+            // Seed the LWW baseline so the live listener can tell genuinely newer
+            // remote writes apart from this initial copy / our own echoes.
+            lastSyncedAtMs = timestampToMillis(cloud.updatedAt) ?? 0;
+        }
     } catch (err) {
         console.warn('Cloud sync read failed:', err);
     }
@@ -241,10 +263,23 @@ const handleSignIn = async (uid: string) => {
     // Set up live cloud listener for cross-device sync
     unsubscribeCloud = onSnapshot(ref, (snap) => {
         if (!snap.exists()) return;
-        const data = snap.data() as CloudState;
-        // Only apply if metadata says this came from server (not our own write)
+        // Skip our own optimistic write echo (still has a local pending write).
         if (snap.metadata.hasPendingWrites) return;
+
+        const data = snap.data() as CloudState;
+        const incomingMs = timestampToMillis(data.updatedAt);
+
+        // Last-write-wins safety: a pending local edit (debounce armed) is the most
+        // recent user action and is about to be written, so never let an incoming
+        // snapshot clobber it — our write will go out and win as the later write.
+        if (debounceTimer !== null) return;
+
+        // Drop stale or duplicate snapshots: anything not strictly newer than what
+        // we already hold would only roll state backwards (or re-apply our echo).
+        if (incomingMs !== null && incomingMs <= lastSyncedAtMs) return;
+
         applyCloudSnapshot(data);
+        if (incomingMs !== null) lastSyncedAtMs = incomingMs;
     });
 
     startListening();
@@ -254,6 +289,7 @@ const handleSignOut = () => {
     stopListening();
     activeUid = null;
     suppressNextWrite = false;
+    lastSyncedAtMs = 0;
 };
 
 export const initCloudSync = (): void => {
