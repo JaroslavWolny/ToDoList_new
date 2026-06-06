@@ -9,6 +9,11 @@ import {
     DEFAULT_NOTIFICATION_MORNING,
     normalizeReminderHour,
 } from '../lib/reminders';
+import {
+    getFirebaseMessagingConfigError,
+    requestFirebaseNotificationPermission,
+    saveTokenToFirestore,
+} from '../lib/firebase';
 import { REFERRER_STORAGE_KEY } from '../lib/shareCard';
 
 const TOTAL_STEPS = 5;
@@ -49,7 +54,31 @@ export function Onboarding() {
         }
     }, [theme]);
 
-    const handleFinish = () => {
+    const [finishing, setFinishing] = useState(false);
+
+    const handleFinish = async () => {
+        if (finishing) return;
+        setFinishing(true);
+
+        const morning = normalizeReminderHour(notificationMorning, DEFAULT_NOTIFICATION_MORNING);
+        const evening = normalizeReminderHour(notificationEvening, DEFAULT_NOTIFICATION_EVENING);
+
+        // Only claim notifications are enabled if we actually got permission and
+        // registered a token. Otherwise the toggle would lie about its state.
+        let notificationsEnabled = false;
+        if (!getFirebaseMessagingConfigError()) {
+            try {
+                const token = await requestFirebaseNotificationPermission();
+                if (token) {
+                    await saveTokenToFirestore(token, morning, evening);
+                    notificationsEnabled = true;
+                }
+            } catch (error) {
+                console.error('Failed to register notifications during onboarding:', error);
+                notificationsEnabled = false;
+            }
+        }
+
         completeOnboarding({
             displayName: name || 'Hero',
             workStyle,
@@ -57,9 +86,9 @@ export function Onboarding() {
             dailyGoal,
             gamificationLevel,
             theme,
-            notificationMorning: normalizeReminderHour(notificationMorning, DEFAULT_NOTIFICATION_MORNING),
-            notificationEvening: normalizeReminderHour(notificationEvening, DEFAULT_NOTIFICATION_EVENING),
-            notificationsEnabled: true,
+            notificationMorning: morning,
+            notificationEvening: evening,
+            notificationsEnabled,
         });
         try { window.localStorage.removeItem(REFERRER_STORAGE_KEY); } catch { /* noop */ }
         navigate('/');
@@ -340,10 +369,11 @@ export function Onboarding() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={handleFinish}
-                        className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-sm shadow-lg shadow-green-500/30"
+                        disabled={finishing}
+                        className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-sm shadow-lg shadow-green-500/30 disabled:opacity-60"
                     >
                         <Rocket className="w-4 h-4" />
-                        Let's Go!
+                        {finishing ? 'Setting up…' : "Let's Go!"}
                     </motion.button>
                 )}
             </div>

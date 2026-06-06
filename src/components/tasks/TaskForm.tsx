@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Calendar, Clock, Repeat, Zap, AlertTriangle, Flame, Shield, Check, X, Rocket, Target, CalendarClock, Tags } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Calendar, Lock, Repeat, Zap, AlertTriangle, Flame, Shield, Check, X, Rocket, Target, CalendarClock, Tags } from 'lucide-react';
 import { Task, Priority, Recurrence } from '../../types';
 import { toDateTimeLocalInputValue } from '../../lib/dates';
 
@@ -434,12 +434,15 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                         </div>
                                     </div>
 
-                                    {/* Reminder */}
+                                    {/* Start date (locks the quest until then) */}
                                     <div className="w-full">
-                                        <label className="flex items-center font-semibold" style={{ gap: 8, fontSize: 15, marginBottom: 8 }}>
-                                            <Clock className="text-blue-500" style={{ width: 18, height: 18 }} />
-                                            Reminder
+                                        <label className="flex items-center font-semibold" style={{ gap: 8, fontSize: 15, marginBottom: 4 }}>
+                                            <Lock className="text-blue-500" style={{ width: 18, height: 18 }} />
+                                            Start date
                                         </label>
+                                        <p className="text-[var(--color-text-secondary)]" style={{ fontSize: 12, marginBottom: 8 }}>
+                                            Hides &amp; locks the quest until this time
+                                        </p>
                                         <div className="card-surface rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-primary-500/50 transition-all">
                                             <input
                                                 type="datetime-local"
