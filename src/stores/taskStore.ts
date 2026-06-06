@@ -178,7 +178,7 @@ interface TaskStore {
     addTask: (task: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate' | 'lastPenaltyAt'>) => Task;
     updateTask: (id: string, updates: Partial<Task>) => void;
     deleteTask: (id: string) => void;
-    completeTask: (id: string) => { xpEarned: number; comboMultiplier: number; reward: RandomReward | null } | null;
+    completeTask: (id: string) => { xpEarned: number; comboMultiplier: number; reward: RandomReward | null; appliedBuff: DailyThemeId | null } | null;
     failTask: (id: string) => void;
     processOverdueTasks: (gamificationLevel: 'CASUAL' | 'STANDARD' | 'HARDCORE') => { taskId: string; xpLost: number }[];
     resetRecurringTasks: () => void;
@@ -253,6 +253,20 @@ export const useTaskStore = create<TaskStore>()(
 
                 const xpEarned = Math.floor(baseXP * comboMultiplier);
 
+                // Surface the buff *only* when it actually changed this completion's XP,
+                // so the feedback never claims a bonus the player didn't really get.
+                let appliedBuff: DailyThemeId | null = null;
+                if (activeTheme === 'DOUBLE_HIGH' && task.priority === 'HIGH') {
+                    appliedBuff = 'DOUBLE_HIGH';
+                } else if (activeTheme === 'CRITICAL_FOCUS' && task.priority === 'CRITICAL') {
+                    appliedBuff = 'CRITICAL_FOCUS';
+                } else if (
+                    activeTheme === 'COMBO_BOOST' &&
+                    comboMultiplier > calculateComboMultiplier(completionsToday.length + 1)
+                ) {
+                    appliedBuff = 'COMBO_BOOST';
+                }
+
                 const completion: Completion = {
                     id: uuidv4(),
                     taskId: id,
@@ -311,7 +325,7 @@ export const useTaskStore = create<TaskStore>()(
                     reward = { ...reward, amount: Math.floor(reward.amount * 1.5) };
                 }
 
-                return { xpEarned, comboMultiplier, reward };
+                return { xpEarned, comboMultiplier, reward, appliedBuff };
             },
 
             failTask: (id) => {

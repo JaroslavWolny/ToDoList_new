@@ -11,6 +11,7 @@ import { StreakCounter } from '../components/gamification/StreakCounter';
 import { LevelBadge } from '../components/gamification/LevelBadge';
 import { HealthBar } from '../components/gamification/HealthBar';
 import { ComboIndicator } from '../components/gamification/ComboIndicator';
+import { CompletionFeedback, CompletionFeedbackData } from '../components/gamification/CompletionFeedback';
 import { DailyRevealCard } from '../components/gamification/DailyRevealCard';
 import { MilestoneShareOverlay } from '../components/gamification/MilestoneShareOverlay';
 import { TaskList } from '../components/tasks/TaskList';
@@ -49,6 +50,7 @@ export function Dashboard() {
     const [showLevelUp, setShowLevelUp] = useState(false);
     const [newLevel, setNewLevel] = useState(0);
     const [rewardDrop, setRewardDrop] = useState<RandomReward | null>(null);
+    const [completionFeedback, setCompletionFeedback] = useState<CompletionFeedbackData | null>(null);
     const [showRituals, setShowRituals] = useState(false);
     const [missionsExpanded, setMissionsExpanded] = useState(true);
     const [quickTitle, setQuickTitle] = useState('');
@@ -177,7 +179,15 @@ export function Dashboard() {
 
         try { navigator.vibrate?.(12); } catch { /* noop */ }
 
-        const { levelUpTo, reward } = result;
+        const { levelUpTo, reward, xpEarned, comboMultiplier, appliedBuff } = result;
+
+        setCompletionFeedback({
+            id: Date.now(),
+            xpEarned,
+            comboMultiplier,
+            appliedBuff,
+        });
+
         if (reward) {
             setRewardDrop(reward);
         }
@@ -636,6 +646,11 @@ export function Dashboard() {
                     />
                 </Suspense>
             )}
+
+            <CompletionFeedback
+                feedback={completionFeedback}
+                onDone={() => setCompletionFeedback(null)}
+            />
 
             <MilestoneShareOverlay />
         </div>

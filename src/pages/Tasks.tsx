@@ -6,6 +6,7 @@ import { getTaskStatusCounts, useTaskStore } from '../stores/taskStore';
 import { TaskList } from '../components/tasks/TaskList';
 import { Task, Priority, TaskStatus } from '../types';
 import { completeTaskTransaction } from '../lib/taskCompletion';
+import { CompletionFeedback, CompletionFeedbackData } from '../components/gamification/CompletionFeedback';
 
 const TaskForm = lazy(() => import('../components/tasks/TaskForm').then((module) => ({ default: module.TaskForm })));
 const LevelUpOverlay = lazy(() => import('../components/gamification/LevelUpOverlay').then((module) => ({ default: module.LevelUpOverlay })));
@@ -25,6 +26,7 @@ export function Tasks() {
     const [showFilters, setShowFilters] = useState(false);
     const [showLevelUp, setShowLevelUp] = useState(false);
     const [newLevel, setNewLevel] = useState(0);
+    const [completionFeedback, setCompletionFeedback] = useState<CompletionFeedbackData | null>(null);
 
     const { tasks, addTask, updateTask, deleteTask } = useTaskStore(
         useShallow((state) => ({
@@ -74,6 +76,15 @@ export function Tasks() {
     const handleCompleteTask = useCallback((id: string) => {
         const result = completeTaskTransaction(id);
         if (!result) return;
+
+        try { navigator.vibrate?.(12); } catch { /* noop */ }
+
+        setCompletionFeedback({
+            id: Date.now(),
+            xpEarned: result.xpEarned,
+            comboMultiplier: result.comboMultiplier,
+            appliedBuff: result.appliedBuff,
+        });
 
         if (result.levelUpTo !== null) {
             setNewLevel(result.levelUpTo);
@@ -259,6 +270,11 @@ export function Tasks() {
                     />
                 </Suspense>
             )}
+
+            <CompletionFeedback
+                feedback={completionFeedback}
+                onDone={() => setCompletionFeedback(null)}
+            />
         </div>
     );
 }

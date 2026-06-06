@@ -5,11 +5,14 @@ import { useAchievementStore } from '../stores/achievementStore';
 import { useMissionStore } from '../stores/missionStore';
 import { useTaskStore } from '../stores/taskStore';
 import { useUserStore } from '../stores/userStore';
-import { DailyMission, RandomReward } from '../types';
+import { DailyMission, DailyThemeId, RandomReward } from '../types';
 
 export type TaskCompletionTransactionResult = {
     levelUpTo: number | null;
     reward: RandomReward | null;
+    xpEarned: number;
+    comboMultiplier: number;
+    appliedBuff: DailyThemeId | null;
 };
 
 export const completeTaskTransaction = (
@@ -145,6 +148,9 @@ export const completeTaskTransaction = (
     return {
         levelUpTo: currentLevel > prevLevel ? currentLevel : null,
         reward: result.reward,
+        xpEarned: result.xpEarned,
+        comboMultiplier: result.comboMultiplier,
+        appliedBuff: result.appliedBuff,
     };
 };
 
