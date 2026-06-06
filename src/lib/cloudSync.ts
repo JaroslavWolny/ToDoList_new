@@ -14,6 +14,19 @@ type CloudState = {
 
 const DEBOUNCE_MS = 1500;
 const PENDING_MIGRATION_KEY = 'todolist:pendingMigration';
+// Records which account this device has already reconciled with. Once a device
+// has bound to an account, reopening the app is a session *restore* (local data
+// is the already-synced copy), not a fresh sign-in — so we must not re-prompt
+// the migration conflict dialog on every launch.
+const SYNCED_UID_KEY = 'todolist:syncedUid';
+
+const getSyncedUid = (): string | null => {
+    try { return window.localStorage.getItem(SYNCED_UID_KEY); } catch { return null; }
+};
+
+const setSyncedUid = (uid: string): void => {
+    try { window.localStorage.setItem(SYNCED_UID_KEY, uid); } catch { /* noop */ }
+};
 
 let unsubscribeAuth: (() => void) | null = null;
 let unsubscribeTask: (() => void) | null = null;
@@ -165,9 +178,13 @@ const handleSignIn = async (uid: string) => {
     const cloudHasTaskData = !!cloud && ((cloud.tasks?.length ?? 0) > 0 || (cloud.completions?.length ?? 0) > 0);
     const cloudHasUserData = !!cloud && !!cloud.user && Object.keys(cloud.user).length > 0;
     const localHasData = localTasks.length > 0;
+    // A device that has already reconciled with this account is just restoring a
+    // session on relaunch — the live snapshot listener keeps both sides in sync,
+    // so the conflict prompt would be a false alarm on every launch.
+    const alreadyBoundToThisAccount = getSyncedUid() === uid;
 
-    if (cloudHasTaskData && localHasData) {
-        // Conflict on tasks: ask the user
+    if (cloudHasTaskData && localHasData && !alreadyBoundToThisAccount) {
+        // Genuine first-time conflict on this device: ask the user.
         await new Promise<void>((resolve) => {
             const prompt: MigrationPrompt = {
                 cloudHasData: cloudHasTaskData,
@@ -184,6 +201,7 @@ const handleSignIn = async (uid: string) => {
                         applyCloudSnapshot(cloud);
                         suppressNextWrite = true;
                     }
+                    setSyncedUid(uid);
                     resolve();
                 },
             };
@@ -192,8 +210,12 @@ const handleSignIn = async (uid: string) => {
         });
         try { window.sessionStorage.removeItem(PENDING_MIGRATION_KEY); } catch { /* noop */ }
     } else if (cloudHasTaskData && cloud) {
+        // Either no local data, or a recognized device restoring its session:
+        // adopt the canonical cloud copy silently (the live listener will keep
+        // it fresh from here on).
         applyCloudSnapshot(cloud);
         suppressNextWrite = true;
+        setSyncedUid(uid);
     } else if (cloudHasUserData && cloud) {
         // Returning user signing in on a fresh device: they may have no
         // tasks yet but already finished onboarding elsewhere. Pull the
@@ -205,9 +227,15 @@ const handleSignIn = async (uid: string) => {
             // We still need to push the local tasks up so they aren't lost.
             await writeNow();
         }
+        setSyncedUid(uid);
     } else if (localHasData) {
         // First-time login with only local data — push to cloud silently
         await writeNow();
+        setSyncedUid(uid);
+    } else {
+        // Empty on both sides (e.g. brand-new account): still bind the device so
+        // the first real data on either side never triggers the conflict prompt.
+        setSyncedUid(uid);
     }
 
     // Set up live cloud listener for cross-device sync
