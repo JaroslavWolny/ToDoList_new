@@ -336,11 +336,11 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
     {
         key: 'avatar_archivist',
         title: 'Avatar Archivist',
-        description: 'Unlock all 8 avatars',
+        description: 'Unlock 20 different avatars',
         icon: '🎭',
         category: 'special',
-        check: (u) => u.unlockedAvatars.length >= 8,
-        getProgress: (u) => ({ current: u.unlockedAvatars.length, max: 8 }),
+        check: (u) => u.unlockedAvatars.length >= 20,
+        getProgress: (u) => ({ current: u.unlockedAvatars.length, max: 20 }),
     },
     {
         key: 'ice_wizard',

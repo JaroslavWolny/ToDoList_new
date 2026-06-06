@@ -1,12 +1,20 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
-import { Task, Completion, TaskStatus, RandomReward, Recurrence } from '../types';
+import { Task, Completion, TaskStatus, RandomReward, Recurrence, DailyThemeId } from '../types';
 import { calculateXP, calculateComboMultiplier, calculatePenalty } from '../lib/gamification';
 import { toLocalDateKey } from '../lib/dates';
+import { useUserStore } from './userStore';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * DAY_MS;
+
+// The "Daily Reveal" buff only applies on the day it was opened. Read it lazily
+// from the user store so completing a task picks up the currently active theme.
+const getActiveDailyTheme = (now: Date): DailyThemeId | null => {
+    const user = useUserStore.getState();
+    return user.lastRevealDate === toLocalDateKey(now) ? user.dailyThemeId : null;
+};
 
 const getPenaltyPeriodMs = (recurrence: Recurrence): number =>
     recurrence === 'WEEKLY' ? WEEK_MS : DAY_MS;
@@ -229,15 +237,26 @@ export const useTaskStore = create<TaskStore>()(
                 const task = state.tasks.find((t) => t.id === id);
                 if (!task || task.status !== 'ACTIVE') return null;
 
-                const completionsToday = getCompletionsToday(state.completions);
-                const comboMultiplier = calculateComboMultiplier(completionsToday.length + 1);
-                const baseXP = calculateXP(task.priority);
+                const now = new Date();
+                const nowIso = now.toISOString();
+                const activeTheme = getActiveDailyTheme(now);
+                const completionsToday = getCompletionsToday(state.completions, now);
+
+                // COMBO_BOOST: combo tiers are reached faster (as if +2 completions).
+                const comboReach = completionsToday.length + 1 + (activeTheme === 'COMBO_BOOST' ? 2 : 0);
+                const comboMultiplier = calculateComboMultiplier(comboReach);
+
+                // DOUBLE_HIGH / CRITICAL_FOCUS: priority-targeted XP multipliers.
+                let baseXP = calculateXP(task.priority);
+                if (activeTheme === 'DOUBLE_HIGH' && task.priority === 'HIGH') baseXP *= 2;
+                if (activeTheme === 'CRITICAL_FOCUS' && task.priority === 'CRITICAL') baseXP *= 3;
+
                 const xpEarned = Math.floor(baseXP * comboMultiplier);
 
                 const completion: Completion = {
                     id: uuidv4(),
                     taskId: id,
-                    completedAt: new Date().toISOString(),
+                    completedAt: nowIso,
                     xpEarned,
                     comboMultiplier,
                 };
@@ -248,7 +267,7 @@ export const useTaskStore = create<TaskStore>()(
                             ? {
                                 ...t,
                                 status: 'COMPLETED' as TaskStatus,
-                                completedAt: new Date().toISOString(),
+                                completedAt: nowIso,
                                 lastPenaltyAt: null,
                             }
                             : t
@@ -256,9 +275,10 @@ export const useTaskStore = create<TaskStore>()(
                     completions: [...state.completions, completion],
                 }));
 
-                // 12% chance to drop a random reward (rarer)
+                // 12% chance to drop a random reward (rarer). DOUBLE_CHEST doubles it.
                 let reward: RandomReward | null = null;
-                if (Math.random() < 0.12) {
+                const dropChance = activeTheme === 'DOUBLE_CHEST' ? 0.24 : 0.12;
+                if (Math.random() < dropChance) {
                     const isChest = Math.random() < 0.2; // 20% chance of chest (rare, bigger reward), 80% pouch
                     const isCoins = Math.random() < 0.6; // 60% chance for coins, 40% for XP
 
@@ -275,6 +295,20 @@ export const useTaskStore = create<TaskStore>()(
                             amount: isCoins ? Math.floor(Math.random() * 40) + 30 : Math.floor(Math.random() * 60) + 40,
                         };
                     }
+                }
+
+                // EARLY_RISER: the 3rd quest finished before noon drops a guaranteed bonus chest.
+                if (activeTheme === 'EARLY_RISER' && now.getHours() < 12) {
+                    const beforeNoonCount =
+                        completionsToday.filter((c) => new Date(c.completedAt).getHours() < 12).length + 1;
+                    if (beforeNoonCount === 3) {
+                        reward = { type: 'CHEST', currency: 'COINS', amount: Math.floor(Math.random() * 150) + 150 };
+                    }
+                }
+
+                // COIN_RAIN: +50% on any coin reward earned today.
+                if (reward && reward.currency === 'COINS' && activeTheme === 'COIN_RAIN') {
+                    reward = { ...reward, amount: Math.floor(reward.amount * 1.5) };
                 }
 
                 return { xpEarned, comboMultiplier, reward };

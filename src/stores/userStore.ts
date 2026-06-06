@@ -297,7 +297,17 @@ export const useUserStore = create<UserStore>()(
             revealDailyTheme: () => {
                 const themeId = pickRandomTheme();
                 const today = toDateOnlyString(new Date());
-                set({ lastRevealDate: today, dailyThemeId: themeId });
+                set((state) => ({
+                    lastRevealDate: today,
+                    dailyThemeId: themeId,
+                    // STREAK_SHIELD arms a protective freeze token so one missed day
+                    // won't break the streak (reuses the auto-freeze in checkStreakOnLoad).
+                    // No-op in HARDCORE, where freeze tokens are disabled by design.
+                    streakFreezeTokens:
+                        themeId === 'STREAK_SHIELD' && state.settings.gamificationLevel !== 'HARDCORE'
+                            ? Math.min(state.streakFreezeTokens + 1, MAX_FREEZE_TOKENS)
+                            : state.streakFreezeTokens,
+                }));
                 return themeId;
             },
 
