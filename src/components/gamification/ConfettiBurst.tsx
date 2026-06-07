@@ -16,7 +16,6 @@ interface ConfettiBurstProps {
  */
 export function ConfettiBurst({ fireKey }: ConfettiBurstProps) {
     const pieces = useMemo(() => {
-        /* eslint-disable react-hooks/purity -- decorative one-shot randomness per burst */
         return Array.from({ length: 40 }, (_, i) => ({
             id: i,
             left: Math.random() * 100,
@@ -27,7 +26,6 @@ export function ConfettiBurst({ fireKey }: ConfettiBurstProps) {
             rotate: Math.random() * 720 - 360,
             duration: 1.4 + Math.random() * 0.7,
         }));
-        /* eslint-enable react-hooks/purity */
         // fireKey is the intentional re-roll trigger (not read inside the body).
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fireKey]);
