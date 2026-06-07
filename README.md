@@ -24,6 +24,18 @@ Built as a blazing-fast, local-first Progressive Web App (PWA), it seamlessly bl
 
 ## 🔥 Epic Features
 
+### 🤖 Your AI Quest Coach — *NEW*
+Meet the productivity coach living right inside your dashboard. Tap **Ask coach** and chat with an AI that actually *sees your game state* — your streak, HP, Focus score, daily missions, and every quest on your board. Ask it the questions that matter:
+- *"What should I tackle first?"* — a prioritized next move, not generic filler.
+- *"Why is my Focus low today?"* — it explains the **why** behind your numbers.
+- *"Plan my day"* — turn a messy quest list into a clear battle plan.
+- *"How do I protect my streak?"* — tactical tips grounded in your real data.
+
+Bilingual (English & Czech) and **100% free for everyone** — powered by Google Gemini's free tier, so neither you nor your players ever pay a cent.
+
+### 🎯 Today's Focus Score — *NEW*
+One glance, total clarity. Instead of scattering your stats across the screen, QuestDo distills your **HP, streak, daily-goal progress, and overdue quests** into a single **0–100 Focus score** with an at-a-glance tier (🪫 Depleted → 🌅 Warming Up → ⚡ In Flow → 🔥 Peak Focus). And it never just throws a number at you — it tells you **why**, with tappable reason chips and a one-line headline pointing straight at your next win. One tap on the card hands the same snapshot to your AI Coach.
+
 ### 🗡️ Level Up Your Life
 Every task is a quest. Earn **XP** for completing your to-dos, fill up your XP bar, and level up just like in your favorite RPG! The progressive XP curve ensures that every new rank feels like a true achievement.
 
@@ -109,6 +121,7 @@ We forged QuestDo using the most modern web technologies:
 | 🔥 **Firebase** | Cloud Messaging (FCM) & Firestore Database |
 | ▲ **Vercel** | Serverless API Functions (Hobby plan) |
 | 🤖 **GitHub Actions** | Hourly cron scheduler for push notifications |
+| 🧠 **Google Gemini** | Free-tier AI powering the Quest Coach (zero cost) |
 
 ---
 
@@ -321,6 +334,12 @@ This wave made the reminder system tell the truth and made deadlines actionable:
 - **Onboarding notifications registered for real.** The notification step now actually requests permission and persists the FCM token instead of only flipping a UI toggle.
 - **Renamed the misleading "Reminder" field to "Start date"** in `TaskForm` — it locks a quest until that time; it was never a notification.
 - **Real XP/combo/buff feedback on completion**, and **last-write-wins safety** for the live cloud sync listener so a slow remote echo can't clobber fresher local edits.
+
+### AI Quest Coach & Today's Focus (June 2026)
+
+QuestDo's biggest leap yet — the app now thinks *with* you, and it does it for free:
+- **AI Quest Coach (`api/coach.ts` · `src/lib/coachApi.ts` · `src/components/coach/QuestCoach.tsx`).** A conversational coach grounded in your live game state. The client snapshots your streak, HP, Focus score, missions, and today's quests and hands them to a serverless function that calls **Google Gemini's free tier** — so users pay nothing. Bilingual (EN/CZ), with one-tap suggestions ("what to tackle", "why is my Focus low", "plan my day", "protect my streak"). Degrades gracefully when no `GEMINI_API_KEY` is set.
+- **Today's Focus score (`src/lib/todayScore.ts` · `src/components/gamification/TodayScoreCard.tsx`).** A single 0–100 hero number on the dashboard, synthesized from HP, streak, daily-goal progress, and overdue quests, with a tier metaphor and **reason chips that explain the *why*** behind the number. Fully local — no AI, no cost. The same snapshot feeds the Coach so its advice always lines up with the card.
 
 ---
 

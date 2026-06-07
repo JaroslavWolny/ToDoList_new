@@ -14,6 +14,8 @@ import { ComboIndicator } from '../components/gamification/ComboIndicator';
 import { CompletionFeedback, CompletionFeedbackData } from '../components/gamification/CompletionFeedback';
 import { DailyRevealCard } from '../components/gamification/DailyRevealCard';
 import { MilestoneShareOverlay } from '../components/gamification/MilestoneShareOverlay';
+import { TodayScoreCard } from '../components/gamification/TodayScoreCard';
+import { QuestCoach } from '../components/coach/QuestCoach';
 import { TaskList } from '../components/tasks/TaskList';
 import { QuickRituals, RITUAL_TAG } from '../components/tasks/QuickRituals';
 import { Task, RandomReward } from '../types';
@@ -52,6 +54,7 @@ export function Dashboard() {
     const [rewardDrop, setRewardDrop] = useState<RandomReward | null>(null);
     const [completionFeedback, setCompletionFeedback] = useState<CompletionFeedbackData | null>(null);
     const [showRituals, setShowRituals] = useState(false);
+    const [showCoach, setShowCoach] = useState(false);
     const [missionsExpanded, setMissionsExpanded] = useState(true);
     const [quickTitle, setQuickTitle] = useState('');
     const [quickFocused, setQuickFocused] = useState(false);
@@ -59,7 +62,7 @@ export function Dashboard() {
     const hasInitializedRef = useRef(false);
     const quickInputRef = useRef<HTMLInputElement>(null);
     const quickAddedTimerRef = useRef<number | null>(null);
-    const quickPlaceholder = useMemo(getQuickPlaceholder, []);
+    const quickPlaceholder = useMemo(() => getQuickPlaceholder(), []);
     const quickParsed = useMemo(
         () => (quickTitle.trim() ? parseQuickInput(quickTitle) : null),
         [quickTitle]
@@ -136,6 +139,7 @@ export function Dashboard() {
     const allMissionsDone = missionsForToday.length > 0 && missionsCompleted === missionsForToday.length;
 
     const tasksDueSoon = useMemo(() => {
+        // eslint-disable-next-line react-hooks/purity -- "now" is intentionally read at compute time
         const now = Date.now();
         const horizon = now + 24 * 60 * 60 * 1000;
         return tasks.filter((t) => {
@@ -159,6 +163,7 @@ export function Dashboard() {
     // Per-task deadline reminders: collect active quests with a future deadline
     // and hand them to the backend so the hourly cron can ping near each deadline.
     const upcomingReminders = useMemo(() => {
+        // eslint-disable-next-line react-hooks/purity -- "now" is intentionally read at compute time
         const now = Date.now();
         const horizon = now + 30 * 24 * 60 * 60 * 1000;
         return tasks
@@ -417,6 +422,11 @@ export function Dashboard() {
                 )}
             </AnimatePresence>
 
+            {/* ============== TODAY'S FOCUS (hero score + coach) ============== */}
+            <div className="mb-4">
+                <TodayScoreCard onAskCoach={() => setShowCoach(true)} />
+            </div>
+
             {/* ============== XP BAR ============== */}
             <div className="mb-5">
                 <XPBar />
@@ -639,6 +649,8 @@ export function Dashboard() {
                 tasks={tasks}
                 onComplete={handleCompleteTask}
             />
+
+            <QuestCoach isOpen={showCoach} onClose={() => setShowCoach(false)} />
 
             {showTaskForm && (
                 <Suspense fallback={null}>
