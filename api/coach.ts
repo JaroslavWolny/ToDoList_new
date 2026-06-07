@@ -11,7 +11,9 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
  */
 
 // Free-tier default; override with COACH_MODEL if Google rotates the free model.
-const DEFAULT_MODEL = 'gemini-2.0-flash';
+// (gemini-2.0-flash had its free-tier quota zeroed out by Google, so we default
+// to gemini-2.5-flash, which still has free quota.)
+const DEFAULT_MODEL = 'gemini-2.5-flash';
 const MAX_MESSAGE_LEN = 2000;
 const MAX_HISTORY = 12;
 
@@ -141,6 +143,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     temperature: 0.7,
                     maxOutputTokens: 700,
                     topP: 0.95,
+                    // Disable "thinking" on Gemini 2.5 Flash — a coach reply doesn't
+                    // need it, and it just burns latency + free-tier quota.
+                    thinkingConfig: { thinkingBudget: 0 },
                 },
             }),
         });
