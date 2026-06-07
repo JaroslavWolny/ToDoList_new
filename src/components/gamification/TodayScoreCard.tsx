@@ -78,7 +78,6 @@ export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach }: Today
     }, [focus.score, recordToday]);
 
     const { todayKey, yesterdayKey } = useMemo(() => {
-        // eslint-disable-next-line react-hooks/purity -- date keys are read once at mount
         const now = new Date();
         const y = new Date(now);
         y.setDate(now.getDate() - 1);
