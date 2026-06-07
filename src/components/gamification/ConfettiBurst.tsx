@@ -28,6 +28,8 @@ export function ConfettiBurst({ fireKey }: ConfettiBurstProps) {
             duration: 1.4 + Math.random() * 0.7,
         }));
         /* eslint-enable react-hooks/purity */
+        // fireKey is the intentional re-roll trigger (not read inside the body).
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fireKey]);
 
     if (fireKey === 0) return null;
