@@ -21,7 +21,7 @@ import { calculateComboMultiplier } from '../lib/gamification';
 import { completeTaskTransaction } from '../lib/taskCompletion';
 import { toLocalDateKey } from '../lib/dates';
 import { parseQuickInput, formatDeadlineChip } from '../lib/quickParse';
-import { updateNotificationStats } from '../lib/firebase';
+import { updateNotificationStats, syncTaskReminders } from '../lib/firebase';
 import { DAILY_CHEST_XP, DAILY_CHEST_COINS } from '../stores/missionStore';
 
 const LevelUpOverlay = lazy(() => import('../components/gamification/LevelUpOverlay').then((module) => ({ default: module.LevelUpOverlay })));
@@ -155,6 +155,31 @@ export function Dashboard() {
             missionsTotal: missionsForToday.length,
         });
     }, [tasksDueSoon, completionsToday.length, dailyGoal, streakCurrent, missionsCompleted, missionsForToday.length]);
+
+    // Per-task deadline reminders: collect active quests with a future deadline
+    // and hand them to the backend so the hourly cron can ping near each deadline.
+    const upcomingReminders = useMemo(() => {
+        const now = Date.now();
+        const horizon = now + 30 * 24 * 60 * 60 * 1000;
+        return tasks
+            .filter((t) => {
+                if (t.status !== 'ACTIVE' || !t.deadline) return false;
+                const due = Date.parse(t.deadline);
+                return Number.isFinite(due) && due > now && due <= horizon;
+            })
+            .map((t) => ({ taskId: t.id, title: t.title, deadline: t.deadline as string }))
+            .sort((a, b) => Date.parse(a.deadline) - Date.parse(b.deadline));
+    }, [tasks]);
+
+    const lastReminderSignatureRef = useRef<string>('');
+    useEffect(() => {
+        const signature = upcomingReminders
+            .map((r) => `${r.taskId}:${r.deadline}:${r.title}`)
+            .join('|');
+        if (signature === lastReminderSignatureRef.current) return;
+        lastReminderSignatureRef.current = signature;
+        syncTaskReminders(upcomingReminders);
+    }, [upcomingReminders]);
 
     const handleClaimDailyChest = useCallback(() => {
         const reward = claimDailyChest();

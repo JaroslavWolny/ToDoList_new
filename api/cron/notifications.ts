@@ -193,7 +193,57 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         await Promise.all(sendPromises);
 
-        return res.status(200).json({ success: true, sent: sentCount });
+        // --- Per-task deadline reminders ---------------------------------
+        // These are one-shot pushes that name a specific quest as its deadline
+        // approaches. They are scheduled client-side (see /api/notifications/
+        // task-reminders) and fired here by the same hourly cron, then deleted.
+        const dueTaskReminders = await db
+            .collection('task_reminders')
+            .where('sendAtUtc', '<=', admin.firestore.Timestamp.fromDate(now))
+            .orderBy('sendAtUtc')
+            .limit(500)
+            .get();
+
+        let taskRemindersSent = 0;
+
+        const taskReminderPromises = dueTaskReminders.docs.map(async (doc) => {
+            const data = doc.data() as { token?: unknown; title?: unknown };
+            const token = typeof data.token === 'string' ? data.token : null;
+            const title = typeof data.title === 'string' && data.title.trim()
+                ? data.title.trim()
+                : 'A quest';
+
+            if (!token) {
+                await doc.ref.delete();
+                return;
+            }
+
+            try {
+                await messaging.send({
+                    data: {
+                        title: '⏰ Deadline approaching',
+                        body: `"${title}" is due soon. Finish it for the XP before it slips.`,
+                        link: '/',
+                    },
+                    token,
+                    webpush: {
+                        fcmOptions: {
+                            link: '/',
+                        },
+                    },
+                });
+                taskRemindersSent += 1;
+            } catch (err: unknown) {
+                console.error(`Failed to send task reminder ${doc.id}:`, err);
+            } finally {
+                // One-shot: always remove so a deadline reminder never repeats.
+                await doc.ref.delete();
+            }
+        });
+
+        await Promise.all(taskReminderPromises);
+
+        return res.status(200).json({ success: true, sent: sentCount, taskRemindersSent });
     } catch (error: unknown) {
         const details = getErrorDetails(error);
         console.error('Cron Error: ', error);

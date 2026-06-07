@@ -218,6 +218,35 @@ export const updateNotificationStats = async (stats: ReminderStats): Promise<voi
     }
 };
 
+export type TaskReminderInput = {
+    taskId: string;
+    title: string;
+    deadline: string;
+};
+
+const getTaskRemindersApiUrl = (): string => '/api/notifications/task-reminders';
+
+// Pushes the device's upcoming task deadlines to the backend so the hourly cron
+// can fire a per-quest reminder as each deadline approaches. Replaces the full
+// set every call — the backend reconciles, so completed/deleted quests drop out.
+export const syncTaskReminders = async (reminders: TaskReminderInput[]): Promise<void> => {
+    const deviceId = localStorage.getItem(DEVICE_ID_KEY);
+    if (!deviceId) return; // no token registered yet — nothing to schedule
+
+    try {
+        const response = await fetch(getTaskRemindersApiUrl(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deviceId, reminders }),
+        });
+        if (!response.ok) {
+            console.warn(`Failed to sync task reminders: ${response.status}`);
+        }
+    } catch (error) {
+        console.warn('Failed to sync task reminders:', error);
+    }
+};
+
 export const removeTokenFromFirestore = async () => {
     try {
         const deviceId = localStorage.getItem(DEVICE_ID_KEY);

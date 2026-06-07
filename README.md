@@ -73,6 +73,7 @@ Productivity becomes a team sport. After signing in:
 
 ### 🔔 Web Push Notifications (Firebase & Vercel)
 - **Background Reminders:** 📲 The app uses Firebase Cloud Messaging (FCM) to deliver morning and evening summaries directly to your device (supports iOS 16.4+ standalone PWAs).
+- **Per-Quest Deadline Reminders:** ⏰ Beyond the daily summaries, QuestDo schedules a **one-shot push for each quest as its deadline approaches** — naming the exact quest so you never miss a due date. The Dashboard syncs upcoming deadlines to a `task_reminders` collection (written server-side via the Admin SDK), and the same hourly cron fires each reminder at the top of the hour before it's due, then deletes it so it never repeats. Completed, deleted, or rescheduled quests are reconciled automatically.
 - **Hourly Reminder Slots:** 🕐 Reminder selection is normalized to the start of the selected hour so the UI matches the hourly cron delivery model.
 - **Hourly Dispatch via GitHub Actions:** ⚙️ A scheduled GitHub Actions workflow pings a Vercel Serverless Function every hour on the dot. The function securely reads timezone preferences from Firestore via the Firebase Admin SDK and delivers reminders at the correct local slot — a 100% free-tier setup (Vercel Hobby + Firebase Spark + GitHub Actions) with no Pro plan required.
 
@@ -312,6 +313,14 @@ A multi-front fix for the Google sign-in flow that had been broken on iOS PWA an
 **"Today's Buff" icon was misaligned and rendered blurry.** Two compounding issues in `src/components/gamification/DailyRevealCard.tsx`:
 - Emoji glyphs (`⚔️`, `🛡️`, `🪙`, `🌅`, …) have asymmetric internal baselines and don't visually center via `flex items-center justify-center` on a bare text node — wrapped them in a `<span>` with explicit `font-size`, `line-height: 1`, `display: block`, `text-align: center` and added `overflow-hidden` to the tile.
 - The celebration modal animated the icon with a keyframe rotation sequence (`rotate: [0, -8, 8, -4, 4, 0]`). Framer Motion promoted the element to a GPU layer that rasterized the color emoji once, then resampled it through every rotation step, leaving the glyph softly sampled at rest. Replaced the keyframe wobble with a single-shot `scale` + `rotate` spring — the icon still pops in, but never gets resampled.
+
+### Per-Quest Deadline Reminders & Honest Notifications (June 2026)
+
+This wave made the reminder system tell the truth and made deadlines actionable:
+- **Per-task deadline push reminders.** Added a `task_reminders` Firestore collection and a new `POST /api/notifications/task-reminders` endpoint (Admin SDK). The Dashboard collects active quests with a future deadline (30-day horizon) and syncs them whenever the set changes; the endpoint denormalizes the device's FCM token, aligns each `sendAtUtc` to the top of the hour at/before the deadline, and clears the device's previous reminders so completed/deleted/rescheduled quests never fire a stale push. The existing hourly cron (`/api/cron/notifications`) now also queries due `task_reminders`, sends a push that names the exact quest, and deletes each one — strictly one-shot.
+- **Onboarding notifications registered for real.** The notification step now actually requests permission and persists the FCM token instead of only flipping a UI toggle.
+- **Renamed the misleading "Reminder" field to "Start date"** in `TaskForm` — it locks a quest until that time; it was never a notification.
+- **Real XP/combo/buff feedback on completion**, and **last-write-wins safety** for the live cloud sync listener so a slow remote echo can't clobber fresher local edits.
 
 ---
 
