@@ -6,6 +6,8 @@ import { askCoach, type ChatTurn } from '../../lib/coachApi';
 interface QuestCoachProps {
     isOpen: boolean;
     onClose: () => void;
+    /** When set, this prompt is auto-sent once each time the sheet opens. */
+    autoPrompt?: string;
 }
 
 const SUGGESTIONS = [
@@ -15,7 +17,7 @@ const SUGGESTIONS = [
     'How do I protect my streak?',
 ];
 
-export const QuestCoach = memo(function QuestCoach({ isOpen, onClose }: QuestCoachProps) {
+export const QuestCoach = memo(function QuestCoach({ isOpen, onClose, autoPrompt }: QuestCoachProps) {
     const dragControls = useDragControls();
     const [messages, setMessages] = useState<ChatTurn[]>([]);
     const [input, setInput] = useState('');
@@ -23,6 +25,7 @@ export const QuestCoach = memo(function QuestCoach({ isOpen, onClose }: QuestCoa
     const [error, setError] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const autoSentRef = useRef(false);
 
     const send = useCallback(
         async (text: string) => {
@@ -56,6 +59,18 @@ export const QuestCoach = memo(function QuestCoach({ isOpen, onClose }: QuestCoa
         else document.body.classList.remove('modal-scroll-lock');
         return () => document.body.classList.remove('modal-scroll-lock');
     }, [isOpen]);
+
+    // Auto-send a seed prompt once per open (e.g. "Plan tomorrow with coach").
+    useEffect(() => {
+        if (!isOpen) {
+            autoSentRef.current = false;
+            return;
+        }
+        if (autoPrompt && !autoSentRef.current) {
+            autoSentRef.current = true;
+            send(autoPrompt);
+        }
+    }, [isOpen, autoPrompt, send]);
 
     const handleDragEnd = useCallback(
         (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {

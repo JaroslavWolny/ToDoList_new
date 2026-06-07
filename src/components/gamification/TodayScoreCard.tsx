@@ -1,16 +1,47 @@
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../../stores/userStore';
 import { getCompletionsToday, useTaskStore } from '../../stores/taskStore';
+import { useFocusHistoryStore } from '../../stores/focusHistoryStore';
 import { computeTodayScore, buildFocusInputs, type FocusReason } from '../../lib/todayScore';
+import { getCachedInsight, fetchDailyInsight } from '../../lib/dailyInsight';
+import { toLocalDateKey } from '../../lib/dates';
 
 const reasonClasses: Record<FocusReason['tone'], string> = {
     good: 'bg-emerald-500/12 border-emerald-500/30 text-emerald-400',
     bad: 'bg-red-500/12 border-red-500/30 text-red-400',
     neutral: 'bg-white/5 border-[var(--color-border)] text-[var(--color-text-secondary)]',
 };
+
+/** Tiny inline trend line for the last few days of Focus scores. */
+function Sparkline({ scores, stroke }: { scores: number[]; stroke: string }) {
+    if (scores.length < 2) return null;
+    const w = 52;
+    const h = 16;
+    const min = Math.min(...scores);
+    const max = Math.max(...scores);
+    const range = max - min || 1;
+    const pts = scores
+        .map((s, i) => {
+            const x = (i / (scores.length - 1)) * w;
+            const y = h - ((s - min) / range) * h;
+            return `${x.toFixed(1)},${y.toFixed(1)}`;
+        })
+        .join(' ');
+    return (
+        <svg width={w} height={h} className="overflow-visible" aria-hidden="true">
+            <polyline points={pts} fill="none" stroke={stroke} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
+            <circle
+                cx={w}
+                cy={h - ((scores[scores.length - 1] - min) / range) * h}
+                r={1.9}
+                fill={stroke}
+            />
+        </svg>
+    );
+}
 
 interface TodayScoreCardProps {
     onAskCoach: () => void;
@@ -28,6 +59,8 @@ export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach }: Today
     const { tasks, completions } = useTaskStore(
         useShallow((s) => ({ tasks: s.tasks, completions: s.completions }))
     );
+    const history = useFocusHistoryStore((s) => s.history);
+    const recordToday = useFocusHistoryStore((s) => s.recordToday);
 
     const completedToday = useMemo(() => getCompletionsToday(completions).length, [completions]);
 
@@ -38,6 +71,48 @@ export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach }: Today
             ),
         [tasks, completedToday, health, maxHealth, streakCurrent, dailyGoal]
     );
+
+    // ── A) record + trend ──
+    useEffect(() => {
+        recordToday(focus.score);
+    }, [focus.score, recordToday]);
+
+    const { todayKey, yesterdayKey } = useMemo(() => {
+        // eslint-disable-next-line react-hooks/purity -- date keys are read once at mount
+        const now = new Date();
+        const y = new Date(now);
+        y.setDate(now.getDate() - 1);
+        return { todayKey: toLocalDateKey(now), yesterdayKey: toLocalDateKey(y) };
+    }, []);
+
+    const sparkScores = useMemo(() => {
+        const recent = history.slice(-7).map((e) => ({ date: e.date, score: e.score }));
+        if (recent.length === 0 || recent[recent.length - 1].date !== todayKey) {
+            recent.push({ date: todayKey, score: focus.score });
+        } else {
+            recent[recent.length - 1] = { date: todayKey, score: focus.score };
+        }
+        return recent.map((e) => e.score);
+    }, [history, todayKey, focus.score]);
+
+    const delta = useMemo(() => {
+        const y = history.find((e) => e.date === yesterdayKey);
+        return y ? focus.score - y.score : null;
+    }, [history, yesterdayKey, focus.score]);
+
+    // ── C) daily AI insight (cached once/day; silent on failure) ──
+    const [insight, setInsight] = useState<string | null>(() => getCachedInsight());
+    useEffect(() => {
+        let alive = true;
+        fetchDailyInsight().then((t) => {
+            if (alive && t) setInsight(t);
+        });
+        return () => {
+            alive = false;
+        };
+    }, []);
+
+    const headline = insight ?? focus.headline;
 
     // Ring geometry
     const radius = 30;
@@ -53,10 +128,7 @@ export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach }: Today
                 {/* ── Score ring ── */}
                 <div className="relative shrink-0" style={{ width: radius * 2, height: radius * 2 }}>
                     <svg width={radius * 2} height={radius * 2} className="-rotate-90">
-                        <circle
-                            cx={radius} cy={radius} r={r} fill="none"
-                            stroke="var(--color-border)" strokeWidth={stroke}
-                        />
+                        <circle cx={radius} cy={radius} r={r} fill="none" stroke="var(--color-border)" strokeWidth={stroke} />
                         <motion.circle
                             cx={radius} cy={radius} r={r} fill="none"
                             stroke={`url(#${gradId})`} strokeWidth={stroke} strokeLinecap="round"
@@ -86,16 +158,31 @@ export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach }: Today
 
                 {/* ── Label + headline ── */}
                 <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center justify-between gap-2">
                         <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
                             Today's Focus
                         </span>
+                        {/* trend: sparkline + delta vs yesterday */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            <Sparkline scores={sparkScores} stroke={focus.tier.to} />
+                            {delta !== null && (
+                                <span
+                                    className={`inline-flex items-center gap-0.5 text-[10px] font-bold text-stat ${
+                                        delta > 0 ? 'text-emerald-400' : delta < 0 ? 'text-red-400' : 'text-[var(--color-text-tertiary)]'
+                                    }`}
+                                >
+                                    {delta > 0 ? <TrendingUp className="w-3 h-3" strokeWidth={3} /> : delta < 0 ? <TrendingDown className="w-3 h-3" strokeWidth={3} /> : <Minus className="w-3 h-3" strokeWidth={3} />}
+                                    {delta > 0 ? `+${delta}` : delta}
+                                </span>
+                            )}
+                        </div>
                     </div>
                     <p className={`text-sm font-black mt-0.5 ${focus.tier.text}`}>
                         {focus.tier.emoji} {focus.tier.label}
                     </p>
-                    <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5 leading-snug">
-                        {focus.headline}
+                    <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5 leading-snug flex items-start gap-1">
+                        {insight && <Sparkles className="w-3 h-3 mt-[1px] shrink-0 text-cyan-400" strokeWidth={2.6} />}
+                        <span>{headline}</span>
                     </p>
                 </div>
             </div>

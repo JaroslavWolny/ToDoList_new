@@ -83,13 +83,13 @@ export function StreakCounter() {
                 onClick={() => setIsShareModalOpen(true)}
                 whileHover={{ scale: 1.015 }}
                 whileTap={{ scale: 0.985 }}
-                className="glass-hero w-full p-5 text-left group"
+                className="glass-card w-full p-3.5 text-left group"
                 aria-label="Open share streak card"
             >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                     {/* Flame */}
                     <div className="relative shrink-0">
-                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${flameClass} ${animClass}`}
+                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${flameClass} ${animClass}`}
                              style={{
                                  boxShadow: streakCurrent > 0
                                      ? state === 'critical'
@@ -97,7 +97,7 @@ export function StreakCounter() {
                                          : '0 12px 32px -8px rgba(249, 115, 22, 0.45), inset 0 1px 0 rgba(255,255,255,0.18)'
                                      : 'none',
                              }}>
-                            <Flame className="w-9 h-9 text-white drop-shadow-lg" strokeWidth={2.4} />
+                            <Flame className="w-6 h-6 text-white drop-shadow-lg" strokeWidth={2.4} />
                         </div>
                         {/* Tiny sparkle for fire streaks */}
                         {streakCurrent >= 7 && state === 'safe' && (
@@ -119,7 +119,7 @@ export function StreakCounter() {
                                 initial={{ y: -10, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
                                 transition={{ type: 'spring', stiffness: 320, damping: 20 }}
-                                className="text-display text-stat"
+                                className="text-2xl font-black text-stat leading-none"
                             >
                                 {streakCurrent}
                             </motion.span>

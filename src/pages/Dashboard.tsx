@@ -55,6 +55,7 @@ export function Dashboard() {
     const [completionFeedback, setCompletionFeedback] = useState<CompletionFeedbackData | null>(null);
     const [showRituals, setShowRituals] = useState(false);
     const [showCoach, setShowCoach] = useState(false);
+    const [coachPrompt, setCoachPrompt] = useState<string | undefined>(undefined);
     const [missionsExpanded, setMissionsExpanded] = useState(true);
     const [quickTitle, setQuickTitle] = useState('');
     const [quickFocused, setQuickFocused] = useState(false);
@@ -424,7 +425,7 @@ export function Dashboard() {
 
             {/* ============== TODAY'S FOCUS (hero score + coach) ============== */}
             <div className="mb-4">
-                <TodayScoreCard onAskCoach={() => setShowCoach(true)} />
+                <TodayScoreCard onAskCoach={() => { setCoachPrompt(undefined); setShowCoach(true); }} />
             </div>
 
             {/* ============== XP BAR ============== */}
@@ -612,6 +613,21 @@ export function Dashboard() {
                     onEdit={handleEditTask}
                     emptyMessage="All clear. Tap “New Quest” to add one."
                 />
+                {todayTasks.length === 0 && (
+                    <motion.button
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                            setCoachPrompt('Plan tomorrow for me — suggest 3 concrete, short quests based on my recent patterns and what matters most. Number them.');
+                            setShowCoach(true);
+                        }}
+                        className="mt-3 w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-2xl text-sm font-bold text-white fab-primary"
+                    >
+                        <Sparkles className="w-4 h-4" strokeWidth={2.6} />
+                        Plan tomorrow with coach
+                    </motion.button>
+                )}
             </div>
 
             {/* ============== RITUAL PILL ============== */}
@@ -650,7 +666,7 @@ export function Dashboard() {
                 onComplete={handleCompleteTask}
             />
 
-            <QuestCoach isOpen={showCoach} onClose={() => setShowCoach(false)} />
+            <QuestCoach isOpen={showCoach} onClose={() => setShowCoach(false)} autoPrompt={coachPrompt} />
 
             {showTaskForm && (
                 <Suspense fallback={null}>
