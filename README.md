@@ -31,10 +31,12 @@ Meet the productivity coach living right inside your dashboard. Tap **Ask coach*
 - *"Plan my day"* — turn a messy quest list into a clear battle plan.
 - *"How do I protect my streak?"* — tactical tips grounded in your real data.
 
-Bilingual (English & Czech) and **100% free for everyone** — powered by Google Gemini's free tier, so neither you nor your players ever pay a cent.
+Bilingual (English & Czech) and **100% free for everyone** — powered by Google Gemini's free tier, so neither you nor your players ever pay a cent. It's proactive, too: clear your board for the day and the empty state offers **"✨ Plan tomorrow with coach"**, which asks the AI to draft three concrete quests for tomorrow from your patterns.
 
 ### 🎯 Today's Focus Score — *NEW*
 One glance, total clarity. Instead of scattering your stats across the screen, QuestDo distills your **HP, streak, daily-goal progress, and overdue quests** into a single **0–100 Focus score** with an at-a-glance tier (🪫 Depleted → 🌅 Warming Up → ⚡ In Flow → 🔥 Peak Focus). And it never just throws a number at you — it tells you **why**, with tappable reason chips and a one-line headline pointing straight at your next win. One tap on the card hands the same snapshot to your AI Coach.
+
+It's not a snapshot — it's a **story**. The card tracks your Focus over time with a **7-day sparkline** and a **"↗ +N vs yesterday"** delta, so you see whether you're trending up. And once a day it surfaces a fresh **AI coaching line** right on the card (cached → one free call per day), turning the headline from a rule into a real nudge.
 
 ### 🗡️ Level Up Your Life
 Every task is a quest. Earn **XP** for completing your to-dos, fill up your XP bar, and level up just like in your favorite RPG! The progressive XP curve ensures that every new rank feels like a true achievement.
@@ -340,6 +342,14 @@ This wave made the reminder system tell the truth and made deadlines actionable:
 QuestDo's biggest leap yet — the app now thinks *with* you, and it does it for free:
 - **AI Quest Coach (`api/coach.ts` · `src/lib/coachApi.ts` · `src/components/coach/QuestCoach.tsx`).** A conversational coach grounded in your live game state. The client snapshots your streak, HP, Focus score, missions, and today's quests and hands them to a serverless function that calls **Google Gemini's free tier** — so users pay nothing. Bilingual (EN/CZ), with one-tap suggestions ("what to tackle", "why is my Focus low", "plan my day", "protect my streak"). Degrades gracefully when no `GEMINI_API_KEY` is set.
 - **Today's Focus score (`src/lib/todayScore.ts` · `src/components/gamification/TodayScoreCard.tsx`).** A single 0–100 hero number on the dashboard, synthesized from HP, streak, daily-goal progress, and overdue quests, with a tier metaphor and **reason chips that explain the *why*** behind the number. Fully local — no AI, no cost. The same snapshot feeds the Coach so its advice always lines up with the card.
+
+### Focus Trend, Daily Insight & Proactive Planning (June 2026)
+
+Built on the same week's AI Coach + Focus score, this wave turned the dashboard from a status board into a coach:
+- **Focus trend (`src/stores/focusHistoryStore.ts`).** The daily Focus score is now persisted (last 30 days) and the card renders a **7-day sparkline** plus a **delta-vs-yesterday** chip (↗/↘), so progress reads as a trend, not a one-off number.
+- **Daily AI insight (`src/lib/dailyInsight.ts`).** Once per day the Focus card shows a fresh one-line coach nudge, **cached in localStorage by date** → exactly one Gemini free-tier call per day. Fails silently back to the local headline when the coach is unavailable.
+- **Proactive "Plan tomorrow with coach".** When Today's Quests is empty, a CTA auto-sends a planning prompt to the coach (`QuestCoach` gained an `autoPrompt`), which drafts three concrete quests for tomorrow from your data.
+- **Slimmer streak card.** `StreakCounter` shrank from a hero block to a compact row so the Today's Focus card is the single hero at the top.
 
 ---
 
