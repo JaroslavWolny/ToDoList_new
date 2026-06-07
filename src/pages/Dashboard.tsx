@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Zap, Sparkles, Gift, ChevronDown, ArrowUp, Clock, Repeat, Hash } from 'lucide-react';
+import { Plus, Zap, Sparkles, Gift, ChevronDown, ArrowUp, Clock, Repeat, Hash, Brain, CalendarDays } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../stores/userStore';
 import { getCompletionsToday, getTasksForToday, useTaskStore } from '../stores/taskStore';
@@ -16,6 +16,8 @@ import { DailyRevealCard } from '../components/gamification/DailyRevealCard';
 import { MilestoneShareOverlay } from '../components/gamification/MilestoneShareOverlay';
 import { TodayScoreCard } from '../components/gamification/TodayScoreCard';
 import { QuestCoach } from '../components/coach/QuestCoach';
+import { BrainDumpModal } from '../components/tasks/BrainDumpModal';
+import { WeeklyReview } from '../components/coach/WeeklyReview';
 import { TaskList } from '../components/tasks/TaskList';
 import { QuickRituals, RITUAL_TAG } from '../components/tasks/QuickRituals';
 import { Task, RandomReward } from '../types';
@@ -56,6 +58,8 @@ export function Dashboard() {
     const [showRituals, setShowRituals] = useState(false);
     const [showCoach, setShowCoach] = useState(false);
     const [coachPrompt, setCoachPrompt] = useState<string | undefined>(undefined);
+    const [showBrainDump, setShowBrainDump] = useState(false);
+    const [showWeekly, setShowWeekly] = useState(false);
     const [missionsExpanded, setMissionsExpanded] = useState(true);
     const [quickTitle, setQuickTitle] = useState('');
     const [quickFocused, setQuickFocused] = useState(false);
@@ -423,6 +427,24 @@ export function Dashboard() {
                 )}
             </AnimatePresence>
 
+            {/* ============== BRAIN DUMP / WEEKLY REVIEW ============== */}
+            <div className="flex items-center gap-2 mb-4">
+                <button
+                    type="button"
+                    onClick={() => setShowBrainDump(true)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-violet-500/12 border border-violet-500/30 text-violet-300 active:scale-[0.98] transition-transform"
+                >
+                    <Brain className="w-3.5 h-3.5" strokeWidth={2.6} /> Brain dump
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setShowWeekly(true)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-amber-500/12 border border-amber-500/30 text-amber-300 active:scale-[0.98] transition-transform"
+                >
+                    <CalendarDays className="w-3.5 h-3.5" strokeWidth={2.6} /> Weekly review
+                </button>
+            </div>
+
             {/* ============== TODAY'S FOCUS (hero score + coach) ============== */}
             <div className="mb-4">
                 <TodayScoreCard onAskCoach={() => { setCoachPrompt(undefined); setShowCoach(true); }} />
@@ -667,6 +689,10 @@ export function Dashboard() {
             />
 
             <QuestCoach isOpen={showCoach} onClose={() => setShowCoach(false)} autoPrompt={coachPrompt} />
+
+            <BrainDumpModal isOpen={showBrainDump} onClose={() => setShowBrainDump(false)} />
+
+            <WeeklyReview isOpen={showWeekly} onClose={() => setShowWeekly(false)} />
 
             {showTaskForm && (
                 <Suspense fallback={null}>

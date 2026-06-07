@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { getFirebaseAdminServices, admin } from '../lib/firebaseAdmin';
+import { geminiGenerate } from '../lib/gemini';
 import {
     getNextReminderSchedule,
     ReminderType,
@@ -99,6 +100,34 @@ const getReminderMessage = (reminderType: ReminderType, stats?: ReminderStats) =
     };
 };
 
+// Proactive AI coach push: let Gemini (free tier) write a punchy, data-specific
+// nudge from the player's stats. Falls back to the templated copy on any failure.
+const buildAiPush = async (
+    reminderType: ReminderType,
+    stats?: ReminderStats
+): Promise<{ title: string; body: string } | null> => {
+    const s = stats ?? {};
+    const summary =
+        `time=${reminderType.toLowerCase()}, streak=${n(s.streakCurrent)} days, ` +
+        `dailyGoal=${n(s.dailyGoalProgress)}/${n(s.dailyGoalTarget)}, ` +
+        `questsDueSoon=${n(s.tasksDueSoon)}, ` +
+        `dailyMissions=${n(s.missionsCompleted)}/${n(s.missionsTotal)}`;
+    const system =
+        'You write ONE push notification for QuestDo, a gamified to-do app (quests, XP, daily streaks, HP). ' +
+        'Be punchy and specific to the numbers — never generic. Max 12 words, at most one emoji. ' +
+        'Output only the notification text, no quotes.';
+    const body = await geminiGenerate({
+        system,
+        user: `Player state: ${summary}. Write the ${reminderType.toLowerCase()} nudge.`,
+        maxOutputTokens: 60,
+        temperature: 0.9,
+    });
+    if (!body) return null;
+    const clean = body.replace(/^["'\s]+|["'\s]+$/g, '').split('\n')[0].trim().slice(0, 120);
+    if (!clean) return null;
+    return { title: reminderType === 'EVENING' ? '🌙 Quest Coach' : '🌅 Quest Coach', body: clean };
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'GET') {
         return res.status(405).json({ message: 'Method Not Allowed' });
@@ -147,7 +176,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return;
             }
 
-            const messageText = getReminderMessage(reminderType, data.stats);
+            const aiMessage = await buildAiPush(reminderType, data.stats);
+            const messageText = aiMessage ?? getReminderMessage(reminderType, data.stats);
 
             try {
                 await messaging.send({

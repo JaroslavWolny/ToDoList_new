@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../stores/userStore';
 import { useAchievementStore } from '../stores/achievementStore';
 import { HeatmapCalendar } from '../components/stats/HeatmapCalendar';
 import { XPChart } from '../components/stats/XPChart';
 import { AchievementGrid } from '../components/stats/AchievementGrid';
-import { Flame, Zap, CheckCircle2, Trophy } from 'lucide-react';
+import { WeeklyReview } from '../components/coach/WeeklyReview';
+import { Flame, Zap, CheckCircle2, Trophy, CalendarDays, Sparkles, ChevronRight } from 'lucide-react';
 
 export function Stats() {
     const { streakLongest, totalTasksCompleted, totalXPEarned } = useUserStore(
@@ -16,6 +17,7 @@ export function Stats() {
             totalXPEarned: state.totalXPEarned,
         }))
     );
+    const [showWeekly, setShowWeekly] = useState(false);
     const achievements = useAchievementStore((state) => state.achievements);
     const unlockedCount = useMemo(
         () => achievements.filter((achievement) => achievement.unlockedAt).length,
@@ -58,6 +60,25 @@ export function Stats() {
         <div className="page-container">
             <h1 className="text-2xl font-bold mb-6">Statistics</h1>
 
+            {/* Weekly Review entry */}
+            <button
+                type="button"
+                onClick={() => setShowWeekly(true)}
+                className="w-full glass-card p-4 mb-6 flex items-center gap-3 text-left active:scale-[0.99] transition-transform"
+            >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 shrink-0">
+                    <CalendarDays className="w-5 h-5 text-amber-400" strokeWidth={2.4} />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold flex items-center gap-1.5">
+                        Weekly Review
+                        <Sparkles className="w-3.5 h-3.5 text-cyan-400" strokeWidth={2.6} />
+                    </p>
+                    <p className="text-xs text-[var(--color-text-secondary)]">Your last 7 days + AI plan for next week</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-[var(--color-text-tertiary)] shrink-0" />
+            </button>
+
             {/* Stat Cards Grid */}
             <div className="grid grid-cols-2 gap-3 mb-6">
                 {statCards.map((stat, i) => (
@@ -95,6 +116,8 @@ export function Stats() {
                 </h2>
                 <AchievementGrid />
             </div>
+
+            <WeeklyReview isOpen={showWeekly} onClose={() => setShowWeekly(false)} />
         </div>
     );
 }
