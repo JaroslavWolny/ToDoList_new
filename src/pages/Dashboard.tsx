@@ -7,10 +7,8 @@ import { getCompletionsToday, getTasksForToday, useTaskStore } from '../stores/t
 import { useAchievementStore } from '../stores/achievementStore';
 import { useMissionStore } from '../stores/missionStore';
 import { XPBar } from '../components/gamification/XPBar';
-import { StreakCounter } from '../components/gamification/StreakCounter';
 import { LevelBadge } from '../components/gamification/LevelBadge';
-import { HealthBar } from '../components/gamification/HealthBar';
-import { ComboIndicator } from '../components/gamification/ComboIndicator';
+import { VitalsStrip } from '../components/gamification/VitalsStrip';
 import { CompletionFeedback, CompletionFeedbackData } from '../components/gamification/CompletionFeedback';
 import { DailyRevealCard } from '../components/gamification/DailyRevealCard';
 import { MilestoneShareOverlay } from '../components/gamification/MilestoneShareOverlay';
@@ -19,9 +17,8 @@ import { QuestCoach } from '../components/coach/QuestCoach';
 import { BrainDumpModal } from '../components/tasks/BrainDumpModal';
 import { WeeklyReview } from '../components/coach/WeeklyReview';
 import { TaskList } from '../components/tasks/TaskList';
-import { QuickRituals, RITUAL_TAG } from '../components/tasks/QuickRituals';
+import { QuickRituals } from '../components/tasks/QuickRituals';
 import { Task, RandomReward } from '../types';
-import { calculateComboMultiplier } from '../lib/gamification';
 import { completeTaskTransaction } from '../lib/taskCompletion';
 import { toLocalDateKey } from '../lib/dates';
 import { parseQuickInput, formatDeadlineChip } from '../lib/quickParse';
@@ -80,11 +77,10 @@ export function Dashboard() {
             quickParsed.tags.length > 0)
     );
 
-    const { displayName, dailyMissionsEnabled, quickRitualsEnabled } = useUserStore(
+    const { displayName, dailyMissionsEnabled } = useUserStore(
         useShallow((state) => ({
             displayName: state.displayName,
             dailyMissionsEnabled: state.settings.dailyMissionsEnabled,
-            quickRitualsEnabled: state.settings.quickRitualsEnabled,
         }))
     );
     const { tasks, completions, addTask, updateTask, deleteTask } = useTaskStore(
@@ -122,15 +118,6 @@ export function Dashboard() {
 
     const todayTasks = useMemo(() => getTasksForToday(tasks), [tasks]);
     const completionsToday = useMemo(() => getCompletionsToday(completions), [completions]);
-    const currentCombo = calculateComboMultiplier(completionsToday.length);
-
-    const ritualStats = useMemo(() => {
-        const rituals = tasks.filter(
-            (t) => t.tags.includes(RITUAL_TAG) && (t.status === 'ACTIVE' || t.status === 'COMPLETED') && t.recurrence !== 'NONE'
-        );
-        const remaining = rituals.filter((t) => t.status === 'ACTIVE').length;
-        return { total: rituals.length, remaining };
-    }, [tasks]);
 
     const missionsForToday = useMemo(() => {
         const today = toLocalDateKey(new Date());
@@ -285,8 +272,6 @@ export function Dashboard() {
             setEditingTask(null);
         }
     }, [editingTask, updateTask]);
-
-    const goalProgress = dailyGoal > 0 ? Math.min(100, (completionsToday.length / dailyGoal) * 100) : 0;
 
     return (
         <div className="page-container">
@@ -450,50 +435,19 @@ export function Dashboard() {
                 <TodayScoreCard onAskCoach={() => { setCoachPrompt(undefined); setShowCoach(true); }} />
             </div>
 
+            {/* ============== VITALS STRIP (streak · HP · combo · goal · rituals) ============== */}
+            <div className="mb-4">
+                <VitalsStrip onOpenRituals={() => setShowRituals(true)} />
+            </div>
+
             {/* ============== XP BAR ============== */}
             <div className="mb-5">
                 <XPBar />
             </div>
 
-            {/* ============== DAILY REVEAL ============== */}
+            {/* ============== DAILY REVEAL (buff) ============== */}
             <div className="mb-4">
                 <DailyRevealCard />
-            </div>
-
-            {/* ============== STREAK (hero) ============== */}
-            <div className="mb-4">
-                <StreakCounter />
-            </div>
-
-            {/* ============== STATUS ROW (HP / Combo / Goal pill) ============== */}
-            <div className="mb-6 flex items-center justify-between gap-2">
-                <HealthBar />
-                <div className="flex items-center gap-2">
-                    {currentCombo > 1 && <ComboIndicator multiplier={currentCombo} />}
-                    {dailyGoal > 0 && (
-                        <div className="inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-full bg-white/5 dark:bg-white/[0.04] border border-[var(--color-border)]">
-                            <div className="relative w-3.5 h-3.5">
-                                <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 -rotate-90">
-                                    <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--color-text-tertiary)] opacity-30" />
-                                    <circle
-                                        cx="8" cy="8" r="6" fill="none"
-                                        stroke="url(#goalGrad)" strokeWidth="2" strokeLinecap="round"
-                                        strokeDasharray={`${(goalProgress / 100) * 37.7} 37.7`}
-                                    />
-                                    <defs>
-                                        <linearGradient id="goalGrad" x1="0" y1="0" x2="1" y2="1">
-                                            <stop offset="0%" stopColor="#06b6d4" />
-                                            <stop offset="100%" stopColor="#3b82f6" />
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                            </div>
-                            <span className="text-[10px] font-bold text-stat text-[var(--color-text-secondary)]">
-                                {completionsToday.length}/{dailyGoal}
-                            </span>
-                        </div>
-                    )}
-                </div>
             </div>
 
             {/* ============== DAILY MISSIONS (collapsible) — moved above quests so it's always visible ============== */}
@@ -628,57 +582,38 @@ export function Dashboard() {
                         {todayTasks.length}
                     </span>
                 </div>
-                <TaskList
-                    tasks={todayTasks}
-                    onComplete={handleCompleteTask}
-                    onDelete={handleDeleteTask}
-                    onEdit={handleEditTask}
-                    emptyMessage="All clear. Tap “New Quest” to add one."
-                />
-                {todayTasks.length === 0 && (
-                    <motion.button
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                            setCoachPrompt('Plan tomorrow for me — suggest 3 concrete, short quests based on my recent patterns and what matters most. Number them.');
-                            setShowCoach(true);
-                        }}
-                        className="mt-3 w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-2xl text-sm font-bold text-white fab-primary"
-                    >
-                        <Sparkles className="w-4 h-4" strokeWidth={2.6} />
-                        Plan tomorrow with coach
-                    </motion.button>
+                {todayTasks.length === 0 ? (
+                    <div className="glass-card px-4 py-4 flex flex-col items-center text-center gap-3">
+                        <p className="text-sm text-[var(--color-text-secondary)]">🎯 All clear for today.</p>
+                        <div className="flex items-center gap-2 w-full">
+                            <button
+                                type="button"
+                                onClick={() => setShowBrainDump(true)}
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold bg-violet-500/12 border border-violet-500/30 text-violet-300 active:scale-[0.98] transition-transform"
+                            >
+                                <Brain className="w-3.5 h-3.5" strokeWidth={2.6} /> Brain dump
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setCoachPrompt('Plan tomorrow for me — suggest 3 concrete, short quests based on my recent patterns and what matters most. Number them.');
+                                    setShowCoach(true);
+                                }}
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold text-white fab-primary active:scale-[0.98] transition-transform"
+                            >
+                                <Sparkles className="w-3.5 h-3.5" strokeWidth={2.6} /> Plan tomorrow
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <TaskList
+                        tasks={todayTasks}
+                        onComplete={handleCompleteTask}
+                        onDelete={handleDeleteTask}
+                        onEdit={handleEditTask}
+                    />
                 )}
             </div>
-
-            {/* ============== RITUAL PILL ============== */}
-            {quickRitualsEnabled && ritualStats.total > 0 && (
-                <motion.button
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setShowRituals(true)}
-                    className={`fixed z-20 flex items-center gap-2 px-4 py-3 rounded-2xl text-white ${
-                        ritualStats.remaining === 0
-                            ? 'bg-green-500 shadow-lg shadow-green-500/40'
-                            : 'fab-ritual'
-                    }`}
-                    style={{
-                        bottom: 'calc(6.5rem + env(safe-area-inset-bottom, 0px))',
-                        left: 'calc(1.5rem + env(safe-area-inset-left, 0px))',
-                    }}
-                >
-                    <Sparkles className="w-4 h-4" strokeWidth={2.6} />
-                    <span className="text-xs font-bold">
-                        {ritualStats.remaining === 0 ? 'Rituals ✓' : `${ritualStats.remaining} rituals`}
-                    </span>
-                    {ritualStats.remaining > 0 && (
-                        <span className="ritual-pulse w-1.5 h-1.5 rounded-full bg-white/85" />
-                    )}
-                </motion.button>
-            )}
 
             {/* ============== MODALS ============== */}
             <QuickRituals
