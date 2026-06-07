@@ -6,7 +6,6 @@ import { useUserStore } from '../stores/userStore';
 import { getCompletionsToday, getTasksForToday, useTaskStore } from '../stores/taskStore';
 import { useAchievementStore } from '../stores/achievementStore';
 import { useMissionStore } from '../stores/missionStore';
-import { XPBar } from '../components/gamification/XPBar';
 import { LevelBadge } from '../components/gamification/LevelBadge';
 import { VitalsStrip } from '../components/gamification/VitalsStrip';
 import { CompletionFeedback, CompletionFeedbackData } from '../components/gamification/CompletionFeedback';
@@ -435,14 +434,9 @@ export function Dashboard() {
                 <TodayScoreCard onAskCoach={() => { setCoachPrompt(undefined); setShowCoach(true); }} />
             </div>
 
-            {/* ============== VITALS STRIP (streak · HP · combo · goal · rituals) ============== */}
+            {/* ============== VITALS STRIP (streak · HP · combo · goal · rituals · level) ============== */}
             <div className="mb-4">
                 <VitalsStrip onOpenRituals={() => setShowRituals(true)} />
-            </div>
-
-            {/* ============== XP BAR ============== */}
-            <div className="mb-5">
-                <XPBar />
             </div>
 
             {/* ============== DAILY REVEAL (buff) ============== */}

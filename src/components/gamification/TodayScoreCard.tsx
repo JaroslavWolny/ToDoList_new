@@ -189,7 +189,9 @@ export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach }: Today
             {/* ── Reasons (the "why") + Ask coach ── */}
             <div className="flex items-center justify-between gap-2 mt-3">
                 <div className="flex flex-wrap gap-1.5 min-w-0">
-                    {focus.reasons.map((reason) => (
+                    {/* Only surface warnings here — the live streak/goal/HP numbers
+                        already live in the vitals strip, so we don't duplicate them. */}
+                    {focus.reasons.filter((r) => r.tone === 'bad').map((reason) => (
                         <span
                             key={reason.label}
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${reasonClasses[reason.tone]}`}

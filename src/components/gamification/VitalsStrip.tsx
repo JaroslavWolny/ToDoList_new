@@ -8,6 +8,7 @@ import { calculateComboMultiplier, getLevelTitle } from '../../lib/gamification'
 import { computeShareStats, getAvatarHex, slugifyHandle } from '../../lib/shareCard';
 import { HealthBar } from './HealthBar';
 import { ComboIndicator } from './ComboIndicator';
+import { XPBar } from './XPBar';
 import { RITUAL_TAG } from '../tasks/QuickRituals';
 
 const StreakShareModal = lazy(() =>
@@ -75,7 +76,7 @@ export function VitalsStrip({ onOpenRituals }: VitalsStripProps) {
 
     return (
         <>
-            <div className="glass-card p-2.5">
+            <div className="glass-card p-3">
                 <div className="flex items-center gap-2 flex-wrap">
                     {/* Streak → share */}
                     <motion.button
@@ -130,6 +131,11 @@ export function VitalsStrip({ onOpenRituals }: VitalsStripProps) {
                             {ritualStats.remaining === 0 ? 'Rituals ✓' : `${ritualStats.remaining} rituals`}
                         </motion.button>
                     )}
+                </div>
+
+                {/* Level / XP progress — folded into the same stats card */}
+                <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
+                    <XPBar />
                 </div>
             </div>
 
