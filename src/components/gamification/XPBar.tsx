@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion';
 import { useUserStore } from '../../stores/userStore';
 import { xpProgressInLevel, xpForNextLevel } from '../../lib/gamification';
+import { useCountUp } from '../../lib/useCountUp';
 
 export function XPBar() {
     const { xp, level } = useUserStore();
     const progress = xpProgressInLevel(xp, level);
     const nextLevelXP = xpForNextLevel(level);
     const xpRemaining = Math.max(0, nextLevelXP - xp);
+    const displayRemaining = useCountUp(xpRemaining);
 
     return (
         <div className="w-full">
@@ -20,7 +22,7 @@ export function XPBar() {
                     </span>
                 </div>
                 <span className="text-[10px] uppercase tracking-[0.14em] font-semibold text-[var(--color-text-tertiary)] text-stat">
-                    {xpRemaining.toLocaleString()} XP to next
+                    {displayRemaining.toLocaleString()} XP to next
                 </span>
             </div>
             <div className="relative h-2.5 rounded-full bg-black/5 dark:bg-white/[0.04] overflow-hidden">

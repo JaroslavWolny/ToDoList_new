@@ -11,6 +11,7 @@ import { VitalsStrip } from '../components/gamification/VitalsStrip';
 import { CompletionFeedback, CompletionFeedbackData } from '../components/gamification/CompletionFeedback';
 import { DailyRevealCard } from '../components/gamification/DailyRevealCard';
 import { MilestoneShareOverlay } from '../components/gamification/MilestoneShareOverlay';
+import { ConfettiBurst } from '../components/gamification/ConfettiBurst';
 import { TodayScoreCard } from '../components/gamification/TodayScoreCard';
 import { QuestCoach } from '../components/coach/QuestCoach';
 import { BrainDumpModal } from '../components/tasks/BrainDumpModal';
@@ -56,6 +57,7 @@ export function Dashboard() {
     const [coachPrompt, setCoachPrompt] = useState<string | undefined>(undefined);
     const [showBrainDump, setShowBrainDump] = useState(false);
     const [showWeekly, setShowWeekly] = useState(false);
+    const [confettiKey, setConfettiKey] = useState(0);
     const [missionsExpanded, setMissionsExpanded] = useState(true);
     const [quickTitle, setQuickTitle] = useState('');
     const [quickFocused, setQuickFocused] = useState(false);
@@ -183,6 +185,8 @@ export function Dashboard() {
         addXP(reward.xp);
         addCoins(reward.coins);
         setRewardDrop({ type: 'CHEST', amount: reward.xp, currency: 'XP' });
+        setConfettiKey((k) => k + 1);
+        try { navigator.vibrate?.([0, 45, 30, 45]); } catch { /* noop */ }
     }, [claimDailyChest, addXP, addCoins]);
 
     useEffect(() => {
@@ -208,6 +212,15 @@ export function Dashboard() {
             comboMultiplier,
             appliedBuff,
         });
+
+        // Celebrate the two big milestones: reaching the daily goal, or levelling up.
+        const doneNow = getCompletionsToday(useTaskStore.getState().completions).length;
+        const goal = useUserStore.getState().settings.dailyGoal;
+        const hitGoal = goal > 0 && doneNow === goal;
+        if (hitGoal || levelUpTo !== null) {
+            setConfettiKey((k) => k + 1);
+            try { navigator.vibrate?.([0, 45, 30, 45]); } catch { /* noop */ }
+        }
 
         if (reward) {
             setRewardDrop(reward);
@@ -416,16 +429,16 @@ export function Dashboard() {
                 <button
                     type="button"
                     onClick={() => setShowBrainDump(true)}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-violet-500/12 border border-violet-500/30 text-violet-300 active:scale-[0.98] transition-transform"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold glass-card text-[var(--color-text-secondary)] active:scale-[0.98] transition-transform"
                 >
-                    <Brain className="w-3.5 h-3.5" strokeWidth={2.6} /> Brain dump
+                    <Brain className="w-3.5 h-3.5 text-cyan-400" strokeWidth={2.6} /> Brain dump
                 </button>
                 <button
                     type="button"
                     onClick={() => setShowWeekly(true)}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-amber-500/12 border border-amber-500/30 text-amber-300 active:scale-[0.98] transition-transform"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold glass-card text-[var(--color-text-secondary)] active:scale-[0.98] transition-transform"
                 >
-                    <CalendarDays className="w-3.5 h-3.5" strokeWidth={2.6} /> Weekly review
+                    <CalendarDays className="w-3.5 h-3.5 text-cyan-400" strokeWidth={2.6} /> Weekly review
                 </button>
             </div>
 
@@ -583,9 +596,9 @@ export function Dashboard() {
                             <button
                                 type="button"
                                 onClick={() => setShowBrainDump(true)}
-                                className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold bg-violet-500/12 border border-violet-500/30 text-violet-300 active:scale-[0.98] transition-transform"
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold bg-white/5 border border-[var(--color-border)] text-[var(--color-text-secondary)] active:scale-[0.98] transition-transform"
                             >
-                                <Brain className="w-3.5 h-3.5" strokeWidth={2.6} /> Brain dump
+                                <Brain className="w-3.5 h-3.5 text-cyan-400" strokeWidth={2.6} /> Brain dump
                             </button>
                             <button
                                 type="button"
@@ -661,6 +674,8 @@ export function Dashboard() {
             />
 
             <MilestoneShareOverlay />
+
+            <ConfettiBurst fireKey={confettiKey} />
         </div>
     );
 }

@@ -80,10 +80,10 @@ export function DailyRevealCard({ onReveal }: DailyRevealCardProps) {
             <motion.div
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-card w-full px-4 py-3 flex items-center gap-3"
+                className="glass-card w-full px-4 py-2.5 flex items-center gap-3"
             >
                 <div
-                    className={`relative w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br ${activeTheme.accent} shadow-lg overflow-hidden`}
+                    className={`relative w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-br ${activeTheme.accent} shadow-lg overflow-hidden`}
                     style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.35), 0 4px 12px rgba(0,0,0,0.18)' }}
                 >
                     {/* Glossy top highlight for a modern, tactile tile */}

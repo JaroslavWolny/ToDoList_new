@@ -8,6 +8,7 @@ import { useFocusHistoryStore } from '../../stores/focusHistoryStore';
 import { computeTodayScore, buildFocusInputs, type FocusReason } from '../../lib/todayScore';
 import { getCachedInsight, fetchDailyInsight } from '../../lib/dailyInsight';
 import { toLocalDateKey } from '../../lib/dates';
+import { useCountUp } from '../../lib/useCountUp';
 
 const reasonClasses: Record<FocusReason['tone'], string> = {
     good: 'bg-emerald-500/12 border-emerald-500/30 text-emerald-400',
@@ -71,6 +72,8 @@ export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach }: Today
             ),
         [tasks, completedToday, health, maxHealth, streakCurrent, dailyGoal]
     );
+
+    const displayScore = useCountUp(focus.score);
 
     // ── A) record + trend ──
     useEffect(() => {
@@ -145,12 +148,11 @@ export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach }: Today
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
                         <motion.span
-                            key={focus.score}
-                            initial={{ scale: 1.2, opacity: 0 }}
+                            initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             className={`text-lg font-black text-stat ${focus.tier.text}`}
                         >
-                            {focus.score}
+                            {displayScore}
                         </motion.span>
                     </div>
                 </div>
