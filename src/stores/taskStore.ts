@@ -81,18 +81,20 @@ export const getTasksForToday = (tasks: Task[], today = new Date()): Task[] => {
     return tasks.filter((task) => {
         if (task.status !== 'ACTIVE') return false;
 
-        if (task.startDate) {
-            const startDate = toLocalDateKey(task.startDate);
-            if (startDate > todayKey) return false;
-        }
+        // A future "Start date" is the only thing that hides & locks a quest
+        // until its day arrives (matches the Start date field in the task form).
+        if (task.startDate && toLocalDateKey(task.startDate) > todayKey) return false;
 
+        // Recurring quests are always part of today's rotation.
         if (task.recurrence !== 'NONE') return true;
 
-        if (task.deadline) {
-            const deadlineDate = toLocalDateKey(task.deadline);
-            return deadlineDate <= todayKey;
-        }
+        // Any quest with a deadline stays on today's board until it's done —
+        // whether it's overdue, due today, or still coming up. A future deadline
+        // must NOT hide an active quest; only a future Start date does that.
+        if (task.deadline) return true;
 
+        // No deadline and no start date: keep it visible for a week after
+        // creation so the board doesn't fill up with old, open-ended quests.
         const createdDate = new Date(task.createdAt);
         const daysSinceCreated = Math.floor(
             (today.getTime() - createdDate.getTime()) / DAY_MS
