@@ -303,21 +303,33 @@ export function Dashboard() {
     }, [editingTask, updateTask]);
 
     return (
-        <div className="page-container">
+        <motion.div
+            className="page-container"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        >
             {/* ============== HERO IDENTITY (greeting · avatar · level · XP) ============== */}
-            <div className="glass-card p-4 mb-4">
-                <div className="flex items-start justify-between gap-3">
+            <div className="glass-hero p-5 mb-4">
+                {/* Ambient corner glow — adds depth so the hero reads as the signature surface */}
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute -top-20 -right-12 w-52 h-52 rounded-full blur-3xl opacity-60"
+                    style={{ background: 'radial-gradient(circle, rgba(34,211,238,0.30), transparent 70%)' }}
+                />
+                <div className="relative flex items-start justify-between gap-3">
                     <div className="flex flex-col min-w-0 flex-1">
-                        <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
+                        <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
+                            <Sparkles className="w-3 h-3 text-cyan-400" strokeWidth={2.8} />
                             {getGreeting()}
                         </span>
-                        <h1 className="mt-0.5 text-3xl font-black leading-none tracking-tight truncate">
-                            <span className="gradient-text">{displayName || 'Hero'}</span>
+                        <h1 className="mt-1 text-display gradient-text truncate">
+                            {displayName || 'Hero'}
                         </h1>
                     </div>
                     <LevelBadge />
                 </div>
-                <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
+                <div className="relative mt-4 pt-4 border-t border-[var(--color-border)]">
                     <XPBar />
                 </div>
             </div>
@@ -715,6 +727,6 @@ export function Dashboard() {
             <MilestoneShareOverlay />
 
             <ConfettiBurst fireKey={confettiKey} />
-        </div>
+        </motion.div>
     );
 }

@@ -135,6 +135,14 @@ const applyCloudSnapshot = (data: CloudState) => {
                 ...data.user,
             }));
         }
+        // A cloud snapshot can carry recurring quests that were completed on an
+        // earlier day or on another device. The app's one-shot daily maintenance
+        // (App.tsx) already ran before this async snapshot landed, so without
+        // re-running the reset here those quests stay COMPLETED and silently drop
+        // off "Today's Quests" — which is exactly why daily quests never loaded.
+        // Re-running it while `hydrating` is true reactivates them for today
+        // without scheduling a redundant write back to the cloud.
+        useTaskStore.getState().resetRecurringTasks();
     } finally {
         hydrating = false;
     }
