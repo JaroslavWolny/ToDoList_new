@@ -632,25 +632,16 @@ export function Dashboard() {
                 {todayTasks.length === 0 ? (
                     <div className="glass-card px-4 py-4 flex flex-col items-center text-center gap-3">
                         <p className="text-sm text-[var(--color-text-secondary)]">🎯 All clear for today.</p>
-                        <div className="flex items-center gap-2 w-full">
-                            <button
-                                type="button"
-                                onClick={() => setShowBrainDump(true)}
-                                className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold bg-white/5 border border-[var(--color-border)] text-[var(--color-text-secondary)] active:scale-[0.98] transition-transform"
-                            >
-                                <Brain className="w-3.5 h-3.5 text-cyan-400" strokeWidth={2.6} /> Brain dump
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setCoachPrompt('Plan tomorrow for me — suggest 3 concrete, short quests based on my recent patterns and what matters most. Number them.');
-                                    setShowCoach(true);
-                                }}
-                                className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold text-white fab-primary active:scale-[0.98] transition-transform"
-                            >
-                                <Sparkles className="w-3.5 h-3.5" strokeWidth={2.6} /> Plan tomorrow
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setCoachPrompt('Plan tomorrow for me — suggest 3 concrete, short quests based on my recent patterns and what matters most. Number them.');
+                                setShowCoach(true);
+                            }}
+                            className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold text-white fab-primary active:scale-[0.98] transition-transform"
+                        >
+                            <Sparkles className="w-3.5 h-3.5" strokeWidth={2.6} /> Plan tomorrow
+                        </button>
                     </div>
                 ) : (
                     <>

@@ -148,11 +148,10 @@ export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach }: Today
                 </div>
             </div>
 
-            {/* ── Reasons (the "why") + Ask coach ── */}
-            <div className="flex items-center justify-between gap-2 mt-3">
-                <div className="flex flex-wrap gap-1.5 min-w-0">
-                    {/* Only surface warnings here — the live streak/goal/HP numbers
-                        already live in the vitals strip, so we don't duplicate them. */}
+            {/* ── Reasons (the "why") — warnings only; live streak/goal/HP already
+                   live in the vitals strip, so we don't duplicate them here. ── */}
+            {focus.reasons.some((r) => r.tone === 'bad') && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
                     {focus.reasons.filter((r) => r.tone === 'bad').map((reason) => (
                         <span
                             key={reason.label}
@@ -162,16 +161,19 @@ export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach }: Today
                         </span>
                     ))}
                 </div>
-                <motion.button
-                    whileTap={{ scale: 0.94 }}
-                    onClick={onAskCoach}
-                    className="shrink-0 inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full text-xs font-bold text-white fab-primary"
-                    aria-label="Ask the AI coach"
-                >
-                    <Sparkles className="w-3.5 h-3.5" strokeWidth={2.6} />
-                    Ask coach
-                </motion.button>
-            </div>
+            )}
+
+            {/* ── Ask coach — full-width CTA so it sits evenly across the card
+                   instead of being jammed against the right edge. ── */}
+            <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={onAskCoach}
+                className="mt-3 w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold text-white fab-primary active:scale-[0.99] transition-transform"
+                aria-label="Ask the AI coach"
+            >
+                <Sparkles className="w-3.5 h-3.5" strokeWidth={2.6} />
+                Ask coach
+            </motion.button>
         </div>
     );
 });
