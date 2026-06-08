@@ -303,12 +303,12 @@ export function Dashboard() {
     }, [editingTask, updateTask]);
 
     return (
-        <motion.div
-            className="page-container"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        >
+        // NOTE: keep this a plain <div>. A transform here (e.g. a framer-motion
+        // entrance animating x/y) would establish a containing block for every
+        // position:fixed descendant — which breaks full-screen modals rendered
+        // inside the dashboard tree (Avatar Shop, Task form, Coach, …), pinning
+        // them to this container instead of the viewport.
+        <div className="page-container">
             {/* ============== HERO IDENTITY (greeting · avatar · level · XP) ============== */}
             <div className="glass-hero p-5 mb-4">
                 {/* Ambient corner glow — adds depth so the hero reads as the signature surface */}
@@ -727,6 +727,6 @@ export function Dashboard() {
             <MilestoneShareOverlay />
 
             <ConfettiBurst fireKey={confettiKey} />
-        </motion.div>
+        </div>
     );
 }
