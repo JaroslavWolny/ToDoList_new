@@ -85,22 +85,12 @@ export const getTasksForToday = (tasks: Task[], today = new Date()): Task[] => {
         // until its day arrives (matches the Start date field in the task form).
         if (task.startDate && toLocalDateKey(task.startDate) > todayKey) return false;
 
-        // Recurring quests are always part of today's rotation.
-        if (task.recurrence !== 'NONE') return true;
-
-        // Any quest with a deadline stays on today's board until it's done —
-        // whether it's overdue, due today, or still coming up. A future deadline
-        // must NOT hide an active quest; only a future Start date does that.
-        if (task.deadline) return true;
-
-        // No deadline and no start date: keep it visible for a week after
-        // creation so the board doesn't fill up with old, open-ended quests.
-        const createdDate = new Date(task.createdAt);
-        const daysSinceCreated = Math.floor(
-            (today.getTime() - createdDate.getTime()) / DAY_MS
-        );
-
-        return daysSinceCreated <= 7;
+        // Everything else that's active and unlocked belongs on today's board:
+        // recurring quests, quests with any deadline (overdue / today / upcoming),
+        // and open-ended quests with no deadline. Nothing silently disappears —
+        // an older no-deadline quest used to drop off after a week, which is why
+        // "Today's Quests" mysteriously went empty for long-running users.
+        return true;
     });
 };
 

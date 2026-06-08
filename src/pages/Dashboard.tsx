@@ -1,12 +1,14 @@
 import { Suspense, lazy, useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Zap, Sparkles, Gift, ChevronDown, ArrowUp, Clock, Repeat, Hash, Brain, CalendarDays } from 'lucide-react';
+import { Plus, Zap, Sparkles, Gift, ChevronDown, ArrowUp, Clock, Repeat, Hash, Brain, CalendarDays, ArrowRight } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../stores/userStore';
 import { getCompletionsToday, getTasksForToday, useTaskStore } from '../stores/taskStore';
 import { useAchievementStore } from '../stores/achievementStore';
 import { useMissionStore } from '../stores/missionStore';
 import { LevelBadge } from '../components/gamification/LevelBadge';
+import { XPBar } from '../components/gamification/XPBar';
 import { VitalsStrip } from '../components/gamification/VitalsStrip';
 import { CompletionFeedback, CompletionFeedbackData } from '../components/gamification/CompletionFeedback';
 import { DailyRevealCard } from '../components/gamification/DailyRevealCard';
@@ -36,6 +38,8 @@ function getGreeting(): string {
     if (hour < 18) return 'Good afternoon';
     return 'Good evening';
 }
+
+const TODAY_PREVIEW_LIMIT = 4;
 
 function getQuickPlaceholder(): string {
     const hour = new Date().getHours();
@@ -118,6 +122,19 @@ export function Dashboard() {
     );
 
     const todayTasks = useMemo(() => getTasksForToday(tasks), [tasks]);
+    const todayPreview = useMemo(() => {
+        const rank: Record<Task['priority'], number> = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+        return [...todayTasks]
+            .sort((a, b) => {
+                const byPriority = rank[b.priority] - rank[a.priority];
+                if (byPriority !== 0) return byPriority;
+                if (a.deadline && b.deadline) return a.deadline.localeCompare(b.deadline);
+                if (a.deadline) return -1;
+                if (b.deadline) return 1;
+                return 0;
+            })
+            .slice(0, TODAY_PREVIEW_LIMIT);
+    }, [todayTasks]);
     const completionsToday = useMemo(() => getCompletionsToday(completions), [completions]);
 
     const missionsForToday = useMemo(() => {
@@ -287,17 +304,22 @@ export function Dashboard() {
 
     return (
         <div className="page-container">
-            {/* ============== HEADER ============== */}
-            <div className="flex items-start justify-between gap-3 mb-4">
-                <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
-                        {getGreeting()}
-                    </span>
-                    <h1 className="mt-0.5 text-3xl font-black leading-none tracking-tight truncate">
-                        <span className="gradient-text">{displayName || 'Hero'}</span>
-                    </h1>
+            {/* ============== HERO IDENTITY (greeting · avatar · level · XP) ============== */}
+            <div className="glass-card p-4 mb-4">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col min-w-0 flex-1">
+                        <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
+                            {getGreeting()}
+                        </span>
+                        <h1 className="mt-0.5 text-3xl font-black leading-none tracking-tight truncate">
+                            <span className="gradient-text">{displayName || 'Hero'}</span>
+                        </h1>
+                    </div>
+                    <LevelBadge />
                 </div>
-                <LevelBadge />
+                <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
+                    <XPBar />
+                </div>
             </div>
 
             {/* ============== QUICK-ADD QUEST BAR ============== */}
@@ -579,15 +601,21 @@ export function Dashboard() {
                 </div>
             )}
 
-            {/* ============== TODAY'S QUESTS ============== */}
+            {/* ============== TODAY'S QUESTS (compact preview — full list lives on the Tasks tab) ============== */}
             <div className="mb-5">
                 <div className="flex items-center justify-between mb-2.5">
                     <h2 className="text-[11px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
                         Today's Quests
                     </h2>
-                    <span className="text-[11px] font-semibold text-[var(--color-text-tertiary)] text-stat">
-                        {todayTasks.length}
-                    </span>
+                    <Link
+                        to="/tasks"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-cyan-400 active:opacity-70"
+                    >
+                        <span className="text-stat">{todayTasks.length}</span>
+                        <span className="text-[var(--color-text-tertiary)]">·</span>
+                        All quests
+                        <ArrowRight className="w-3 h-3" strokeWidth={3} />
+                    </Link>
                 </div>
                 {todayTasks.length === 0 ? (
                     <div className="glass-card px-4 py-4 flex flex-col items-center text-center gap-3">
@@ -613,12 +641,23 @@ export function Dashboard() {
                         </div>
                     </div>
                 ) : (
-                    <TaskList
-                        tasks={todayTasks}
-                        onComplete={handleCompleteTask}
-                        onDelete={handleDeleteTask}
-                        onEdit={handleEditTask}
-                    />
+                    <>
+                        <TaskList
+                            tasks={todayPreview}
+                            onComplete={handleCompleteTask}
+                            onDelete={handleDeleteTask}
+                            onEdit={handleEditTask}
+                        />
+                        {todayTasks.length > TODAY_PREVIEW_LIMIT && (
+                            <Link
+                                to="/tasks"
+                                className="mt-2 w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold glass-card text-[var(--color-text-secondary)] active:scale-[0.98] transition-transform"
+                            >
+                                +{todayTasks.length - TODAY_PREVIEW_LIMIT} more
+                                <ArrowRight className="w-3.5 h-3.5 text-cyan-400" strokeWidth={2.6} />
+                            </Link>
+                        )}
+                    </>
                 )}
             </div>
 

@@ -16,34 +16,6 @@ const reasonClasses: Record<FocusReason['tone'], string> = {
     neutral: 'bg-white/5 border-[var(--color-border)] text-[var(--color-text-secondary)]',
 };
 
-/** Tiny inline trend line for the last few days of Focus scores. */
-function Sparkline({ scores, stroke }: { scores: number[]; stroke: string }) {
-    if (scores.length < 2) return null;
-    const w = 52;
-    const h = 16;
-    const min = Math.min(...scores);
-    const max = Math.max(...scores);
-    const range = max - min || 1;
-    const pts = scores
-        .map((s, i) => {
-            const x = (i / (scores.length - 1)) * w;
-            const y = h - ((s - min) / range) * h;
-            return `${x.toFixed(1)},${y.toFixed(1)}`;
-        })
-        .join(' ');
-    return (
-        <svg width={w} height={h} className="overflow-visible" aria-hidden="true">
-            <polyline points={pts} fill="none" stroke={stroke} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
-            <circle
-                cx={w}
-                cy={h - ((scores[scores.length - 1] - min) / range) * h}
-                r={1.9}
-                fill={stroke}
-            />
-        </svg>
-    );
-}
-
 interface TodayScoreCardProps {
     onAskCoach: () => void;
 }
@@ -80,22 +52,11 @@ export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach }: Today
         recordToday(focus.score);
     }, [focus.score, recordToday]);
 
-    const { todayKey, yesterdayKey } = useMemo(() => {
-        const now = new Date();
-        const y = new Date(now);
-        y.setDate(now.getDate() - 1);
-        return { todayKey: toLocalDateKey(now), yesterdayKey: toLocalDateKey(y) };
+    const yesterdayKey = useMemo(() => {
+        const y = new Date();
+        y.setDate(y.getDate() - 1);
+        return toLocalDateKey(y);
     }, []);
-
-    const sparkScores = useMemo(() => {
-        const recent = history.slice(-7).map((e) => ({ date: e.date, score: e.score }));
-        if (recent.length === 0 || recent[recent.length - 1].date !== todayKey) {
-            recent.push({ date: todayKey, score: focus.score });
-        } else {
-            recent[recent.length - 1] = { date: todayKey, score: focus.score };
-        }
-        return recent.map((e) => e.score);
-    }, [history, todayKey, focus.score]);
 
     const delta = useMemo(() => {
         const y = history.find((e) => e.date === yesterdayKey);
@@ -163,9 +124,8 @@ export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach }: Today
                         <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
                             Today's Focus
                         </span>
-                        {/* trend: sparkline + delta vs yesterday */}
+                        {/* trend: simple delta vs yesterday (no chart) */}
                         <div className="flex items-center gap-1.5 shrink-0">
-                            <Sparkline scores={sparkScores} stroke={focus.tier.to} />
                             {delta !== null && (
                                 <span
                                     className={`inline-flex items-center gap-0.5 text-[10px] font-bold text-stat ${
