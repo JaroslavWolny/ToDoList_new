@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Lock, Sparkles, Star, Coins, Trophy, ShoppingBag } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -148,8 +149,14 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
     ], [ownedCount]);
 
     if (!isOpen) return null;
+    if (typeof document === 'undefined') return null;
 
-    return (
+    // Portal to <body> so the panel escapes any ancestor that establishes a
+    // containing block for position:fixed — e.g. the dashboard's `.glass-hero`
+    // card (backdrop-filter + overflow:hidden) that wraps the LevelBadge which
+    // mounts this modal. Without the portal the panel gets pinned to that small
+    // hero card and clipped, leaving the page showing through behind it.
+    return createPortal(
         <AnimatePresence>
             {/* Backdrop – desktop only */}
             {!isMobile && (
@@ -502,6 +509,7 @@ export function AvatarShopModal({ isOpen, onClose }: AvatarShopModalProps) {
                     </div>
                 </div>
             </motion.div>
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     );
 }

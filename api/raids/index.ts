@@ -55,7 +55,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .get();
 
         const raids = snapshot.docs
-            .map((doc) => ({ id: doc.id, ...(doc.data() as { createdAt?: string }) }))
+            .map((doc) => ({ id: doc.id, ...(doc.data() as { createdAt?: string; status?: string }) }))
+            // Hide archived raids so a deleted raid actually disappears from the
+            // list. (Filtering in memory avoids a composite index on
+            // memberUids + status.)
+            .filter((r) => r.status !== 'ARCHIVED')
             .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
         return res.status(200).json({ raids });
     }

@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Skull, Heart, Copy, Check, Users, Crown, Loader2, Swords, Trophy } from 'lucide-react';
+import { ArrowLeft, Skull, Heart, Copy, Check, Users, Crown, Loader2, Swords, Trophy, Trash2, Coins } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
-import { archiveRaid, getRaid } from '../lib/raidApi';
+import { deleteRaid, getRaid } from '../lib/raidApi';
+import { computeLoot, invalidateRaidCache } from '../lib/raidDamage';
 import type { DamageEvent, Raid, RaidMember } from '../types/raids';
 
 export function RaidDetail() {
@@ -17,7 +18,7 @@ export function RaidDetail() {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [copied, setCopied] = useState(false);
-    const [archiving, setArchiving] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const fetchRaid = useCallback(async () => {
         if (!raidId) return;
@@ -88,16 +89,16 @@ export function RaidDetail() {
         }
     };
 
-    const handleArchive = async () => {
-        if (!window.confirm('Archive this raid? Damage will no longer be counted.')) return;
-        setArchiving(true);
+    const handleDelete = async () => {
+        if (!window.confirm('Delete this raid for everyone? The boss and all damage history will be permanently removed. This cannot be undone.')) return;
+        setDeleting(true);
         try {
-            await archiveRaid(raid.id);
+            await deleteRaid(raid.id);
+            invalidateRaidCache();
             navigate('/raids');
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to archive');
-        } finally {
-            setArchiving(false);
+            setError(err instanceof Error ? err.message : 'Failed to delete');
+            setDeleting(false);
         }
     };
 
@@ -159,6 +160,12 @@ export function RaidDetail() {
                     <p className="text-xs text-[var(--color-text-secondary)]">
                         Damage: LOW=1, MEDIUM=3, HIGH=5, CRITICAL=8 · Quest x2
                     </p>
+                    <div className="flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 bg-amber-500/10 border border-amber-500/20">
+                        <Coins className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" />
+                        <span className="text-xs font-semibold text-amber-200">
+                            Killing blow drops ~{computeLoot(boss.tier).coins} coins + {computeLoot(boss.tier).xp} XP — land the last hit to claim it
+                        </span>
+                    </div>
                 </div>
             ) : (
                 <div className="card-surface rounded-2xl p-5 mb-4 text-center">
@@ -232,12 +239,16 @@ export function RaidDetail() {
                 <Section title="Management">
                     <button
                         type="button"
-                        onClick={handleArchive}
-                        disabled={archiving}
-                        className="w-full rounded-xl py-2.5 px-4 text-sm font-semibold bg-red-500/10 text-red-300 border border-red-500/20 disabled:opacity-50"
+                        onClick={handleDelete}
+                        disabled={deleting}
+                        className="w-full rounded-xl py-2.5 px-4 text-sm font-semibold bg-red-500/10 text-red-300 border border-red-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                        {archiving ? 'Archiving...' : 'Archive raid'}
+                        {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        {deleting ? 'Deleting...' : 'Delete raid'}
                     </button>
+                    <p className="text-[11px] text-[var(--color-text-tertiary)] mt-2 text-center">
+                        Permanently removes the boss and damage history for all members.
+                    </p>
                 </Section>
             )}
         </div>

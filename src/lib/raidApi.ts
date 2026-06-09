@@ -58,7 +58,7 @@ export const dealDamage = async (raidId: string, payload: {
     return await handle<{ damage: number; killed: boolean; bossHp: number; raid: Raid }>(res);
 };
 
-export const archiveRaid = async (raidId: string): Promise<void> => {
+export const deleteRaid = async (raidId: string): Promise<void> => {
     const res = await authFetch(`/api/raids/${encodeURIComponent(raidId)}`, {
         method: 'DELETE',
     });

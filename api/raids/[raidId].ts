@@ -205,10 +205,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (data.ownerUid !== auth.user.uid) {
             return res.status(403).json({ error: 'Only the creator can delete this raid' });
         }
-        await raidRef.update({
-            status: 'ARCHIVED',
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
+        // Hard delete: remove the raid document along with its subcollections
+        // (damageEvents, bossHistory). A previous version only flipped the
+        // status to ARCHIVED, which left the boss showing in the list — so the
+        // delete looked like it did nothing. recursiveDelete frees the owner's
+        // raid quota too.
+        await db.recursiveDelete(raidRef);
         return res.status(200).json({ success: true });
     }
 
