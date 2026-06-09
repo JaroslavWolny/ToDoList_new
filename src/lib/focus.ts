@@ -1,4 +1,4 @@
-import type { Priority } from '../types';
+import type { Priority, GamificationLevel } from '../types';
 
 /**
  * Pure helpers for the Gamified Focus Timer / Deep-Work mode.
@@ -31,6 +31,20 @@ export const focusXp = (minutes: number): number =>
 
 /** A small coin trickle so deep work also feeds the avatar-shop economy. */
 export const focusCoins = (minutes: number): number => Math.round(minutes / 5);
+
+/**
+ * XP lost when you bail on a session early. Paired with a guaranteed −1 HP,
+ * this gives "deep focus" real teeth (Forest kills your tree) instead of a
+ * toothless "no reward". Scales with how much you committed (session length)
+ * and the chosen difficulty, so quitting genuinely costs more than finishing.
+ */
+export const focusForfeitXp = (minutes: number, level: GamificationLevel): number => {
+    const pct = level === 'CASUAL' ? 0.5 : level === 'HARDCORE' ? 1.5 : 1;
+    return Math.max(5, Math.round(Math.max(1, minutes) * pct));
+};
+
+/** HP always lost on a forfeit — same sting as missing a quest deadline. */
+export const FOCUS_FORFEIT_HP = 1;
 
 /**
  * Map a session length to a raid-damage tier. Longer focus = heavier hit.

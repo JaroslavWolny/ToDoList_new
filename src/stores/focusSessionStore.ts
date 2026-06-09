@@ -13,7 +13,7 @@ import { toLocalDateKey } from '../lib/dates';
  *     feeds Today's Focus, the Weekly Review and the focus achievements.
  */
 
-export type FocusPhase = 'idle' | 'setup' | 'running' | 'done';
+export type FocusPhase = 'idle' | 'setup' | 'running' | 'done' | 'forfeited';
 
 export interface FocusDayEntry {
     date: string; // YYYY-MM-DD (local)
@@ -40,6 +40,14 @@ export interface FocusResultSummary {
     taskTitle: string | null;
 }
 
+/** What you lost by bailing on a session early. */
+export interface FocusForfeitSummary {
+    minutes: number;
+    xpLost: number;
+    hpLost: number;
+    taskTitle: string | null;
+}
+
 const HISTORY_DAYS = 60;
 
 const sumLastDays = (history: FocusDayEntry[], days: number, now = new Date()): number => {
@@ -56,6 +64,7 @@ interface FocusSessionStore {
     phase: FocusPhase;
     active: ActiveFocusSession | null;
     lastResult: FocusResultSummary | null;
+    lastForfeit: FocusForfeitSummary | null;
 
     // Lifetime metric
     totalFocusMinutes: number;
@@ -66,7 +75,8 @@ interface FocusSessionStore {
     // UI flow
     openSetup: () => void;
     start: (durationMin: number, taskId: string | null, taskTitle: string | null) => void;
-    giveUp: () => void; // loss aversion — discard the session, no reward
+    /** Bail out — surface the forfeit screen with the penalty that was applied. */
+    showForfeit: (result: FocusForfeitSummary) => void;
     showResult: (result: FocusResultSummary) => void;
     close: () => void;
     /** Re-enter the running phase if a persisted session is still in flight (after reload). */
@@ -87,18 +97,20 @@ export const useFocusSessionStore = create<FocusSessionStore>()(
             phase: 'idle',
             active: null,
             lastResult: null,
+            lastForfeit: null,
             totalFocusMinutes: 0,
             totalSessions: 0,
             longestSessionMin: 0,
             history: [],
 
-            openSetup: () => set({ phase: 'setup', lastResult: null }),
+            openSetup: () => set({ phase: 'setup', lastResult: null, lastForfeit: null }),
 
             start: (durationMin, taskId, taskTitle) => {
                 const minutes = Math.max(1, Math.round(durationMin));
                 set({
                     phase: 'running',
                     lastResult: null,
+                    lastForfeit: null,
                     active: {
                         startedAt: Date.now(),
                         durationSec: minutes * 60,
@@ -109,11 +121,11 @@ export const useFocusSessionStore = create<FocusSessionStore>()(
                 });
             },
 
-            giveUp: () => set({ phase: 'idle', active: null, lastResult: null }),
+            showForfeit: (result) => set({ phase: 'forfeited', active: null, lastForfeit: result }),
 
             showResult: (result) => set({ phase: 'done', active: null, lastResult: result }),
 
-            close: () => set({ phase: 'idle', lastResult: null }),
+            close: () => set({ phase: 'idle', lastResult: null, lastForfeit: null }),
 
             resume: () => {
                 const { active, phase } = get();

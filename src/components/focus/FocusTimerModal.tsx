@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Timer, X, Zap, Coins, Target, Swords, Minus, Plus, AlertTriangle, Sparkles, Check } from 'lucide-react';
+import { Timer, X, Zap, Coins, Target, Swords, Minus, Plus, AlertTriangle, Sparkles, Check, Heart, ShieldAlert } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useFocusSessionStore } from '../../stores/focusSessionStore';
+import { useUserStore } from '../../stores/userStore';
 import { getTasksForToday, useTaskStore } from '../../stores/taskStore';
-import { completeFocusSession } from '../../lib/focusCompletion';
+import { completeFocusSession, forfeitFocusSession } from '../../lib/focusCompletion';
 import { completeTaskTransaction } from '../../lib/taskCompletion';
 import {
     FOCUS_PRESETS,
@@ -12,31 +13,38 @@ import {
     FOCUS_MAX_MINUTES,
     FOCUS_STEP_MINUTES,
     FOCUS_DEFAULT_MINUTES,
+    FOCUS_FORFEIT_HP,
+    focusXp,
+    focusCoins,
+    focusForfeitXp,
     formatClock,
     formatFocusMinutes,
 } from '../../lib/focus';
 import { ConfettiBurst } from '../gamification/ConfettiBurst';
 
 const QUEST_PICKER_LIMIT = 6;
+const HOLD_TO_FORFEIT_MS = 1400;
 
 /**
  * Full-screen Deep-Work overlay. Mounted once at the app shell so a running
- * session survives navigation between tabs. Three phases:
- *   setup   → pick a length (25/50/custom) + an optional quest to focus on
- *   running → a countdown that "takes over" the app (deep focus); bailing early
- *             forfeits everything (loss aversion); the clock is wall-clock based
- *             so a reload or tab-switch resumes instead of cheating the timer
- *   done    → reward summary (XP · coins · focus minutes · boss damage)
+ * session survives navigation between tabs. Phases:
+ *   setup     → pick a length (25/50/custom) + an optional quest; see the stakes
+ *   running   → a countdown that "takes over" the app (deep focus). There's no
+ *               close button and the back gesture is trapped — the only way out
+ *               is to finish (reward) or hold-to-forfeit (real XP + HP penalty)
+ *   done      → reward summary (XP · coins · focus minutes · boss damage)
+ *   forfeited → the damage you took for bailing (loss aversion with teeth)
  */
 export function FocusTimerModal() {
-    const { phase, active, lastResult, start, giveUp, showResult, openSetup, close, resume } =
+    const { phase, active, lastResult, lastForfeit, start, showForfeit, showResult, openSetup, close, resume } =
         useFocusSessionStore(
             useShallow((s) => ({
                 phase: s.phase,
                 active: s.active,
                 lastResult: s.lastResult,
+                lastForfeit: s.lastForfeit,
                 start: s.start,
-                giveUp: s.giveUp,
+                showForfeit: s.showForfeit,
                 showResult: s.showResult,
                 openSetup: s.openSetup,
                 close: s.close,
@@ -44,6 +52,7 @@ export function FocusTimerModal() {
             }))
         );
     const tasks = useTaskStore((s) => s.tasks);
+    const gamificationLevel = useUserStore((s) => s.settings.gamificationLevel);
     const todayTasks = useMemo(() => getTasksForToday(tasks).slice(0, QUEST_PICKER_LIMIT), [tasks]);
 
     // ── setup form state ──
@@ -53,11 +62,13 @@ export function FocusTimerModal() {
     // ── running state ──
     const [remainingSec, setRemainingSec] = useState(0);
     const [confettiKey, setConfettiKey] = useState(0);
-    const [confirmGiveUp, setConfirmGiveUp] = useState(false);
+    const [giveUpOpen, setGiveUpOpen] = useState(false);
+    const [holdProgress, setHoldProgress] = useState(0);
     const [showNudge, setShowNudge] = useState(false);
     const [questDone, setQuestDone] = useState(false);
     const completingRef = useRef(false);
-    const giveUpTimerRef = useRef<number | null>(null);
+    const holdIntervalRef = useRef<number | null>(null);
+    const holdStartRef = useRef(0);
     const nudgeTimerRef = useRef<number | null>(null);
 
     // Resume a persisted session after a reload (no-op when there's nothing live).
@@ -76,7 +87,8 @@ export function FocusTimerModal() {
     const sessionKey = active?.startedAt ?? 0;
     useEffect(() => {
         completingRef.current = false;
-        setConfirmGiveUp(false);
+        setGiveUpOpen(false);
+        setHoldProgress(0);
         setShowNudge(false);
         setQuestDone(false);
     }, [sessionKey]);
@@ -94,6 +106,17 @@ export function FocusTimerModal() {
         });
         showResult(result);
     }, [showResult]);
+
+    const handleForfeit = useCallback(() => {
+        const session = useFocusSessionStore.getState().active;
+        if (!session) return;
+        try { navigator.vibrate?.([0, 90, 50, 140]); } catch { /* noop */ }
+        const result = forfeitFocusSession({
+            minutes: session.durationMin,
+            taskTitle: session.taskTitle,
+        });
+        showForfeit(result);
+    }, [showForfeit]);
 
     // Countdown driven by wall-clock so throttled/background tabs stay accurate.
     useEffect(() => {
@@ -124,6 +147,20 @@ export function FocusTimerModal() {
         return () => window.removeEventListener('beforeunload', handler);
     }, [phase]);
 
+    // Deep focus: trap the back gesture so a session can't be swiped away.
+    // Instead of leaving, re-pin the history entry and surface the forfeit prompt.
+    useEffect(() => {
+        if (phase !== 'running') return;
+        window.history.pushState({ focusGuard: true }, '');
+        const onPop = () => {
+            window.history.pushState({ focusGuard: true }, '');
+            setGiveUpOpen(true);
+            try { navigator.vibrate?.(20); } catch { /* noop */ }
+        };
+        window.addEventListener('popstate', onPop);
+        return () => window.removeEventListener('popstate', onPop);
+    }, [phase]);
+
     // Deep focus: nudge the user when they tab away and come back.
     useEffect(() => {
         if (phase !== 'running') return;
@@ -138,8 +175,31 @@ export function FocusTimerModal() {
         return () => document.removeEventListener('visibilitychange', onVisibility);
     }, [phase]);
 
+    const cancelHold = useCallback(() => {
+        if (holdIntervalRef.current) {
+            window.clearInterval(holdIntervalRef.current);
+            holdIntervalRef.current = null;
+        }
+        setHoldProgress(0);
+    }, []);
+
+    const startHold = useCallback(() => {
+        holdStartRef.current = Date.now();
+        if (holdIntervalRef.current) window.clearInterval(holdIntervalRef.current);
+        holdIntervalRef.current = window.setInterval(() => {
+            const p = Math.min(1, (Date.now() - holdStartRef.current) / HOLD_TO_FORFEIT_MS);
+            setHoldProgress(p);
+            if (p >= 1) {
+                if (holdIntervalRef.current) window.clearInterval(holdIntervalRef.current);
+                holdIntervalRef.current = null;
+                setHoldProgress(0);
+                handleForfeit();
+            }
+        }, 30);
+    }, [handleForfeit]);
+
     useEffect(() => () => {
-        if (giveUpTimerRef.current) window.clearTimeout(giveUpTimerRef.current);
+        if (holdIntervalRef.current) window.clearInterval(holdIntervalRef.current);
         if (nudgeTimerRef.current) window.clearTimeout(nudgeTimerRef.current);
     }, []);
 
@@ -150,18 +210,6 @@ export function FocusTimerModal() {
         const task = todayTasks.find((t) => t.id === selTaskId) ?? null;
         try { navigator.vibrate?.(12); } catch { /* noop */ }
         start(minutes, task?.id ?? null, task?.title ?? null);
-    };
-
-    const handleGiveUp = () => {
-        if (!confirmGiveUp) {
-            setConfirmGiveUp(true);
-            try { navigator.vibrate?.(8); } catch { /* noop */ }
-            if (giveUpTimerRef.current) window.clearTimeout(giveUpTimerRef.current);
-            giveUpTimerRef.current = window.setTimeout(() => setConfirmGiveUp(false), 3000);
-            return;
-        }
-        if (giveUpTimerRef.current) window.clearTimeout(giveUpTimerRef.current);
-        giveUp();
     };
 
     const handleMarkQuestDone = () => {
@@ -178,6 +226,13 @@ export function FocusTimerModal() {
     }, [lastResult, tasks]);
 
     if (phase === 'idle') return <ConfettiBurst fireKey={confettiKey} />;
+
+    // ── reward / penalty stakes (shown so quitting reads as a real loss) ──
+    const setupRewardXp = focusXp(minutes);
+    const setupRewardCoins = focusCoins(minutes);
+    const setupPenaltyXp = focusForfeitXp(minutes, gamificationLevel);
+    const runRewardXp = active ? focusXp(active.durationMin) : 0;
+    const runPenaltyXp = active ? focusForfeitXp(active.durationMin, gamificationLevel) : 0;
 
     // ── countdown ring geometry ──
     const radius = 130;
@@ -197,10 +252,10 @@ export function FocusTimerModal() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[70] flex flex-col items-center justify-center px-6 safe-x safe-bottom"
+                    className="fixed inset-0 z-[70] flex flex-col items-center justify-center overflow-y-auto px-6 py-10 safe-x safe-bottom"
                     style={{
                         background:
-                            'radial-gradient(120% 90% at 50% 0%, rgba(34,211,238,0.14), transparent 60%), var(--color-bg)',
+                            'radial-gradient(120% 90% at 50% 0%, rgba(34,211,238,0.16), transparent 55%), var(--color-bg)',
                     }}
                 >
                     {/* ============ SETUP ============ */}
@@ -211,13 +266,13 @@ export function FocusTimerModal() {
                             className="w-full max-w-sm"
                         >
                             <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-2">
-                                    <span className="w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-br from-cyan-500/25 to-blue-500/25 border border-cyan-400/30">
-                                        <Timer className="w-5 h-5 text-cyan-400" strokeWidth={2.4} />
+                                <div className="flex items-center gap-2.5">
+                                    <span className="w-11 h-11 rounded-2xl flex items-center justify-center bg-gradient-to-br from-cyan-500/30 to-blue-600/30 border border-cyan-400/40 shadow-lg shadow-cyan-500/10">
+                                        <Timer className="w-5 h-5 text-cyan-300" strokeWidth={2.4} />
                                     </span>
                                     <div className="leading-tight">
-                                        <h2 className="text-base font-black">Deep Work</h2>
-                                        <p className="text-[10px] text-[var(--color-text-tertiary)]">Pick a block. Stay in it.</p>
+                                        <h2 className="text-lg font-black tracking-tight">Deep Work</h2>
+                                        <p className="text-[11px] text-[var(--color-text-tertiary)]">Lock in. No escape till it's done.</p>
                                     </div>
                                 </div>
                                 <button
@@ -233,7 +288,7 @@ export function FocusTimerModal() {
                             <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)] mb-2">
                                 Session length
                             </p>
-                            <div className="flex items-center gap-2 mb-3">
+                            <div className="flex items-center gap-2 mb-4">
                                 {FOCUS_PRESETS.map((preset) => (
                                     <button
                                         key={preset}
@@ -266,11 +321,27 @@ export function FocusTimerModal() {
                                 </div>
                             </div>
 
+                            {/* Stakes: finish vs bail */}
+                            <div className="grid grid-cols-2 gap-2 mb-4">
+                                <div className="rounded-2xl px-3 py-2.5 bg-emerald-500/10 border border-emerald-500/25">
+                                    <p className="text-[9px] uppercase tracking-[0.16em] font-bold text-emerald-400/80">Finish</p>
+                                    <p className="text-[13px] font-black text-emerald-300 mt-0.5 flex items-center gap-1">
+                                        +{setupRewardXp} XP <span className="text-emerald-400/50">·</span> +{setupRewardCoins} <Coins className="w-3 h-3" strokeWidth={2.6} />
+                                    </p>
+                                </div>
+                                <div className="rounded-2xl px-3 py-2.5 bg-red-500/10 border border-red-500/25">
+                                    <p className="text-[9px] uppercase tracking-[0.16em] font-bold text-red-400/80">Bail early</p>
+                                    <p className="text-[13px] font-black text-red-300 mt-0.5 flex items-center gap-1">
+                                        −{setupPenaltyXp} XP <span className="text-red-400/50">·</span> −{FOCUS_FORFEIT_HP} <Heart className="w-3 h-3 fill-current" strokeWidth={2.6} />
+                                    </p>
+                                </div>
+                            </div>
+
                             {/* Quest link */}
-                            <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)] mb-2 mt-5">
+                            <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)] mb-2">
                                 Focus on a quest <span className="text-[var(--color-text-tertiary)] normal-case font-medium tracking-normal">(optional)</span>
                             </p>
-                            <div className="flex flex-col gap-1.5 mb-6 max-h-44 overflow-y-auto">
+                            <div className="flex flex-col gap-1.5 mb-6 max-h-36 overflow-y-auto">
                                 <button
                                     onClick={() => setSelTaskId(null)}
                                     className={`text-left px-3.5 py-2.5 rounded-xl text-[13px] font-semibold border transition-colors ${
@@ -305,7 +376,7 @@ export function FocusTimerModal() {
                                 Start {minutes}-minute session
                             </motion.button>
                             <p className="text-center text-[10px] text-[var(--color-text-tertiary)] mt-3 leading-relaxed">
-                                Leaving early forfeits the reward. Finish it to bank XP + focus minutes.
+                                Once it starts there's no easy exit — bailing costs XP and a heart.
                             </p>
                         </motion.div>
                     )}
@@ -323,11 +394,11 @@ export function FocusTimerModal() {
                                         initial={{ opacity: 0, y: -12 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -12 }}
-                                        className="absolute top-6 inset-x-6 mx-auto max-w-xs flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30"
+                                        className="absolute top-4 inset-x-6 mx-auto max-w-xs flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30"
                                     >
                                         <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" strokeWidth={2.6} />
                                         <span className="text-[11px] font-semibold text-amber-200">
-                                            Still ticking — get back in the zone before you lose it.
+                                            Still ticking — get back in or you'll lose XP and a heart.
                                         </span>
                                     </motion.div>
                                 )}
@@ -338,7 +409,13 @@ export function FocusTimerModal() {
                             </span>
 
                             <div className="relative" style={{ width: radius * 2, height: radius * 2 }}>
-                                <svg width={radius * 2} height={radius * 2} className="-rotate-90">
+                                {/* Ambient pulse so the timer reads as a living, immersive surface */}
+                                <div
+                                    aria-hidden
+                                    className="absolute inset-4 rounded-full blur-2xl animate-pulse"
+                                    style={{ background: 'radial-gradient(circle, rgba(34,211,238,0.22), transparent 70%)' }}
+                                />
+                                <svg width={radius * 2} height={radius * 2} className="relative -rotate-90">
                                     <circle cx={radius} cy={radius} r={r} fill="none" stroke="var(--color-border)" strokeWidth={stroke} />
                                     <circle
                                         cx={radius}
@@ -378,17 +455,65 @@ export function FocusTimerModal() {
                                 <p className="mt-7 text-[13px] text-[var(--color-text-secondary)]">Eyes on one thing. Nothing else.</p>
                             )}
 
-                            <motion.button
-                                whileTap={{ scale: 0.97 }}
-                                onClick={handleGiveUp}
-                                className={`mt-10 inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold border transition-colors ${
-                                    confirmGiveUp
-                                        ? 'bg-red-500/15 border-red-500/40 text-red-400'
-                                        : 'border-[var(--color-border)] text-[var(--color-text-tertiary)]'
-                                }`}
-                            >
-                                {confirmGiveUp ? 'Tap again to forfeit reward' : 'Give up'}
-                            </motion.button>
+                            {/* Stakes ticker — keeps the cost of bailing in view */}
+                            <div className="mt-4 inline-flex items-center gap-2 text-[11px] font-bold">
+                                <span className="text-emerald-400">Finish +{runRewardXp} XP</span>
+                                <span className="text-[var(--color-text-tertiary)]">·</span>
+                                <span className="text-red-400 inline-flex items-center gap-0.5">
+                                    Bail −{runPenaltyXp} XP −<Heart className="w-3 h-3 fill-current" strokeWidth={2.6} />
+                                </span>
+                            </div>
+
+                            {/* Give-up: gated behind an explicit warning + hold-to-confirm */}
+                            <div className="mt-8 w-full flex flex-col items-center min-h-[96px] justify-start">
+                                {!giveUpOpen ? (
+                                    <button
+                                        onClick={() => { setGiveUpOpen(true); try { navigator.vibrate?.(8); } catch { /* noop */ } }}
+                                        className="text-[11px] font-bold text-[var(--color-text-tertiary)] underline underline-offset-4 decoration-[var(--color-border)] hover:text-[var(--color-text-secondary)]"
+                                    >
+                                        Give up
+                                    </button>
+                                ) : (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 8 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="w-full rounded-2xl p-3.5 bg-red-500/10 border border-red-500/25"
+                                    >
+                                        <div className="flex items-start gap-2 mb-3">
+                                            <ShieldAlert className="w-4 h-4 text-red-400 shrink-0 mt-0.5" strokeWidth={2.6} />
+                                            <p className="text-[12px] font-semibold text-red-200 leading-snug">
+                                                Bail now and you lose <span className="font-black">−{runPenaltyXp} XP</span> and{' '}
+                                                <span className="font-black">−{FOCUS_FORFEIT_HP} ❤️</span>. Your focus minutes won't count.
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => { setGiveUpOpen(false); cancelHold(); }}
+                                                className="flex-1 py-2.5 rounded-xl text-xs font-black text-white fab-primary"
+                                            >
+                                                Keep focusing
+                                            </button>
+                                            <button
+                                                onPointerDown={startHold}
+                                                onPointerUp={cancelHold}
+                                                onPointerLeave={cancelHold}
+                                                onPointerCancel={cancelHold}
+                                                onContextMenu={(e) => e.preventDefault()}
+                                                className="relative flex-1 py-2.5 rounded-xl text-xs font-bold text-red-300 border border-red-500/40 overflow-hidden select-none touch-none"
+                                            >
+                                                <span
+                                                    aria-hidden
+                                                    className="absolute inset-y-0 left-0 bg-red-500/30"
+                                                    style={{ width: `${holdProgress * 100}%`, transition: 'width 0.03s linear' }}
+                                                />
+                                                <span className="relative">
+                                                    {holdProgress > 0 ? 'Keep holding…' : 'Hold to forfeit'}
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </div>
                         </motion.div>
                     )}
 
@@ -480,6 +605,61 @@ export function FocusTimerModal() {
                                         Done
                                     </button>
                                 </div>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* ============ FORFEITED ============ */}
+                    {phase === 'forfeited' && lastForfeit && (
+                        <motion.div
+                            initial={{ scale: 0.94, opacity: 0, y: 12 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            className="w-full max-w-sm flex flex-col items-center text-center"
+                        >
+                            <motion.div
+                                initial={{ rotate: -8, scale: 0 }}
+                                animate={{ rotate: 0, scale: 1 }}
+                                transition={{ type: 'spring', stiffness: 240, damping: 14 }}
+                                className="w-20 h-20 rounded-3xl flex items-center justify-center bg-gradient-to-br from-red-500/25 to-rose-600/25 border border-red-400/30 mb-5"
+                            >
+                                <span className="text-4xl">💔</span>
+                            </motion.div>
+
+                            <h2 className="text-2xl font-black text-red-400">You bailed</h2>
+                            <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+                                {formatFocusMinutes(lastForfeit.minutes)} of deep work, gone. No minutes counted.
+                            </p>
+
+                            <div className="grid grid-cols-2 gap-2 w-full mt-6">
+                                <div className="px-3 py-3 rounded-2xl bg-red-500/10 border border-red-500/25 flex flex-col items-center gap-1">
+                                    <Zap className="w-4 h-4 text-red-400" strokeWidth={2.6} />
+                                    <span className="text-base font-black text-stat leading-none text-red-300">−{lastForfeit.xpLost}</span>
+                                    <span className="text-[10px] text-[var(--color-text-tertiary)]">XP lost</span>
+                                </div>
+                                <div className="px-3 py-3 rounded-2xl bg-red-500/10 border border-red-500/25 flex flex-col items-center gap-1">
+                                    <Heart className="w-4 h-4 text-red-400 fill-current" strokeWidth={2.6} />
+                                    <span className="text-base font-black text-stat leading-none text-red-300">−{lastForfeit.hpLost}</span>
+                                    <span className="text-[10px] text-[var(--color-text-tertiary)]">HP lost</span>
+                                </div>
+                            </div>
+
+                            <p className="text-[11px] text-[var(--color-text-tertiary)] mt-4 leading-relaxed">
+                                Quitting costs more than finishing. Next block — see it through.
+                            </p>
+
+                            <div className="flex items-center gap-2 w-full mt-7">
+                                <button
+                                    onClick={openSetup}
+                                    className="flex-1 py-3 rounded-2xl text-sm font-bold glass-card text-[var(--color-text-secondary)] active:scale-[0.98] transition-transform"
+                                >
+                                    Try again
+                                </button>
+                                <button
+                                    onClick={close}
+                                    className="flex-1 py-3 rounded-2xl text-sm font-bold fab-primary text-white active:scale-[0.98] transition-transform"
+                                >
+                                    Close
+                                </button>
                             </div>
                         </motion.div>
                     )}

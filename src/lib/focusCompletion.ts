@@ -1,7 +1,11 @@
-import { focusXp, focusCoins } from './focus';
+import { focusXp, focusCoins, focusForfeitXp, FOCUS_FORFEIT_HP } from './focus';
 import { dispatchFocusRaidDamage } from './raidDamage';
 import { useUserStore } from '../stores/userStore';
-import { useFocusSessionStore, type FocusResultSummary } from '../stores/focusSessionStore';
+import {
+    useFocusSessionStore,
+    type FocusResultSummary,
+    type FocusForfeitSummary,
+} from '../stores/focusSessionStore';
 import { useAchievementStore } from '../stores/achievementStore';
 
 export interface CompleteFocusInput {
@@ -62,4 +66,24 @@ export const completeFocusSession = async (
         taskId: input.taskId,
         taskTitle: input.taskTitle,
     };
+};
+
+/**
+ * Punish a bailed session. Strips XP (scaled by length + difficulty) and 1 HP,
+ * records nothing toward the focus metric, and returns the loss so the overlay
+ * can show the damage. This is the "real impact" that stops Deep-Work from
+ * being a consequence-free toggle.
+ */
+export const forfeitFocusSession = (input: {
+    minutes: number;
+    taskTitle: string | null;
+}): FocusForfeitSummary => {
+    const minutes = Math.max(1, Math.round(input.minutes));
+    const level = useUserStore.getState().settings.gamificationLevel;
+    const xpLost = focusForfeitXp(minutes, level);
+
+    useUserStore.getState().removeXP(xpLost);
+    useUserStore.getState().loseHealth();
+
+    return { minutes, xpLost, hpLost: FOCUS_FORFEIT_HP, taskTitle: input.taskTitle };
 };
