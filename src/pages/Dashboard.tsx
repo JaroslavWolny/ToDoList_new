@@ -16,6 +16,7 @@ import { MilestoneShareOverlay } from '../components/gamification/MilestoneShare
 import { ConfettiBurst } from '../components/gamification/ConfettiBurst';
 import { TodayScoreCard } from '../components/gamification/TodayScoreCard';
 import { QuestCoach } from '../components/coach/QuestCoach';
+import { FocusLauncher } from '../components/focus/FocusLauncher';
 import { BrainDumpModal } from '../components/tasks/BrainDumpModal';
 import { WeeklyReview } from '../components/coach/WeeklyReview';
 import { TaskList } from '../components/tasks/TaskList';
@@ -479,6 +480,11 @@ export function Dashboard() {
             {/* ============== TODAY'S FOCUS (hero score + coach) ============== */}
             <div className="mb-4">
                 <TodayScoreCard onAskCoach={() => { setCoachPrompt(undefined); setShowCoach(true); }} />
+            </div>
+
+            {/* ============== DEEP-WORK FOCUS TIMER ============== */}
+            <div className="mb-4">
+                <FocusLauncher />
             </div>
 
             {/* ============== VITALS STRIP (streak · HP · combo · goal · rituals · level) ============== */}

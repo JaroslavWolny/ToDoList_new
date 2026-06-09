@@ -1,13 +1,15 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Sparkles, TrendingUp, TrendingDown, Minus, Timer } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../../stores/userStore';
 import { getCompletionsToday, useTaskStore } from '../../stores/taskStore';
 import { useFocusHistoryStore } from '../../stores/focusHistoryStore';
+import { useFocusSessionStore } from '../../stores/focusSessionStore';
 import { computeTodayScore, buildFocusInputs, type FocusReason } from '../../lib/todayScore';
 import { getCachedInsight, fetchDailyInsight } from '../../lib/dailyInsight';
 import { toLocalDateKey } from '../../lib/dates';
+import { formatFocusMinutes } from '../../lib/focus';
 import { useCountUp } from '../../lib/useCountUp';
 
 const reasonClasses: Record<FocusReason['tone'], string> = {
@@ -34,15 +36,22 @@ export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach }: Today
     );
     const history = useFocusHistoryStore((s) => s.history);
     const recordToday = useFocusHistoryStore((s) => s.recordToday);
+    const focusMinutesToday = useFocusSessionStore((s) => s.getTodayMinutes());
 
     const completedToday = useMemo(() => getCompletionsToday(completions).length, [completions]);
 
     const focus = useMemo(
         () =>
             computeTodayScore(
-                buildFocusInputs(tasks, completedToday, { health, maxHealth, streakCurrent, dailyGoal })
+                buildFocusInputs(
+                    tasks,
+                    completedToday,
+                    { health, maxHealth, streakCurrent, dailyGoal },
+                    undefined,
+                    focusMinutesToday
+                )
             ),
-        [tasks, completedToday, health, maxHealth, streakCurrent, dailyGoal]
+        [tasks, completedToday, health, maxHealth, streakCurrent, dailyGoal, focusMinutesToday]
     );
 
     const displayScore = useCountUp(focus.score);
@@ -126,6 +135,12 @@ export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach }: Today
                         </span>
                         {/* trend: simple delta vs yesterday (no chart) */}
                         <div className="flex items-center gap-1.5 shrink-0">
+                            {focusMinutesToday > 0 && (
+                                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-stat text-cyan-400">
+                                    <Timer className="w-3 h-3" strokeWidth={3} />
+                                    {formatFocusMinutes(focusMinutesToday)}
+                                </span>
+                            )}
                             {delta !== null && (
                                 <span
                                     className={`inline-flex items-center gap-0.5 text-[10px] font-bold text-stat ${

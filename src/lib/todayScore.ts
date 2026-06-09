@@ -50,6 +50,8 @@ export interface FocusInputs {
     dailyGoal: number;
     overdueCount: number;
     todayTaskCount: number;
+    /** Minutes spent in completed focus sessions today (Deep-Work metric). */
+    focusMinutesToday: number;
 }
 
 const FOCUS_TIERS: Record<FocusTierId, FocusTier> = {
@@ -74,9 +76,13 @@ const STREAK_CAP_DAYS = 10; // a 10-day streak maxes the streak contribution
 const BASELINE = 10; // small floor so an untouched day still reads as "warming", not dead
 const OVERDUE_PENALTY = 8;
 const OVERDUE_PENALTY_CAP = 24;
+// Deep-work bonus: added on top (like the overdue penalty) then clamped to 100,
+// so a focus session can nudge the score toward Peak. 60+ focus min maxes it.
+const FOCUS_BONUS = 12;
+const FOCUS_CAP_MIN = 60;
 
 export const computeTodayScore = (inputs: FocusInputs): TodayScore => {
-    const { health, maxHealth, streakCurrent, completedToday, dailyGoal, overdueCount } = inputs;
+    const { health, maxHealth, streakCurrent, completedToday, dailyGoal, overdueCount, focusMinutesToday } = inputs;
 
     const goalRatio = dailyGoal > 0
         ? Math.min(1, completedToday / dailyGoal)
@@ -88,8 +94,9 @@ export const computeTodayScore = (inputs: FocusInputs): TodayScore => {
     const hpPts = hpRatio * HP_WEIGHT;
     const streakPts = streakRatio * STREAK_WEIGHT;
     const overduePenalty = Math.min(overdueCount * OVERDUE_PENALTY, OVERDUE_PENALTY_CAP);
+    const focusBonus = Math.min(1, Math.max(0, focusMinutesToday) / FOCUS_CAP_MIN) * FOCUS_BONUS;
 
-    const raw = BASELINE + goalPts + hpPts + streakPts - overduePenalty;
+    const raw = BASELINE + goalPts + hpPts + streakPts - overduePenalty + focusBonus;
     const score = Math.round(Math.min(100, Math.max(0, raw)));
     const tier = tierForScore(score);
 
@@ -109,6 +116,10 @@ export const computeTodayScore = (inputs: FocusInputs): TodayScore => {
 
     if (streakCurrent > 0) {
         reasons.push({ label: `${streakCurrent}-day streak`, tone: 'good' });
+    }
+
+    if (focusMinutesToday > 0) {
+        reasons.push({ label: `${focusMinutesToday}m deep focus`, tone: 'good' });
     }
 
     if (health < maxHealth) {
@@ -159,7 +170,8 @@ export const buildFocusInputs = (
     tasks: Task[],
     completedToday: number,
     user: { health: number; maxHealth: number; streakCurrent: number; dailyGoal: number },
-    now = new Date()
+    now = new Date(),
+    focusMinutesToday = 0
 ): FocusInputs => ({
     health: user.health,
     maxHealth: user.maxHealth,
@@ -168,4 +180,5 @@ export const buildFocusInputs = (
     dailyGoal: user.dailyGoal,
     overdueCount: getOverdueTasks(tasks, now).length,
     todayTaskCount: getTasksForToday(tasks, now).length,
+    focusMinutesToday,
 });

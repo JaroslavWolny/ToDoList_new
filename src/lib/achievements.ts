@@ -1,6 +1,8 @@
 import { UserState, Completion, Task } from '../types';
 import { calculateComboMultiplier } from './gamification';
 import { toLocalDateKey } from './dates';
+import { useFocusSessionStore } from '../stores/focusSessionStore';
+import { FOCUS_DAILY_TARGET_MINUTES } from './focus';
 
 export interface AchievementDef {
     key: string;
@@ -613,6 +615,60 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
             const best = Math.max(0, ...Array.from(xpByDate.values()));
             return { current: Math.min(best, 500), max: 500 };
         },
+    },
+
+    // ── NEW: Focus Timer / Deep-Work achievements ────────────────────────────
+    // These read the focus-session store directly (the metric doesn't live on
+    // user/completions/tasks). `checkAndUnlock` runs after every finished
+    // session, so they unlock right when the milestone is hit.
+
+    {
+        key: 'deep_work',
+        title: 'Deep Work',
+        description: 'Finish your first focus session',
+        icon: '🎧',
+        category: 'special',
+        check: () => useFocusSessionStore.getState().totalSessions >= 1,
+        getProgress: () => ({
+            current: Math.min(useFocusSessionStore.getState().totalSessions, 1),
+            max: 1,
+        }),
+    },
+    {
+        key: 'in_the_zone',
+        title: 'In the Zone',
+        description: 'Complete a 50-minute focus session in one sitting',
+        icon: '🧘',
+        category: 'special',
+        check: () => useFocusSessionStore.getState().longestSessionMin >= 50,
+        getProgress: () => ({
+            current: Math.min(useFocusSessionStore.getState().longestSessionMin, 50),
+            max: 50,
+        }),
+    },
+    {
+        key: 'two_hours_focused',
+        title: '2h in the Zone',
+        description: 'Reach 120 focus minutes in a single day',
+        icon: '⏳',
+        category: 'special',
+        check: () => useFocusSessionStore.getState().getMaxDayMinutes() >= FOCUS_DAILY_TARGET_MINUTES,
+        getProgress: () => ({
+            current: Math.min(useFocusSessionStore.getState().getMaxDayMinutes(), FOCUS_DAILY_TARGET_MINUTES),
+            max: FOCUS_DAILY_TARGET_MINUTES,
+        }),
+    },
+    {
+        key: 'focus_marathon',
+        title: 'Focus Marathon',
+        description: 'Bank 1,000 lifetime focus minutes',
+        icon: '🏔️',
+        category: 'special',
+        check: () => useFocusSessionStore.getState().totalFocusMinutes >= 1000,
+        getProgress: () => ({
+            current: Math.min(useFocusSessionStore.getState().totalFocusMinutes, 1000),
+            max: 1000,
+        }),
     },
 ];
 

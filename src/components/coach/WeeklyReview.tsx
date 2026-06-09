@@ -1,10 +1,12 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence, useDragControls, PanInfo } from 'framer-motion';
-import { X, CalendarDays, Sparkles, Loader2, ArrowLeft, CheckCircle2, Zap, Flame } from 'lucide-react';
+import { X, CalendarDays, Sparkles, Loader2, ArrowLeft, CheckCircle2, Zap, Flame, Timer } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../../stores/userStore';
 import { useTaskStore, buildCompletionStatsByDate } from '../../stores/taskStore';
+import { useFocusSessionStore } from '../../stores/focusSessionStore';
 import { toLocalDateKey } from '../../lib/dates';
+import { formatFocusMinutes } from '../../lib/focus';
 import { askCoach } from '../../lib/coachApi';
 import { suggestNextWeek, addQuests, type ParsedQuest } from '../../lib/brainDumpApi';
 import { QuestPreviewList } from '../tasks/QuestPreviewList';
@@ -18,6 +20,7 @@ export const WeeklyReview = memo(function WeeklyReview({ isOpen, onClose }: Week
     const dragControls = useDragControls();
     const streakCurrent = useUserStore((s) => s.streakCurrent);
     const { completions } = useTaskStore(useShallow((s) => ({ completions: s.completions })));
+    const weekFocusMinutes = useFocusSessionStore((s) => s.getWeekMinutes());
 
     const stats = useMemo(() => {
         const byDate = buildCompletionStatsByDate(completions);
@@ -47,9 +50,10 @@ export const WeeklyReview = memo(function WeeklyReview({ isOpen, onClose }: Week
     const weeklyPrompt = useMemo(
         () =>
             `Weekly review. Over the last 7 days I completed ${stats.done} quests, earned ${stats.xp} XP, was active ${stats.active}/7 days` +
+            `${weekFocusMinutes > 0 ? `, spent ${weekFocusMinutes} minutes in deep-focus sessions` : ''}` +
             `${stats.bestLabel !== '—' ? `, my best day was ${stats.bestLabel}` : ''}, and my current streak is ${streakCurrent} days. ` +
             `In 2-3 sentences give me an honest, encouraging recap of my week and one focus for next week. No greeting.`,
-        [stats, streakCurrent]
+        [stats, streakCurrent, weekFocusMinutes]
     );
 
     const [recap, setRecap] = useState<string | null>(null);
@@ -128,6 +132,7 @@ export const WeeklyReview = memo(function WeeklyReview({ isOpen, onClose }: Week
         { icon: <CheckCircle2 className="w-4 h-4" />, label: 'Done', value: stats.done },
         { icon: <Zap className="w-4 h-4" />, label: 'XP', value: stats.xp.toLocaleString() },
         { icon: <Flame className="w-4 h-4" />, label: 'Active', value: `${stats.active}/7` },
+        { icon: <Timer className="w-4 h-4" />, label: 'Focus', value: formatFocusMinutes(weekFocusMinutes) },
     ];
 
     return (
@@ -185,7 +190,7 @@ export const WeeklyReview = memo(function WeeklyReview({ isOpen, onClose }: Week
                             ) : (
                                 <>
                                     {/* Stat tiles */}
-                                    <div className="grid grid-cols-3 gap-2 mb-3">
+                                    <div className="grid grid-cols-2 gap-2 mb-3">
                                         {tiles.map((t) => (
                                             <div key={t.label} className="glass-card px-3 py-2.5 flex flex-col items-center gap-0.5">
                                                 <span className="text-cyan-400">{t.icon}</span>

@@ -6,6 +6,7 @@ import {
     getCompletionsToday,
 } from '../stores/taskStore';
 import { useMissionStore } from '../stores/missionStore';
+import { useFocusSessionStore } from '../stores/focusSessionStore';
 import { computeTodayScore, buildFocusInputs } from './todayScore';
 import { toLocalDateKey } from './dates';
 
@@ -26,6 +27,7 @@ export interface CoachContext {
     missionsTotal: number;
     focusScore: number;
     focusTier: string;
+    focusMinutesToday: number;
     todayTasks: { title: string; priority: string; deadline: string | null; overdue: boolean }[];
 }
 
@@ -46,6 +48,7 @@ export const buildCoachContext = (now = new Date()): CoachContext => {
     const todayKey = toLocalDateKey(now);
     const missionsForToday = mission.lastGeneratedDate === todayKey ? mission.missions : [];
     const missionsCompleted = missionsForToday.filter((m) => m.completed).length;
+    const focusMinutesToday = useFocusSessionStore.getState().getTodayMinutes();
 
     const focus = computeTodayScore(
         buildFocusInputs(tasks, completedToday, {
@@ -53,7 +56,7 @@ export const buildCoachContext = (now = new Date()): CoachContext => {
             maxHealth: user.maxHealth,
             streakCurrent: user.streakCurrent,
             dailyGoal: user.settings.dailyGoal,
-        }, now)
+        }, now, focusMinutesToday)
     );
 
     return {
@@ -71,6 +74,7 @@ export const buildCoachContext = (now = new Date()): CoachContext => {
         missionsTotal: missionsForToday.length,
         focusScore: focus.score,
         focusTier: focus.tier.label,
+        focusMinutesToday,
         todayTasks: todayTasks.map((t) => ({
             title: t.title,
             priority: t.priority,

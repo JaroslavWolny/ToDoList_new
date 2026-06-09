@@ -1,6 +1,7 @@
 import { useAuthStore } from '../stores/authStore';
 import { useUserStore } from '../stores/userStore';
 import { dealDamage, listRaids } from './raidApi';
+import { minutesToPriority } from './focus';
 import type { Raid } from '../types/raids';
 import type { Priority } from '../types';
 
@@ -146,6 +147,77 @@ export const dispatchRaidDamage = async (input: DamageDispatchInput): Promise<vo
         user.addXP(xp);
         emitLoot({ coins, xp, bossName: top.name, tier: top.tier, kills: kills.length });
     }
+};
+
+export type FocusRaidResult = { damage: number; bossName: string | null };
+
+/**
+ * Deal "bonus" boss damage for finishing a focus session. Always lands as a
+ * quest hit (×2) with a tier derived from the session length, mirroring the
+ * task-completion damage path (kills drop loot + emit so the loot modal plays).
+ * Best-effort: never throws, so it can't break the focus-completion flow.
+ */
+export const dispatchFocusRaidDamage = async (
+    minutes: number,
+    taskTitle: string
+): Promise<FocusRaidResult | null> => {
+    const status = useAuthStore.getState().status;
+    if (status !== 'signed-in') return null;
+
+    const raids = await getActiveRaidsForUser();
+    if (raids.length === 0) return null;
+
+    const priority = minutesToPriority(minutes);
+    const title = taskTitle.trim() || 'Deep Work';
+
+    const kills: { name: string; tier: number }[] = [];
+    let totalDamage = 0;
+    let topBossName: string | null = null;
+
+    await Promise.all(
+        raids.map((raid) =>
+            dealDamage(raid.id, { priority, isQuest: true, taskTitle: `🎯 Focus: ${title}` })
+                .then((res) => {
+                    totalDamage += res.damage;
+                    if (!topBossName) topBossName = raid.activeBoss?.name ?? 'Boss';
+                    if (cache && cache.uid === useAuthStore.getState().user?.uid) {
+                        cache = {
+                            ...cache,
+                            raids: cache.raids.map((r) => (r.id === raid.id ? res.raid : r)),
+                            fetchedAt: Date.now(),
+                        };
+                    }
+                    if (res.killed) {
+                        kills.push({
+                            name: raid.activeBoss?.name ?? 'Boss',
+                            tier: raid.activeBoss?.tier ?? 1,
+                        });
+                    }
+                })
+                .catch(() => {
+                    // best-effort; do not throw to avoid breaking focus completion
+                })
+        )
+    );
+
+    if (kills.length > 0) {
+        let coins = 0;
+        let xp = 0;
+        let top = kills[0];
+        for (const k of kills) {
+            const loot = computeLoot(k.tier);
+            coins += loot.coins;
+            xp += loot.xp;
+            if (k.tier >= top.tier) top = k;
+        }
+        const user = useUserStore.getState();
+        user.addCoins(coins);
+        user.addXP(xp);
+        emitLoot({ coins, xp, bossName: top.name, tier: top.tier, kills: kills.length });
+        topBossName = top.name;
+    }
+
+    return { damage: totalDamage, bossName: topBossName };
 };
 
 // Reset cache on sign-in/out so we don't show stale state

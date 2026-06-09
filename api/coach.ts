@@ -34,6 +34,7 @@ type CoachContext = {
     missionsTotal?: number;
     focusScore?: number;
     focusTier?: string;
+    focusMinutesToday?: number;
     todayTasks?: { title: string; priority: string; deadline: string | null; overdue: boolean }[];
 };
 
