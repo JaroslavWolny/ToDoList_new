@@ -14,8 +14,9 @@
     <img src="https://img.shields.io/badge/PWA-Ready-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white" alt="PWA Ready" />
   </p>
 
-  <strong>Level up your life.</strong> Turn boring tasks into epic quests, build unbreakable streaks,
-  and let an AI coach plan your day — all in a blazing-fast, offline-first app that costs you nothing.
+  <strong>Level up your life.</strong> Turn boring tasks into epic quests, lock into deep-work
+  sessions with real stakes, and let an AI coach plan your day — all in a blazing-fast,
+  offline-first app that costs you nothing.
 
 </div>
 
@@ -25,17 +26,32 @@
 
 Every other to-do app reminds you of *work*. QuestDo reminds you of *winning*.
 
-We took the dopamine loops that make games impossible to put down — XP, levels, streaks, loot, boss fights — and wired them into the one thing most people struggle to stay consistent at: **getting things done.** Then we added an **AI coach that actually sees your data** and tells you what to do next.
+We took the dopamine loops that make games impossible to put down — XP, levels, streaks, loot, boss fights — and wired them into the one thing most people struggle to stay consistent at: **getting things done.** Then we added an **AI coach that actually sees your data** and a **Deep Work mode with teeth** — because motivation is easy and follow-through is the game.
 
-The result is an app you *want* to open. Tasks become quests. Procrastination costs you HP. Finishing your day fills a streak you'll fight to protect. And when you're not sure where to start, you just ask.
+The result is an app you *want* to open. Tasks become quests. Procrastination costs you HP. Bailing on a focus session costs you XP and a heart. Finishing your day fills a streak you'll fight to protect. And when you're not sure where to start, you just ask.
 
 > **No subscriptions. No ads. No catch.** QuestDo runs entirely on free tiers — including the AI — so neither you nor your players ever pay a cent.
 
 ---
 
-## 🤖 Meet your AI Coach — the productivity sidekick that knows your game
+## ⏱️ Deep Work — focus sessions with real stakes
 
-This is what makes QuestDo different. The coach isn't a generic chatbot bolted on — it can **see your streak, HP, Focus score, missions, and every quest on your board**, and it acts on it.
+Most focus timers are polite. They suggest, you ignore, nothing happens. QuestDo's Deep Work mode is a **contract**.
+
+- **Dial in your block.** A big, satisfying duration dial with one-tap presets — **15** (quick burst), **25** (Pomodoro), **50** (deep block), **90** (full ultradian cycle) — or any custom length from 5 to 120 minutes.
+- **Link a quest (optional).** Aim the session at one quest from today's board, or just lock in with no target. Finish with a linked quest and you can mark it done right from the victory screen.
+- **See the contract before you sign.** Finishing pays **XP + coins + focus minutes**. Bailing costs **XP and a heart (HP)** — scaled to how much you committed. Both are on screen before you hit start.
+- **No easy exit.** Once it's running there's no close button, the back gesture is trapped, and quitting takes an explicit warning **plus a hold-to-forfeit**. Tab away mid-session and the app calls you out when you come back.
+- **Boss damage bonus.** In a raid? Every finished session lands bonus damage on the boss — longer block, heavier hit.
+- **A daily target worth chasing.** Bank **120 focus minutes in a day** to hit the "2h in the zone" mark, with dedicated achievements from your first session to full focus marathons.
+
+*Forest kills a tree. QuestDo takes your XP and a heart — and makes finishing feel like loot.*
+
+---
+
+## 🤖 Your AI Coach — the productivity sidekick that knows your game
+
+The coach isn't a generic chatbot bolted on — it can **see your streak, HP, Focus score, missions, and every quest on your board**, and it acts on it.
 
 - **🧭 Ask anything, get answers grounded in *your* data.** *"What should I tackle first?"* → a prioritized next move, not filler. *"Why is my Focus low?"* → the real reason. *"Plan my day."* → a clear battle plan.
 - **🧠 Brain Dump → instant quest plan.** Empty your head in one go — type it or **say it out loud** — and the AI turns the mess into structured quests: titles, priorities, deadlines, recurrence, and tags, all parsed from natural language (English & Czech). Preview, untick what you don't want, add them all in one tap.
@@ -65,6 +81,9 @@ Consistency is king. Build daily **streaks** for XP multipliers, chain completio
 ### 🛡️ Guard your health
 Miss a deadline and you take damage. Keep your **Health Bar** high by staying on top of things — drop to zero and you'll feel the sting of broken discipline. Finish your daily goal to heal.
 
+### 🎲 Daily Reveal — every day plays different
+Each morning flips a **daily theme card**: 2× XP on high-priority quests, doubled loot drops, and more. Same board, new rules — one more reason to show up.
+
 ### 🪙 Loot, avatars & a slick shop
 Completing quests has a chance to drop **treasure** — a common Lucky Pouch or a rare overflowing Chest. Spend your coins in a beautiful slide-in **Avatar Shop** with rarity tiers all the way up to the ultra-premium **MYTHIC** class.
 
@@ -72,10 +91,10 @@ Completing quests has a chance to drop **treasure** — a common Lucky Pouch or 
 Fresh **Daily Missions** every day ("Complete 3 critical tasks") build toward a one-tap **Daily Goal Chest**. Log fast, repeatable habits with **Quick Rituals** — no form required.
 
 ### 🏆 Achievements
-Collect dozens of badges across streaks, speed, time-of-day patterns, and milestones — from *First Blood* to *Unstoppable*.
+Collect dozens of badges across streaks, speed, focus sessions, time-of-day patterns, and milestones — from *First Blood* to *Unstoppable*.
 
 ### ⚔️ Co-op Boss Raids (multiplayer)
-Productivity becomes a team sport. Spin up a raid, share the code, and every quest you finish deals damage to the boss. Live leaderboard, scaling bosses, and atomic, cheat-proof damage through a Firebase transaction.
+Productivity becomes a team sport. Spin up a raid, share the code, and every quest you finish — and every Deep Work session you survive — deals damage to the boss. Live leaderboard, scaling bosses, and atomic, cheat-proof damage through a Firebase transaction.
 
 ---
 

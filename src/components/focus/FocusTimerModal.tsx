@@ -25,6 +25,19 @@ import { ConfettiBurst } from '../gamification/ConfettiBurst';
 const QUEST_PICKER_LIMIT = 6;
 const HOLD_TO_FORFEIT_MS = 1400;
 
+// ── setup dial geometry (the duration picker ring) ──
+const SETUP_DIAL = 196;
+const SETUP_DIAL_STROKE = 10;
+const SETUP_DIAL_R = SETUP_DIAL / 2 - SETUP_DIAL_STROKE;
+const SETUP_DIAL_C = SETUP_DIAL_R * 2 * Math.PI;
+
+/** Staggered entrance for the setup sections (header → dial → … → CTA). */
+const setupSection = (i: number) => ({
+    initial: { opacity: 0, y: 12 },
+    animate: { opacity: 1, y: 0 },
+    transition: { delay: 0.04 + i * 0.05, duration: 0.3, ease: 'easeOut' as const },
+});
+
 /**
  * Full-screen Deep-Work overlay. Mounted once at the app shell so a running
  * session survives navigation between tabs. Phases:
@@ -252,7 +265,7 @@ export function FocusTimerModal() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[70] flex flex-col items-center justify-center overflow-y-auto px-6 py-10 safe-x safe-bottom"
+                    className="fixed inset-0 z-[70] flex flex-col items-center overflow-y-auto px-6 py-8 safe-x safe-bottom"
                     style={{
                         background:
                             'radial-gradient(120% 90% at 50% 0%, rgba(34,211,238,0.16), transparent 55%), var(--color-bg)',
@@ -261,123 +274,211 @@ export function FocusTimerModal() {
                     {/* ============ SETUP ============ */}
                     {phase === 'setup' && (
                         <motion.div
-                            initial={{ scale: 0.96, opacity: 0, y: 12 }}
+                            initial={{ scale: 0.97, opacity: 0, y: 14 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
-                            className="w-full max-w-sm"
+                            transition={{ duration: 0.25, ease: 'easeOut' }}
+                            className="w-full max-w-sm my-auto"
                         >
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-2.5">
-                                    <span className="w-11 h-11 rounded-2xl flex items-center justify-center bg-gradient-to-br from-cyan-500/30 to-blue-600/30 border border-cyan-400/40 shadow-lg shadow-cyan-500/10">
-                                        <Timer className="w-5 h-5 text-cyan-300" strokeWidth={2.4} />
-                                    </span>
-                                    <div className="leading-tight">
-                                        <h2 className="text-lg font-black tracking-tight">Deep Work</h2>
-                                        <p className="text-[11px] text-[var(--color-text-tertiary)]">Lock in. No escape till it's done.</p>
-                                    </div>
+                            <motion.div {...setupSection(0)} className="flex items-start justify-between mb-7">
+                                <div className="leading-tight">
+                                    <h2 className="text-2xl font-black tracking-tight">Deep Work</h2>
+                                    <p className="text-[12px] text-[var(--color-text-tertiary)] mt-1">
+                                        Lock in. No escape till it's done.
+                                    </p>
                                 </div>
                                 <button
                                     onClick={close}
-                                    className="p-2 rounded-xl hover:bg-white/5 text-[var(--color-text-secondary)]"
+                                    className="p-2 -mr-2 rounded-full hover:bg-white/5 active:scale-95 text-[var(--color-text-tertiary)] transition-transform"
                                     aria-label="Close"
                                 >
-                                    <X className="w-5 h-5" />
+                                    <X className="w-5 h-5" strokeWidth={2.4} />
                                 </button>
-                            </div>
+                            </motion.div>
 
-                            {/* Duration */}
-                            <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)] mb-2">
-                                Session length
-                            </p>
-                            <div className="flex items-center gap-2 mb-4">
+                            {/* Duration dial — the same ring you'll watch while running */}
+                            <motion.div {...setupSection(1)} className="flex items-center justify-center gap-4 mb-5">
+                                <motion.button
+                                    whileTap={{ scale: 0.88 }}
+                                    onClick={() => adjustMinutes(-FOCUS_STEP_MINUTES)}
+                                    disabled={minutes <= FOCUS_MIN_MINUTES}
+                                    className="w-12 h-12 rounded-full glass flex items-center justify-center text-[var(--color-text-secondary)] disabled:opacity-25 transition-opacity"
+                                    aria-label="Less time"
+                                >
+                                    <Minus className="w-5 h-5" strokeWidth={2.8} />
+                                </motion.button>
+
+                                <div className="relative" style={{ width: SETUP_DIAL, height: SETUP_DIAL }}>
+                                    <div
+                                        aria-hidden
+                                        className="absolute inset-6 rounded-full blur-2xl"
+                                        style={{ background: 'radial-gradient(circle, rgba(34,211,238,0.18), transparent 70%)' }}
+                                    />
+                                    <svg width={SETUP_DIAL} height={SETUP_DIAL} className="relative -rotate-90">
+                                        <circle
+                                            cx={SETUP_DIAL / 2}
+                                            cy={SETUP_DIAL / 2}
+                                            r={SETUP_DIAL_R}
+                                            fill="none"
+                                            stroke="var(--color-border)"
+                                            strokeWidth={SETUP_DIAL_STROKE}
+                                        />
+                                        <circle
+                                            cx={SETUP_DIAL / 2}
+                                            cy={SETUP_DIAL / 2}
+                                            r={SETUP_DIAL_R}
+                                            fill="none"
+                                            stroke="url(#focusSetupGrad)"
+                                            strokeWidth={SETUP_DIAL_STROKE}
+                                            strokeLinecap="round"
+                                            strokeDasharray={SETUP_DIAL_C}
+                                            strokeDashoffset={SETUP_DIAL_C * (1 - minutes / FOCUS_MAX_MINUTES)}
+                                            style={{ transition: 'stroke-dashoffset 0.35s cubic-bezier(0.34, 1.3, 0.64, 1)' }}
+                                        />
+                                        <defs>
+                                            <linearGradient id="focusSetupGrad" x1="0" y1="0" x2="1" y2="1">
+                                                <stop offset="0%" stopColor="#22d3ee" />
+                                                <stop offset="55%" stopColor="#3b82f6" />
+                                                <stop offset="100%" stopColor="#8b5cf6" />
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                        <div className="h-[56px] flex items-center">
+                                            <AnimatePresence mode="popLayout" initial={false}>
+                                                <motion.span
+                                                    key={minutes}
+                                                    initial={{ y: 12, opacity: 0, scale: 0.92 }}
+                                                    animate={{ y: 0, opacity: 1, scale: 1 }}
+                                                    exit={{ y: -12, opacity: 0, scale: 0.92 }}
+                                                    transition={{ duration: 0.16, ease: 'easeOut' }}
+                                                    className="text-[52px] font-black text-stat leading-none"
+                                                >
+                                                    {minutes}
+                                                </motion.span>
+                                            </AnimatePresence>
+                                        </div>
+                                        <span className="text-[10px] uppercase tracking-[0.24em] font-bold text-[var(--color-text-tertiary)] mt-1.5">
+                                            minutes
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <motion.button
+                                    whileTap={{ scale: 0.88 }}
+                                    onClick={() => adjustMinutes(FOCUS_STEP_MINUTES)}
+                                    disabled={minutes >= FOCUS_MAX_MINUTES}
+                                    className="w-12 h-12 rounded-full glass flex items-center justify-center text-[var(--color-text-secondary)] disabled:opacity-25 transition-opacity"
+                                    aria-label="More time"
+                                >
+                                    <Plus className="w-5 h-5" strokeWidth={2.8} />
+                                </motion.button>
+                            </motion.div>
+
+                            {/* Quick presets */}
+                            <motion.div {...setupSection(2)} className="flex items-center justify-center gap-2 mb-7">
                                 {FOCUS_PRESETS.map((preset) => (
                                     <button
                                         key={preset}
-                                        onClick={() => setMinutes(preset)}
-                                        className={`flex-1 py-3 rounded-2xl text-sm font-black transition-all ${
+                                        onClick={() => {
+                                            setMinutes(preset);
+                                            try { navigator.vibrate?.(8); } catch { /* noop */ }
+                                        }}
+                                        className={`px-4 py-2 rounded-full text-[13px] font-bold transition-all active:scale-95 ${
                                             minutes === preset
-                                                ? 'fab-primary text-white shadow-lg shadow-cyan-500/20'
-                                                : 'glass-card text-[var(--color-text-secondary)]'
+                                                ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/25'
+                                                : 'glass rounded-full text-[var(--color-text-secondary)]'
                                         }`}
                                     >
                                         {preset}m
                                     </button>
                                 ))}
-                                <div className="flex-1 flex items-center justify-between glass-card rounded-2xl px-2 py-2">
-                                    <button
-                                        onClick={() => adjustMinutes(-FOCUS_STEP_MINUTES)}
-                                        className="w-8 h-8 rounded-xl flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-white/5 active:scale-95"
-                                        aria-label="Less time"
-                                    >
-                                        <Minus className="w-4 h-4" strokeWidth={3} />
-                                    </button>
-                                    <span className="text-sm font-black text-stat tabular-nums">{minutes}</span>
-                                    <button
-                                        onClick={() => adjustMinutes(FOCUS_STEP_MINUTES)}
-                                        className="w-8 h-8 rounded-xl flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-white/5 active:scale-95"
-                                        aria-label="More time"
-                                    >
-                                        <Plus className="w-4 h-4" strokeWidth={3} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Stakes: finish vs bail */}
-                            <div className="grid grid-cols-2 gap-2 mb-4">
-                                <div className="rounded-2xl px-3 py-2.5 bg-emerald-500/10 border border-emerald-500/25">
-                                    <p className="text-[9px] uppercase tracking-[0.16em] font-bold text-emerald-400/80">Finish</p>
-                                    <p className="text-[13px] font-black text-emerald-300 mt-0.5 flex items-center gap-1">
-                                        +{setupRewardXp} XP <span className="text-emerald-400/50">·</span> +{setupRewardCoins} <Coins className="w-3 h-3" strokeWidth={2.6} />
-                                    </p>
-                                </div>
-                                <div className="rounded-2xl px-3 py-2.5 bg-red-500/10 border border-red-500/25">
-                                    <p className="text-[9px] uppercase tracking-[0.16em] font-bold text-red-400/80">Bail early</p>
-                                    <p className="text-[13px] font-black text-red-300 mt-0.5 flex items-center gap-1">
-                                        −{setupPenaltyXp} XP <span className="text-red-400/50">·</span> −{FOCUS_FORFEIT_HP} <Heart className="w-3 h-3 fill-current" strokeWidth={2.6} />
-                                    </p>
-                                </div>
-                            </div>
+                            </motion.div>
 
                             {/* Quest link */}
-                            <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)] mb-2">
-                                Focus on a quest <span className="text-[var(--color-text-tertiary)] normal-case font-medium tracking-normal">(optional)</span>
-                            </p>
-                            <div className="flex flex-col gap-1.5 mb-6 max-h-36 overflow-y-auto">
-                                <button
-                                    onClick={() => setSelTaskId(null)}
-                                    className={`text-left px-3.5 py-2.5 rounded-xl text-[13px] font-semibold border transition-colors ${
-                                        selTaskId === null
-                                            ? 'border-cyan-400/50 bg-cyan-500/10 text-[var(--color-text)]'
-                                            : 'border-[var(--color-border)] text-[var(--color-text-secondary)]'
-                                    }`}
-                                >
-                                    Just focus — no quest
-                                </button>
-                                {todayTasks.map((t) => (
-                                    <button
-                                        key={t.id}
-                                        onClick={() => setSelTaskId(t.id)}
-                                        className={`text-left px-3.5 py-2.5 rounded-xl text-[13px] font-semibold border transition-colors truncate ${
-                                            selTaskId === t.id
-                                                ? 'border-cyan-400/50 bg-cyan-500/10 text-[var(--color-text)]'
-                                                : 'border-[var(--color-border)] text-[var(--color-text-secondary)]'
-                                        }`}
-                                    >
-                                        {t.title}
-                                    </button>
-                                ))}
-                            </div>
+                            <motion.div {...setupSection(3)}>
+                                <div className="flex items-baseline justify-between mb-2.5">
+                                    <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
+                                        Link a quest
+                                    </p>
+                                    <span className="text-[10px] font-medium text-[var(--color-text-tertiary)]">optional</span>
+                                </div>
+                                <div className="flex flex-col gap-1.5 mb-5 max-h-44 overflow-y-auto scrollbar-hide">
+                                    {[{ id: null as string | null, title: 'Just focus — no quest' }, ...todayTasks].map((t) => {
+                                        const selected = selTaskId === t.id;
+                                        return (
+                                            <button
+                                                key={t.id ?? 'none'}
+                                                onClick={() => setSelTaskId(t.id)}
+                                                className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl border text-left transition-all active:scale-[0.99] ${
+                                                    selected
+                                                        ? 'border-cyan-400/45 bg-cyan-500/10'
+                                                        : 'border-[var(--color-border)] hover:border-[var(--color-border-strong)]'
+                                                }`}
+                                            >
+                                                <span
+                                                    className={`w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                                                        selected ? 'border-cyan-400 bg-cyan-500' : 'border-[var(--color-border-strong)]'
+                                                    }`}
+                                                >
+                                                    {selected && <Check className="w-3 h-3 text-white" strokeWidth={3.5} />}
+                                                </span>
+                                                <span
+                                                    className={`text-[13px] font-semibold truncate ${
+                                                        selected ? 'text-[var(--color-text)]' : 'text-[var(--color-text-secondary)]'
+                                                    }`}
+                                                >
+                                                    {t.title}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </motion.div>
 
-                            <motion.button
-                                whileTap={{ scale: 0.98 }}
-                                onClick={handleStart}
-                                className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-black text-white fab-primary"
+                            {/* The contract: what finishing pays vs what bailing costs */}
+                            <motion.div
+                                {...setupSection(4)}
+                                className="flex items-stretch rounded-2xl overflow-hidden border border-[var(--color-border)] mb-4"
                             >
-                                <Timer className="w-4 h-4" strokeWidth={2.6} />
-                                Start {minutes}-minute session
-                            </motion.button>
-                            <p className="text-center text-[10px] text-[var(--color-text-tertiary)] mt-3 leading-relaxed">
-                                Once it starts there's no easy exit — bailing costs XP and a heart.
-                            </p>
+                                <div className="flex-1 flex items-center gap-2.5 px-3.5 py-3 bg-emerald-500/[0.07]">
+                                    <span className="w-7 h-7 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0">
+                                        <Check className="w-3.5 h-3.5 text-emerald-400" strokeWidth={3} />
+                                    </span>
+                                    <div className="leading-tight">
+                                        <p className="text-[9px] uppercase tracking-[0.14em] font-bold text-emerald-400/70">Finish</p>
+                                        <p className="text-[12px] font-black text-emerald-300 mt-0.5 flex items-center gap-1">
+                                            +{setupRewardXp} XP · +{setupRewardCoins}
+                                            <Coins className="w-3 h-3" strokeWidth={2.6} />
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="w-px bg-[var(--color-border)]" />
+                                <div className="flex-1 flex items-center gap-2.5 px-3.5 py-3 bg-red-500/[0.07]">
+                                    <span className="w-7 h-7 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
+                                        <Heart className="w-3.5 h-3.5 text-red-400 fill-current" strokeWidth={2.6} />
+                                    </span>
+                                    <div className="leading-tight">
+                                        <p className="text-[9px] uppercase tracking-[0.14em] font-bold text-red-400/70">Bail early</p>
+                                        <p className="text-[12px] font-black text-red-300 mt-0.5">
+                                            −{setupPenaltyXp} XP · −{FOCUS_FORFEIT_HP} HP
+                                        </p>
+                                    </div>
+                                </div>
+                            </motion.div>
+
+                            <motion.div {...setupSection(5)}>
+                                <motion.button
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={handleStart}
+                                    className="w-full inline-flex items-center justify-center gap-2 py-4 rounded-2xl text-[15px] font-black text-white fab-primary"
+                                >
+                                    <Timer className="w-[18px] h-[18px]" strokeWidth={2.6} />
+                                    Start {minutes}-minute session
+                                </motion.button>
+                                <p className="text-center text-[10px] text-[var(--color-text-tertiary)] mt-3 leading-relaxed">
+                                    Once it starts there's no easy exit — bailing costs XP and a heart.
+                                </p>
+                            </motion.div>
                         </motion.div>
                     )}
 
@@ -386,7 +487,7 @@ export function FocusTimerModal() {
                         <motion.div
                             initial={{ scale: 0.96, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="w-full max-w-sm flex flex-col items-center"
+                            className="w-full max-w-sm flex flex-col items-center my-auto"
                         >
                             <AnimatePresence>
                                 {showNudge && (
@@ -432,7 +533,8 @@ export function FocusTimerModal() {
                                     <defs>
                                         <linearGradient id="focusRunGrad" x1="0" y1="0" x2="1" y2="1">
                                             <stop offset="0%" stopColor="#22d3ee" />
-                                            <stop offset="100%" stopColor="#3b82f6" />
+                                            <stop offset="55%" stopColor="#3b82f6" />
+                                            <stop offset="100%" stopColor="#8b5cf6" />
                                         </linearGradient>
                                     </defs>
                                 </svg>
@@ -522,7 +624,7 @@ export function FocusTimerModal() {
                         <motion.div
                             initial={{ scale: 0.94, opacity: 0, y: 12 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
-                            className="w-full max-w-sm flex flex-col items-center text-center"
+                            className="w-full max-w-sm flex flex-col items-center text-center my-auto"
                         >
                             <motion.div
                                 initial={{ scale: 0 }}
@@ -614,7 +716,7 @@ export function FocusTimerModal() {
                         <motion.div
                             initial={{ scale: 0.94, opacity: 0, y: 12 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
-                            className="w-full max-w-sm flex flex-col items-center text-center"
+                            className="w-full max-w-sm flex flex-col items-center text-center my-auto"
                         >
                             <motion.div
                                 initial={{ rotate: -8, scale: 0 }}

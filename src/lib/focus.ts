@@ -9,8 +9,11 @@ import type { Priority, GamificationLevel } from '../types';
  * Kept framework-free so the numbers stay testable and out of the components.
  */
 
-/** Quick-pick durations (minutes). 25/50 mirror the classic Pomodoro/deep-work blocks. */
-export const FOCUS_PRESETS = [25, 50] as const;
+/**
+ * Quick-pick durations (minutes): 15 = quick burst, 25 = Pomodoro,
+ * 50 = deep-work block, 90 = full ultradian cycle.
+ */
+export const FOCUS_PRESETS = [15, 25, 50, 90] as const;
 
 /** Bounds + granularity for the custom-duration stepper. */
 export const FOCUS_MIN_MINUTES = 5;
