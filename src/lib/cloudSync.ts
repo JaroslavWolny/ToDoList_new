@@ -1,9 +1,15 @@
-import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { firestore } from './firebase';
 import { useAuthStore } from '../stores/authStore';
 import { useTaskStore } from '../stores/taskStore';
 import { useUserStore } from '../stores/userStore';
 import type { Completion, Task, UserState } from '../types';
+
+// Firestore (and the rest of the Firebase SDK) is only needed once a user is
+// actually signed in, so it's loaded lazily on the sign-in path — signed-out
+// users never download it through this module.
+type FirebaseModule = typeof import('./firebase');
+let firebasePromise: Promise<FirebaseModule> | null = null;
+const loadFirebase = (): Promise<FirebaseModule> =>
+    (firebasePromise ??= import('./firebase'));
 
 type CloudState = {
     tasks: Task[];
@@ -54,20 +60,21 @@ const timestampToMillis = (value: unknown): number | null => {
     return null;
 };
 
-const getDocRef = (uid: string) => {
-    if (!firestore) return null;
-    return doc(firestore, 'users', uid, 'state', 'main');
+const getDocRef = (fb: FirebaseModule, uid: string) => {
+    if (!fb.firestore) return null;
+    return fb.doc(fb.firestore, 'users', uid, 'state', 'main');
 };
 
 const writeNow = async () => {
     debounceTimer = null;
-    if (!activeUid || !firestore) return;
+    if (!activeUid) return;
     if (suppressNextWrite) {
         suppressNextWrite = false;
         return;
     }
 
-    const ref = getDocRef(activeUid);
+    const fb = await loadFirebase();
+    const ref = getDocRef(fb, activeUid);
     if (!ref) return;
 
     const taskState = useTaskStore.getState();
@@ -77,11 +84,11 @@ const writeNow = async () => {
         tasks: taskState.tasks,
         completions: taskState.completions,
         user: extractUserSnapshot(userState),
-        updatedAt: serverTimestamp(),
+        updatedAt: fb.serverTimestamp(),
     };
 
     try {
-        await setDoc(ref, payload, { merge: false });
+        await fb.setDoc(ref, payload, { merge: false });
     } catch (err) {
         console.warn('Cloud sync write failed:', err);
     }
@@ -186,14 +193,15 @@ export const onMigrationPrompt = (listener: (prompt: MigrationPrompt | null) => 
 };
 
 const handleSignIn = async (uid: string) => {
-    if (!firestore) return;
+    const fb = await loadFirebase();
+    if (!fb.firestore) return;
     activeUid = uid;
-    const ref = getDocRef(uid);
+    const ref = getDocRef(fb, uid);
     if (!ref) return;
 
     let cloud: CloudState | null = null;
     try {
-        const snap = await getDoc(ref);
+        const snap = await fb.getDoc(ref);
         if (snap.exists()) {
             cloud = snap.data() as CloudState;
             // Seed the LWW baseline so the live listener can tell genuinely newer
@@ -269,7 +277,7 @@ const handleSignIn = async (uid: string) => {
     }
 
     // Set up live cloud listener for cross-device sync
-    unsubscribeCloud = onSnapshot(ref, (snap) => {
+    unsubscribeCloud = fb.onSnapshot(ref, (snap) => {
         if (!snap.exists()) return;
         // Skip our own optimistic write echo (still has a local pending write).
         if (snap.metadata.hasPendingWrites) return;
@@ -302,7 +310,6 @@ const handleSignOut = () => {
 
 export const initCloudSync = (): void => {
     if (unsubscribeAuth) return;
-    if (!firestore) return;
 
     let lastUid: string | null = useAuthStore.getState().user?.uid ?? null;
     if (lastUid) {

@@ -1,18 +1,13 @@
 import { create } from 'zustand';
-import {
-    type User,
-    GoogleAuthProvider,
-    onAuthStateChanged,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    signInWithCredential,
-    signInWithPopup,
-    signInWithRedirect,
-    getRedirectResult,
-    signOut as fbSignOut,
-    updateProfile,
-} from 'firebase/auth';
-import { auth, googleProvider, getFirebaseAuthConfigError } from '../lib/firebase';
+import type { User } from 'firebase/auth';
+import { getFirebaseAuthConfigError } from '../lib/notificationSync';
+
+/**
+ * Auth state for the whole app. The Firebase SDK is ~500 kB, so this store
+ * never imports it statically — every action `await import('../lib/firebase')`s
+ * the (cached) module on demand. A device that has never signed in resolves to
+ * 'signed-out' from localStorage alone and downloads no Firebase at all.
+ */
 
 export type AuthUser = {
     uid: string;
@@ -22,6 +17,12 @@ export type AuthUser = {
 };
 
 type AuthStatus = 'initializing' | 'signed-in' | 'signed-out' | 'unavailable';
+
+type FirebaseModule = typeof import('../lib/firebase');
+
+let firebasePromise: Promise<FirebaseModule> | null = null;
+const loadFirebase = (): Promise<FirebaseModule> =>
+    (firebasePromise ??= import('../lib/firebase'));
 
 interface AuthStore {
     user: AuthUser | null;
@@ -107,35 +108,47 @@ const readPersistedError = (): string | null => {
     }
 };
 
-let unsubscribe: (() => void) | null = null;
-
-export const useAuthStore = create<AuthStore>((set, get) => ({
-    user: null,
-    status: 'initializing',
-    error: null,
-    configError: null,
-
-    init: () => {
-        if (unsubscribe) return;
-
-        const configError = getFirebaseAuthConfigError();
-        if (configError || !auth) {
-            set({ status: 'unavailable', configError });
-            return;
+/**
+ * Cheap pre-flight: does this device plausibly hold a Firebase session?
+ * Firebase web auth persists under a `firebase:authUser:*` localStorage key
+ * (we configure browserLocalPersistence first), and our cloud sync brands the
+ * device with `todolist:syncedUid` after the first successful sign-in. If
+ * neither marker exists and no OAuth redirect is in flight, the user is
+ * signed out — no need to download the SDK just to learn that. On any
+ * storage failure we err on the side of loading Firebase.
+ */
+const mayHavePersistedSession = (): boolean => {
+    try {
+        if (sessionStorage.getItem(REDIRECT_PENDING_KEY) === '1') return true;
+        if (localStorage.getItem('todolist:syncedUid')) return true;
+        for (let i = 0; i < localStorage.length; i++) {
+            if (localStorage.key(i)?.startsWith('firebase:authUser:')) return true;
         }
+        return false;
+    } catch {
+        return true;
+    }
+};
 
-        // Surface any error from the previous redirect attempt that survived the
-        // page reload. Cleared once the user actually signs in or explicitly retries.
-        const persistedErr = readPersistedError();
-        if (persistedErr) {
-            console.warn('[auth] surfacing persisted redirect error:', persistedErr);
-            set({ error: persistedErr });
+export const useAuthStore = create<AuthStore>((set, get) => {
+    let listenerAttached = false;
+
+    /**
+     * Loads the SDK and attaches the one onAuthStateChanged listener (plus the
+     * getRedirectResult drain). Both init's slow path and every sign-in action
+     * funnel through here, so a sign-in performed after the no-session fast
+     * path still gets its state change observed.
+     */
+    const ensureAuthListener = async (): Promise<FirebaseModule> => {
+        const fb = await loadFirebase();
+        if (listenerAttached) return fb;
+        listenerAttached = true;
+
+        if (!fb.auth) {
+            set({ status: 'unavailable', configError: getFirebaseAuthConfigError() });
+            return fb;
         }
-
-        const wasRedirectPending = (() => {
-            try { return sessionStorage.getItem(REDIRECT_PENDING_KEY) === '1'; }
-            catch { return false; }
-        })();
+        const auth = fb.auth;
 
         // Safety net: if Firebase's auth state hydration hangs (known issue on
         // standalone iOS Safari), flip the UI off 'initializing' so the user can
@@ -166,17 +179,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             set(next);
         };
 
-        console.log('[auth] init starting', {
-            wasRedirectPending,
-            hasUrlFragment: typeof window !== 'undefined' && window.location.hash.length > 0,
-        });
-
         // Drive the auth flow off getRedirectResult so we know exactly when the
         // post-redirect work is done. onAuthStateChanged will keep firing for
         // subsequent state changes (sign-out, token refresh).
-        getRedirectResult(auth)
+        fb.getRedirectResult(auth)
             .then((cred) => {
-                console.log('[auth] getRedirectResult →', cred ? `user ${cred.user.uid}` : 'null (no pending redirect)');
                 if (cred) persistError(null);
             })
             .catch((err) => {
@@ -188,8 +195,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 }
             });
 
-        unsubscribe = onAuthStateChanged(auth, (fbUser) => {
-            console.log('[auth] onAuthStateChanged →', fbUser ? `signed-in (${fbUser.uid})` : 'signed-out');
+        fb.onAuthStateChanged(auth, (fbUser) => {
             finalize(fbUser);
         }, (err) => {
             console.error('[auth] onAuthStateChanged error:', err);
@@ -197,144 +203,189 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             persistError(msg);
             finalize(null, msg);
         });
-    },
 
-    signInWithGoogle: async () => {
-        if (!auth) {
-            set({ error: getFirebaseAuthConfigError() ?? 'Auth unavailable' });
-            return;
-        }
-        set({ error: null });
-        persistError(null);
+        return fb;
+    };
 
-        // On touch devices / standalone PWAs, popup-based OAuth fails because Safari
-        // blocks cross-origin popups. Use the redirect flow instead.
-        const isStandalone = typeof window !== 'undefined' && (
-            window.matchMedia?.('(display-mode: standalone)').matches
-            || (window.navigator as { standalone?: boolean }).standalone === true
-        );
-        const isMobile = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod/i.test(window.navigator.userAgent);
+    return {
+        user: null,
+        status: 'initializing',
+        error: null,
+        configError: null,
 
-        const beginRedirect = () => {
-            try { sessionStorage.setItem(REDIRECT_PENDING_KEY, '1'); } catch { /* noop */ }
-        };
+        init: () => {
+            if (listenerAttached) return;
 
-        if (isStandalone || isMobile) {
+            const configError = getFirebaseAuthConfigError();
+            if (configError) {
+                set({ status: 'unavailable', configError });
+                return;
+            }
+
+            // Surface any error from the previous redirect attempt that survived the
+            // page reload. Cleared once the user actually signs in or explicitly retries.
+            const persistedErr = readPersistedError();
+            if (persistedErr) {
+                console.warn('[auth] surfacing persisted redirect error:', persistedErr);
+                set({ error: persistedErr });
+            }
+
+            // Fresh device with no session and no redirect in flight: resolve
+            // immediately and keep Firebase off the wire. A later sign-in attaches
+            // the listener through ensureAuthListener.
+            if (!mayHavePersistedSession()) {
+                set({ status: 'signed-out' });
+                return;
+            }
+
+            void ensureAuthListener();
+        },
+
+        signInWithGoogle: async () => {
+            const fb = await ensureAuthListener();
+            if (!fb.auth) {
+                set({ error: getFirebaseAuthConfigError() ?? 'Auth unavailable' });
+                return;
+            }
+            const auth = fb.auth;
+            set({ error: null });
+            persistError(null);
+
+            // On touch devices / standalone PWAs, popup-based OAuth fails because Safari
+            // blocks cross-origin popups. Use the redirect flow instead.
+            const isStandalone = typeof window !== 'undefined' && (
+                window.matchMedia?.('(display-mode: standalone)').matches
+                || (window.navigator as { standalone?: boolean }).standalone === true
+            );
+            const isMobile = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod/i.test(window.navigator.userAgent);
+
+            const beginRedirect = () => {
+                try { sessionStorage.setItem(REDIRECT_PENDING_KEY, '1'); } catch { /* noop */ }
+            };
+
+            if (isStandalone || isMobile) {
+                try {
+                    beginRedirect();
+                    await fb.signInWithRedirect(auth, fb.googleProvider);
+                } catch (err) {
+                    try { sessionStorage.removeItem(REDIRECT_PENDING_KEY); } catch { /* noop */ }
+                    const msg = toErrorMessage(err);
+                    console.error('[auth] signInWithRedirect failed:', err, '→', msg);
+                    set({ error: msg });
+                    throw err;
+                }
+                return;
+            }
+
             try {
-                beginRedirect();
-                console.log('[auth] starting signInWithRedirect (mobile/PWA)');
-                await signInWithRedirect(auth, googleProvider);
+                await fb.signInWithPopup(auth, fb.googleProvider);
             } catch (err) {
-                try { sessionStorage.removeItem(REDIRECT_PENDING_KEY); } catch { /* noop */ }
+                // Fall back to redirect if popup is blocked
+                const code = (err as { code?: string })?.code;
+                if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+                    try {
+                        beginRedirect();
+                        await fb.signInWithRedirect(auth, fb.googleProvider);
+                        return;
+                    } catch (redirectErr) {
+                        try { sessionStorage.removeItem(REDIRECT_PENDING_KEY); } catch { /* noop */ }
+                        set({ error: toErrorMessage(redirectErr) });
+                        throw redirectErr;
+                    }
+                }
+                set({ error: toErrorMessage(err) });
+                throw err;
+            }
+        },
+
+        // Google Identity Services path — caller passes the ID token returned from
+        // accounts.google.com/gsi/client. signInWithCredential is a pure local API
+        // call so the cross-origin redirect that breaks iOS Safari never happens.
+        signInWithGoogleIdToken: async (idToken: string) => {
+            const fb = await ensureAuthListener();
+            if (!fb.auth) {
+                set({ error: getFirebaseAuthConfigError() ?? 'Auth unavailable' });
+                return;
+            }
+            set({ error: null });
+            persistError(null);
+            try {
+                const cred = fb.GoogleAuthProvider.credential(idToken);
+                await fb.signInWithCredential(fb.auth, cred);
+            } catch (err) {
                 const msg = toErrorMessage(err);
-                console.error('[auth] signInWithRedirect failed:', err, '→', msg);
+                console.error('[auth] signInWithCredential (GIS) failed:', err, '→', msg);
                 set({ error: msg });
                 throw err;
             }
-            return;
-        }
+        },
 
-        try {
-            await signInWithPopup(auth, googleProvider);
-        } catch (err) {
-            // Fall back to redirect if popup is blocked
-            const code = (err as { code?: string })?.code;
-            if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-                try {
-                    beginRedirect();
-                    await signInWithRedirect(auth, googleProvider);
-                    return;
-                } catch (redirectErr) {
-                    try { sessionStorage.removeItem(REDIRECT_PENDING_KEY); } catch { /* noop */ }
-                    set({ error: toErrorMessage(redirectErr) });
-                    throw redirectErr;
+        signInWithEmail: async (email, password) => {
+            const fb = await ensureAuthListener();
+            if (!fb.auth) {
+                set({ error: getFirebaseAuthConfigError() ?? 'Auth unavailable' });
+                return;
+            }
+            try {
+                set({ error: null });
+                await fb.signInWithEmailAndPassword(fb.auth, email, password);
+            } catch (err) {
+                set({ error: toErrorMessage(err) });
+                throw err;
+            }
+        },
+
+        signUpWithEmail: async (email, password, displayName) => {
+            const fb = await ensureAuthListener();
+            if (!fb.auth) {
+                set({ error: getFirebaseAuthConfigError() ?? 'Auth unavailable' });
+                return;
+            }
+            try {
+                set({ error: null });
+                const cred = await fb.createUserWithEmailAndPassword(fb.auth, email, password);
+                if (displayName && cred.user) {
+                    await fb.updateProfile(cred.user, { displayName });
+                    set((state) => ({
+                        user: state.user ? { ...state.user, displayName } : state.user,
+                    }));
                 }
+            } catch (err) {
+                set({ error: toErrorMessage(err) });
+                throw err;
             }
-            set({ error: toErrorMessage(err) });
-            throw err;
-        }
-    },
+        },
 
-    // Google Identity Services path — caller passes the ID token returned from
-    // accounts.google.com/gsi/client. signInWithCredential is a pure local API
-    // call so the cross-origin redirect that breaks iOS Safari never happens.
-    signInWithGoogleIdToken: async (idToken: string) => {
-        if (!auth) {
-            set({ error: getFirebaseAuthConfigError() ?? 'Auth unavailable' });
-            return;
-        }
-        set({ error: null });
-        persistError(null);
-        try {
-            const cred = GoogleAuthProvider.credential(idToken);
-            await signInWithCredential(auth, cred);
-        } catch (err) {
-            const msg = toErrorMessage(err);
-            console.error('[auth] signInWithCredential (GIS) failed:', err, '→', msg);
-            set({ error: msg });
-            throw err;
-        }
-    },
-
-    signInWithEmail: async (email, password) => {
-        if (!auth) {
-            set({ error: getFirebaseAuthConfigError() ?? 'Auth unavailable' });
-            return;
-        }
-        try {
-            set({ error: null });
-            await signInWithEmailAndPassword(auth, email, password);
-        } catch (err) {
-            set({ error: toErrorMessage(err) });
-            throw err;
-        }
-    },
-
-    signUpWithEmail: async (email, password, displayName) => {
-        if (!auth) {
-            set({ error: getFirebaseAuthConfigError() ?? 'Auth unavailable' });
-            return;
-        }
-        try {
-            set({ error: null });
-            const cred = await createUserWithEmailAndPassword(auth, email, password);
-            if (displayName && cred.user) {
-                await updateProfile(cred.user, { displayName });
-                set((state) => ({
-                    user: state.user ? { ...state.user, displayName } : state.user,
-                }));
+        signOut: async () => {
+            const fb = await loadFirebase();
+            if (!fb.auth) return;
+            try {
+                await fb.firebaseSignOut(fb.auth);
+                persistError(null);
+            } catch (err) {
+                set({ error: toErrorMessage(err) });
+                throw err;
             }
-        } catch (err) {
-            set({ error: toErrorMessage(err) });
-            throw err;
-        }
-    },
+        },
 
-    signOut: async () => {
-        if (!auth) return;
-        try {
-            await fbSignOut(auth);
+        clearError: () => {
             persistError(null);
-        } catch (err) {
-            set({ error: toErrorMessage(err) });
-            throw err;
-        }
-    },
+            set({ error: null });
+        },
 
-    clearError: () => {
-        persistError(null);
-        set({ error: null });
-    },
-
-    getIdToken: async () => {
-        if (!auth?.currentUser) return null;
-        try {
-            return await auth.currentUser.getIdToken();
-        } catch {
-            return null;
-        }
-    },
-}));
+        getIdToken: async () => {
+            // Never signed in on this device → no token, and no reason to pull the SDK.
+            if (get().status !== 'signed-in' && !mayHavePersistedSession()) return null;
+            const fb = await loadFirebase();
+            if (!fb.auth?.currentUser) return null;
+            try {
+                return await fb.auth.currentUser.getIdToken();
+            } catch {
+                return null;
+            }
+        },
+    };
+});
 
 export const authFetch = async (input: string, init: RequestInit = {}): Promise<Response> => {
     const token = await useAuthStore.getState().getIdToken();

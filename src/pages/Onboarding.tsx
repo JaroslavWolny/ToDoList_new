@@ -13,7 +13,7 @@ import {
     getFirebaseMessagingConfigError,
     requestFirebaseNotificationPermission,
     saveTokenToFirestore,
-} from '../lib/firebase';
+} from '../lib/notificationSync';
 import { REFERRER_STORAGE_KEY } from '../lib/shareCard';
 
 const TOTAL_STEPS = 5;

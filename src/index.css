@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap');
+/* Fonts load from index.html (<link rel=preconnect> + variable-font stylesheet)
+   instead of a CSS @import — an @import here serializes behind the compiled CSS
+   and delays first text paint. */
 
 @tailwind base;
 @tailwind components;

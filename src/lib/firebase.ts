@@ -8,17 +8,17 @@ import {
     type Auth,
 } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
-import { getMessaging, getToken, onMessage, type Messaging } from 'firebase/messaging';
-import { DEVICE_ID_KEY } from './storage';
+import { getMessaging, getToken, type Messaging } from 'firebase/messaging';
+import { hasFirebaseConfig } from './notificationSync';
 
-const FIREBASE_CONFIG_KEYS = [
-    'VITE_FIREBASE_API_KEY',
-    'VITE_FIREBASE_AUTH_DOMAIN',
-    'VITE_FIREBASE_PROJECT_ID',
-    'VITE_FIREBASE_STORAGE_BUCKET',
-    'VITE_FIREBASE_MESSAGING_SENDER_ID',
-    'VITE_FIREBASE_APP_ID',
-] as const;
+/**
+ * The heavy Firebase entry point. This module (and the ~500 kB SDK chunk
+ * behind it) must never be imported statically from the app shell or the
+ * dashboard — consumers either live on rarely-visited lazy routes (Login)
+ * or load it on demand via `await import('./firebase')` (authStore,
+ * cloudSync, notificationSync). Keep it that way: first paint should not
+ * pay for Firebase.
+ */
 
 // iOS Safari sign-in no longer goes through signInWithRedirect — Login.tsx
 // drives Google Identity Services and finishes the auth locally with
@@ -26,11 +26,9 @@ const FIREBASE_CONFIG_KEYS = [
 // That means `authDomain` only matters for the legacy popup/redirect fallback,
 // where the Firebase-managed firebaseapp.com host works out of the box
 // because it is the one already registered with Google's OAuth client.
-const resolvedAuthDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN;
-
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: resolvedAuthDomain,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
     projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
     storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
     messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
@@ -38,13 +36,7 @@ const firebaseConfig = {
     measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-const missingFirebaseConfigKeys = FIREBASE_CONFIG_KEYS.filter((key) => !import.meta.env[key]);
-const missingMessagingConfigKeys = [
-    ...missingFirebaseConfigKeys,
-    ...(!import.meta.env.VITE_FIREBASE_VAPID_KEY ? ['VITE_FIREBASE_VAPID_KEY'] : []),
-];
-
-const app: FirebaseApp | null = missingFirebaseConfigKeys.length === 0 ? initializeApp(firebaseConfig) : null;
+const app: FirebaseApp | null = hasFirebaseConfig ? initializeApp(firebaseConfig) : null;
 
 // iOS Safari in PWA standalone mode can hang on the default IndexedDB persistence,
 // which leaves onAuthStateChanged silent and the UI stuck on "Loading...". Prefer
@@ -73,81 +65,32 @@ if (app) {
 }
 export const messaging = messagingInstance;
 
-export const getFirebaseAuthConfigError = (): string | null => {
-    if (missingFirebaseConfigKeys.length === 0) return null;
-    return `Missing Firebase config: ${missingFirebaseConfigKeys.join(', ')}`;
-};
+// Re-exported so dynamic importers (`await import('./firebase')`) get the SDK
+// functions and the initialized instances from one module — no second entry
+// point into firebase/* that the bundler would have to duplicate.
+export {
+    GoogleAuthProvider,
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signInWithCredential,
+    signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
+    signOut as firebaseSignOut,
+    updateProfile,
+} from 'firebase/auth';
+export { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 
-const getNotificationsApiUrl = (): string => '/api/notifications/token';
-
-export const getFirebaseMessagingConfigError = (): string | null => {
-    if (missingMessagingConfigKeys.length === 0) return null;
-    return `Missing notification config: ${missingMessagingConfigKeys.join(', ')}`;
-};
-
-const ensureMessagingConfigured = (): boolean => {
-    const configError = getFirebaseMessagingConfigError();
-    if (!configError) return true;
-
-    console.error(configError);
-    return false;
-};
-
-const getOrCreateDeviceId = (): string => {
-    let deviceId = localStorage.getItem(DEVICE_ID_KEY);
-    if (!deviceId) {
-        deviceId = crypto.randomUUID();
-        localStorage.setItem(DEVICE_ID_KEY, deviceId);
-    }
-
-    return deviceId;
-};
-
-const syncNotificationToken = async (
-    method: 'POST' | 'DELETE',
-    payload?: Record<string, unknown>
-) => {
-    const response = await fetch(getNotificationsApiUrl(), {
-        method,
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: payload ? JSON.stringify(payload) : undefined,
-    });
-
-    if (!response.ok) {
-        let errorMessage = `Notification sync failed with status ${response.status}`;
-
-        try {
-            const data = await response.json() as { error?: string };
-            if (typeof data.error === 'string' && data.error) {
-                errorMessage = data.error;
-            }
-        } catch {
-            // Ignore JSON parsing failures and keep the generic message.
-        }
-
-        throw new Error(errorMessage);
-    }
-};
-
-export const requestFirebaseNotificationPermission = async () => {
+/** SDK half of the push-permission flow — call via notificationSync, not directly. */
+export const requestNotificationToken = async (): Promise<string | null> => {
     try {
-        if (!ensureMessagingConfigured() || !messaging) {
-            return null;
-        }
+        if (!messaging) return null;
 
-        console.log('Requesting notification permission...');
         const permission = await Notification.requestPermission();
+        if (permission !== 'granted') return null;
 
-        if (permission !== 'granted') {
-            console.log('Notification permission denied.');
-            return null;
-        }
-
-        console.log('Notification permission granted.');
         let swRegistration: ServiceWorkerRegistration | undefined;
-
         if ('serviceWorker' in navigator) {
             swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
                 scope: '/firebase-cloud-messaging-push-scope',
@@ -159,110 +102,9 @@ export const requestFirebaseNotificationPermission = async () => {
             serviceWorkerRegistration: swRegistration,
         });
 
-        if (!currentToken) {
-            console.log('No registration token available. Request permission to generate one.');
-            return null;
-        }
-
-        console.log('Firebase Cloud Messaging Token:', currentToken);
-        return currentToken;
+        return currentToken || null;
     } catch (error) {
         console.error('Error requesting notification permission or getting token:', error);
         return null;
     }
 };
-
-export const saveTokenToFirestore = async (token: string, morningTime: string, eveningTime: string) => {
-    try {
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-        await syncNotificationToken('POST', {
-            deviceId: getOrCreateDeviceId(),
-            token,
-            morningTime,
-            eveningTime,
-            timezone,
-        });
-
-        console.log('Token saved to backend');
-    } catch (error) {
-        console.error('Failed to save token to backend:', error);
-        throw error;
-    }
-};
-
-export type ReminderStats = {
-    tasksDueSoon: number;
-    dailyGoalProgress: number;
-    dailyGoalTarget: number;
-    streakCurrent: number;
-    missionsCompleted: number;
-    missionsTotal: number;
-};
-
-export const updateNotificationStats = async (stats: ReminderStats): Promise<void> => {
-    const deviceId = localStorage.getItem(DEVICE_ID_KEY);
-    if (!deviceId) return; // no token registered yet — nothing to personalize
-
-    try {
-        const response = await fetch(getNotificationsApiUrl(), {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ deviceId, stats }),
-        });
-        if (!response.ok) {
-            console.warn(`Failed to sync notification stats: ${response.status}`);
-        }
-    } catch (error) {
-        console.warn('Failed to sync notification stats:', error);
-    }
-};
-
-export type TaskReminderInput = {
-    taskId: string;
-    title: string;
-    deadline: string;
-};
-
-const getTaskRemindersApiUrl = (): string => '/api/notifications/task-reminders';
-
-// Pushes the device's upcoming task deadlines to the backend so the hourly cron
-// can fire a per-quest reminder as each deadline approaches. Replaces the full
-// set every call — the backend reconciles, so completed/deleted quests drop out.
-export const syncTaskReminders = async (reminders: TaskReminderInput[]): Promise<void> => {
-    const deviceId = localStorage.getItem(DEVICE_ID_KEY);
-    if (!deviceId) return; // no token registered yet — nothing to schedule
-
-    try {
-        const response = await fetch(getTaskRemindersApiUrl(), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ deviceId, reminders }),
-        });
-        if (!response.ok) {
-            console.warn(`Failed to sync task reminders: ${response.status}`);
-        }
-    } catch (error) {
-        console.warn('Failed to sync task reminders:', error);
-    }
-};
-
-export const removeTokenFromFirestore = async () => {
-    try {
-        const deviceId = localStorage.getItem(DEVICE_ID_KEY);
-        if (!deviceId) return;
-
-        await syncNotificationToken('DELETE', { deviceId });
-        console.log('Token removed from backend');
-        localStorage.removeItem(DEVICE_ID_KEY);
-    } catch (error) {
-        console.error('Failed to remove token from backend:', error);
-        throw error;
-    }
-};
-
-export const subscribeToMessages = (callback: (payload: unknown) => void): (() => void) => {
-    if (!messaging) return () => {};
-    return onMessage(messaging, callback);
-};
-

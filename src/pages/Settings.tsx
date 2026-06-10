@@ -7,7 +7,7 @@ import {
     requestFirebaseNotificationPermission,
     saveTokenToFirestore,
     removeTokenFromFirestore,
-} from '../lib/firebase';
+} from '../lib/notificationSync';
 import { AccountSection } from '../components/account/AccountSection';
 import { Moon, Sun, Smartphone, Download, Trash2, Shield, Snowflake, Bell, BellOff, Upload, AlertTriangle, CheckCircle, XCircle, Info, X } from 'lucide-react';
 import { GamificationLevel, ThemeMode } from '../types';

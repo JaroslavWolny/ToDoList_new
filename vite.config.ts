@@ -3,7 +3,15 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // Strip debug logging from production bundles; warn/error stay for diagnostics.
+  esbuild: {
+    pure: ['console.log', 'console.info', 'console.debug'],
+    legalComments: 'none',
+  },
   build: {
+    // The app ships as a PWA to evergreen browsers — no need for older-target
+    // transforms/helpers in the output.
+    target: 'es2022',
     rollupOptions: {
       output: {
         manualChunks(id) {

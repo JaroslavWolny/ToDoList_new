@@ -25,7 +25,7 @@ import { Task, RandomReward } from '../types';
 import { completeTaskTransaction } from '../lib/taskCompletion';
 import { toLocalDateKey } from '../lib/dates';
 import { parseQuickInput, formatDeadlineChip } from '../lib/quickParse';
-import { updateNotificationStats, syncTaskReminders } from '../lib/firebase';
+import { updateNotificationStats, syncTaskReminders } from '../lib/notificationSync';
 import { DAILY_CHEST_XP, DAILY_CHEST_COINS } from '../stores/missionStore';
 
 const LevelUpOverlay = lazy(() => import('../components/gamification/LevelUpOverlay').then((module) => ({ default: module.LevelUpOverlay })));
