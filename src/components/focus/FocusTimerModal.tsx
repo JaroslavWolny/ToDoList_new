@@ -4,7 +4,7 @@ import { Timer, X, Zap, Coins, Target, Swords, Minus, Plus, AlertTriangle, Spark
 import { useShallow } from 'zustand/react/shallow';
 import { useFocusSessionStore } from '../../stores/focusSessionStore';
 import { useUserStore } from '../../stores/userStore';
-import { getTasksForToday, useTaskStore } from '../../stores/taskStore';
+import { useTaskStore } from '../../stores/taskStore';
 import { completeFocusSession, forfeitFocusSession } from '../../lib/focusCompletion';
 import { completeTaskTransaction } from '../../lib/taskCompletion';
 import {
@@ -22,12 +22,11 @@ import {
 } from '../../lib/focus';
 import { ConfettiBurst } from '../gamification/ConfettiBurst';
 
-const QUEST_PICKER_LIMIT = 6;
 const HOLD_TO_FORFEIT_MS = 1400;
 
 // ── setup dial geometry (the duration picker ring) ──
-const SETUP_DIAL = 196;
-const SETUP_DIAL_STROKE = 10;
+const SETUP_DIAL = 208;
+const SETUP_DIAL_STROKE = 12;
 const SETUP_DIAL_R = SETUP_DIAL / 2 - SETUP_DIAL_STROKE;
 const SETUP_DIAL_C = SETUP_DIAL_R * 2 * Math.PI;
 
@@ -66,11 +65,9 @@ export function FocusTimerModal() {
         );
     const tasks = useTaskStore((s) => s.tasks);
     const gamificationLevel = useUserStore((s) => s.settings.gamificationLevel);
-    const todayTasks = useMemo(() => getTasksForToday(tasks).slice(0, QUEST_PICKER_LIMIT), [tasks]);
 
     // ── setup form state ──
     const [minutes, setMinutes] = useState(FOCUS_DEFAULT_MINUTES);
-    const [selTaskId, setSelTaskId] = useState<string | null>(null);
 
     // ── running state ──
     const [remainingSec, setRemainingSec] = useState(0);
@@ -220,9 +217,8 @@ export function FocusTimerModal() {
         setMinutes((m) => Math.min(FOCUS_MAX_MINUTES, Math.max(FOCUS_MIN_MINUTES, m + delta)));
 
     const handleStart = () => {
-        const task = todayTasks.find((t) => t.id === selTaskId) ?? null;
         try { navigator.vibrate?.(12); } catch { /* noop */ }
-        start(minutes, task?.id ?? null, task?.title ?? null);
+        start(minutes, null, null);
     };
 
     const handleMarkQuestDone = () => {
@@ -279,9 +275,9 @@ export function FocusTimerModal() {
                             initial={{ scale: 0.97, opacity: 0, y: 14 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             transition={{ duration: 0.25, ease: 'easeOut' }}
-                            className="w-full max-w-sm my-auto"
+                            className="w-full max-w-sm flex-1 flex flex-col"
                         >
-                            <motion.div {...setupSection(0)} className="flex items-start justify-between mb-7">
+                            <motion.div {...setupSection(0)} className="flex items-start justify-between">
                                 <div className="leading-tight">
                                     <h2 className="text-2xl font-black tracking-tight">Deep Work</h2>
                                     <p className="text-[12px] text-[var(--color-text-tertiary)] mt-1">
@@ -297,16 +293,20 @@ export function FocusTimerModal() {
                                 </button>
                             </motion.div>
 
-                            {/* Duration dial — the same ring you'll watch while running */}
-                            <motion.div {...setupSection(1)} className="flex items-center justify-center gap-4 mb-5">
+                            {/* Hero: duration dial + presets, centered in the free space */}
+                            <motion.div
+                                {...setupSection(1)}
+                                className="flex-1 flex flex-col items-center justify-center gap-8 py-6"
+                            >
+                                <div className="flex items-center justify-center gap-3">
                                 <motion.button
                                     whileTap={{ scale: 0.88 }}
                                     onClick={() => adjustMinutes(-FOCUS_STEP_MINUTES)}
                                     disabled={minutes <= FOCUS_MIN_MINUTES}
-                                    className="w-12 h-12 rounded-full glass flex items-center justify-center text-[var(--color-text-secondary)] disabled:opacity-25 transition-opacity"
+                                    className="w-10 h-10 shrink-0 rounded-full glass flex items-center justify-center text-[var(--color-text-secondary)] disabled:opacity-25 transition-opacity"
                                     aria-label="Less time"
                                 >
-                                    <Minus className="w-5 h-5" strokeWidth={2.8} />
+                                    <Minus className="w-[18px] h-[18px]" strokeWidth={2.8} />
                                 </motion.button>
 
                                 <div className="relative" style={{ width: SETUP_DIAL, height: SETUP_DIAL }}>
@@ -345,7 +345,7 @@ export function FocusTimerModal() {
                                         </defs>
                                     </svg>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                        <div className="h-[56px] flex items-center">
+                                        <div className="h-[64px] flex items-center">
                                             <AnimatePresence mode="popLayout" initial={false}>
                                                 <motion.span
                                                     key={minutes}
@@ -353,7 +353,7 @@ export function FocusTimerModal() {
                                                     animate={{ y: 0, opacity: 1, scale: 1 }}
                                                     exit={{ y: -12, opacity: 0, scale: 0.92 }}
                                                     transition={{ duration: 0.16, ease: 'easeOut' }}
-                                                    className="text-[52px] font-black text-stat leading-none"
+                                                    className="text-[60px] font-black text-stat leading-none"
                                                 >
                                                     {minutes}
                                                 </motion.span>
@@ -369,89 +369,37 @@ export function FocusTimerModal() {
                                     whileTap={{ scale: 0.88 }}
                                     onClick={() => adjustMinutes(FOCUS_STEP_MINUTES)}
                                     disabled={minutes >= FOCUS_MAX_MINUTES}
-                                    className="w-12 h-12 rounded-full glass flex items-center justify-center text-[var(--color-text-secondary)] disabled:opacity-25 transition-opacity"
+                                    className="w-10 h-10 shrink-0 rounded-full glass flex items-center justify-center text-[var(--color-text-secondary)] disabled:opacity-25 transition-opacity"
                                     aria-label="More time"
                                 >
-                                    <Plus className="w-5 h-5" strokeWidth={2.8} />
+                                    <Plus className="w-[18px] h-[18px]" strokeWidth={2.8} />
                                 </motion.button>
-                            </motion.div>
-
-                            {/* Quick presets */}
-                            <motion.div {...setupSection(2)} className="flex items-center justify-center gap-2 mb-7">
-                                {FOCUS_PRESETS.map((preset) => (
-                                    <button
-                                        key={preset}
-                                        onClick={() => {
-                                            setMinutes(preset);
-                                            try { navigator.vibrate?.(8); } catch { /* noop */ }
-                                        }}
-                                        className={`px-4 py-2 rounded-full text-[13px] font-bold transition-all active:scale-95 ${
-                                            minutes === preset
-                                                ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/25'
-                                                : 'glass rounded-full text-[var(--color-text-secondary)]'
-                                        }`}
-                                    >
-                                        {preset}m
-                                    </button>
-                                ))}
-                            </motion.div>
-
-                            {/* Quest link */}
-                            <motion.div {...setupSection(3)}>
-                                <div className="flex items-baseline justify-between mb-2.5">
-                                    <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
-                                        Link a quest
-                                    </p>
-                                    <span className="text-[10px] font-medium text-[var(--color-text-tertiary)]">optional</span>
                                 </div>
-                                <div
-                                    className={`flex flex-col gap-1.5 mb-5 max-h-44 overflow-y-auto scrollbar-hide ${
-                                        todayTasks.length >= 3 ? 'pb-7' : ''
-                                    }`}
-                                    style={
-                                        todayTasks.length >= 3
-                                            ? {
-                                                  maskImage: 'linear-gradient(to bottom, black calc(100% - 28px), transparent)',
-                                                  WebkitMaskImage: 'linear-gradient(to bottom, black calc(100% - 28px), transparent)',
-                                              }
-                                            : undefined
-                                    }
-                                >
-                                    {[{ id: null as string | null, title: 'Just focus — no quest' }, ...todayTasks].map((t) => {
-                                        const selected = selTaskId === t.id;
-                                        return (
-                                            <button
-                                                key={t.id ?? 'none'}
-                                                onClick={() => setSelTaskId(t.id)}
-                                                className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl border text-left transition-all active:scale-[0.99] ${
-                                                    selected
-                                                        ? 'border-cyan-400/45 bg-cyan-500/10'
-                                                        : 'border-[var(--color-border)] hover:border-[var(--color-border-strong)]'
-                                                }`}
-                                            >
-                                                <span
-                                                    className={`w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                                                        selected ? 'border-cyan-400 bg-cyan-500' : 'border-[var(--color-border-strong)]'
-                                                    }`}
-                                                >
-                                                    {selected && <Check className="w-3 h-3 text-white" strokeWidth={3.5} />}
-                                                </span>
-                                                <span
-                                                    className={`text-[13px] font-semibold truncate ${
-                                                        selected ? 'text-[var(--color-text)]' : 'text-[var(--color-text-secondary)]'
-                                                    }`}
-                                                >
-                                                    {t.title}
-                                                </span>
-                                            </button>
-                                        );
-                                    })}
+
+                                {/* Quick presets */}
+                                <div className="flex items-center justify-center gap-2">
+                                    {FOCUS_PRESETS.map((preset) => (
+                                        <button
+                                            key={preset}
+                                            onClick={() => {
+                                                setMinutes(preset);
+                                                try { navigator.vibrate?.(8); } catch { /* noop */ }
+                                            }}
+                                            className={`px-4 py-2.5 rounded-full text-[13px] font-bold transition-all active:scale-95 ${
+                                                minutes === preset
+                                                    ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/25'
+                                                    : 'glass rounded-full text-[var(--color-text-secondary)]'
+                                            }`}
+                                        >
+                                            {preset}m
+                                        </button>
+                                    ))}
                                 </div>
                             </motion.div>
 
                             {/* The contract: what finishing pays vs what bailing costs */}
                             <motion.div
-                                {...setupSection(4)}
+                                {...setupSection(2)}
                                 className="flex items-stretch rounded-2xl overflow-hidden border border-[var(--color-border)] mb-4"
                             >
                                 <div className="flex-1 flex items-center gap-2.5 px-3.5 py-3 bg-emerald-500/[0.07]">
@@ -480,7 +428,7 @@ export function FocusTimerModal() {
                                 </div>
                             </motion.div>
 
-                            <motion.div {...setupSection(5)}>
+                            <motion.div {...setupSection(3)}>
                                 <motion.button
                                     whileTap={{ scale: 0.98 }}
                                     onClick={handleStart}
