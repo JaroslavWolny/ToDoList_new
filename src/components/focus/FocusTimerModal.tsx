@@ -265,10 +265,12 @@ export function FocusTimerModal() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[70] flex flex-col items-center overflow-y-auto px-6 py-8 safe-x safe-bottom"
+                    className="fixed inset-0 z-[70] flex flex-col items-center overflow-y-auto px-6 safe-x"
                     style={{
                         background:
                             'radial-gradient(120% 90% at 50% 0%, rgba(34,211,238,0.16), transparent 55%), var(--color-bg)',
+                        paddingTop: 'calc(1.25rem + var(--safe-top))',
+                        paddingBottom: 'calc(1.5rem + var(--safe-bottom))',
                     }}
                 >
                     {/* ============ SETUP ============ */}
@@ -402,7 +404,19 @@ export function FocusTimerModal() {
                                     </p>
                                     <span className="text-[10px] font-medium text-[var(--color-text-tertiary)]">optional</span>
                                 </div>
-                                <div className="flex flex-col gap-1.5 mb-5 max-h-44 overflow-y-auto scrollbar-hide">
+                                <div
+                                    className={`flex flex-col gap-1.5 mb-5 max-h-44 overflow-y-auto scrollbar-hide ${
+                                        todayTasks.length >= 3 ? 'pb-7' : ''
+                                    }`}
+                                    style={
+                                        todayTasks.length >= 3
+                                            ? {
+                                                  maskImage: 'linear-gradient(to bottom, black calc(100% - 28px), transparent)',
+                                                  WebkitMaskImage: 'linear-gradient(to bottom, black calc(100% - 28px), transparent)',
+                                              }
+                                            : undefined
+                                    }
+                                >
                                     {[{ id: null as string | null, title: 'Just focus — no quest' }, ...todayTasks].map((t) => {
                                         const selected = selTaskId === t.id;
                                         return (
@@ -495,7 +509,8 @@ export function FocusTimerModal() {
                                         initial={{ opacity: 0, y: -12 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -12 }}
-                                        className="absolute top-4 inset-x-6 mx-auto max-w-xs flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30"
+                                        className="absolute inset-x-6 mx-auto max-w-xs flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30"
+                                        style={{ top: 'calc(0.75rem + var(--safe-top))' }}
                                     >
                                         <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" strokeWidth={2.6} />
                                         <span className="text-[11px] font-semibold text-amber-200">
