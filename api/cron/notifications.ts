@@ -1,12 +1,12 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getFirebaseAdminServices, admin } from '../lib/firebaseAdmin';
-import { geminiGenerate } from '../lib/gemini';
+import { getFirebaseAdminServices, admin } from '../_lib/firebaseAdmin';
+import { geminiGenerate } from '../_lib/gemini';
 import {
     getNextReminderSchedule,
     ReminderType,
     isValidReminderSlot,
     isValidTimeZone,
-} from '../lib/reminders';
+} from '../_lib/reminders';
 
 type FirebaseMessagingError = { code?: string; message?: string };
 

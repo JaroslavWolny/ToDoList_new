@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getFirebaseAdminServices, admin } from '../lib/firebaseAdmin';
+import { getFirebaseAdminServices, admin } from '../_lib/firebaseAdmin';
 
 type TaskReminderInput = {
     taskId?: unknown;

@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { geminiGenerate } from './lib/gemini';
+import { geminiGenerate } from './_lib/gemini';
 
 /**
  * Brain Dump → structured quests (free Gemini tier).

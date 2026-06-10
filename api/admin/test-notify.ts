@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getFirebaseAdminServices } from '../lib/firebaseAdmin';
+import { getFirebaseAdminServices } from '../_lib/firebaseAdmin';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     const authHeader = req.headers.authorization;

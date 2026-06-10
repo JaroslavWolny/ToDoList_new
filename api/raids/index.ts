@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getFirebaseAdminServices, admin } from '../lib/firebaseAdmin';
-import { verifyAuth } from '../lib/auth';
-import { calculateNextBossHp, generateInviteCode, sanitizeName } from '../lib/raidLogic';
+import { getFirebaseAdminServices, admin } from '../_lib/firebaseAdmin';
+import { verifyAuth } from '../_lib/auth';
+import { calculateNextBossHp, generateInviteCode, sanitizeName } from '../_lib/raidLogic';
 
 type Boss = {
     id: string;

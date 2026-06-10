@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getFirebaseAdminServices, admin } from '../lib/firebaseAdmin';
-import { verifyAuth } from '../lib/auth';
-import { calculateDamage, calculateNextBossHp, isValidPriority, sanitizeName } from '../lib/raidLogic';
+import { getFirebaseAdminServices, admin } from '../_lib/firebaseAdmin';
+import { verifyAuth } from '../_lib/auth';
+import { calculateDamage, calculateNextBossHp, isValidPriority, sanitizeName } from '../_lib/raidLogic';
 
 const MAX_DAMAGE_PER_EVENT = 200;
 const DEFAULT_BOSS_NAMES = [

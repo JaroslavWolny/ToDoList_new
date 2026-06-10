@@ -1,10 +1,10 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getFirebaseAdminServices, admin } from '../lib/firebaseAdmin';
+import { getFirebaseAdminServices, admin } from '../_lib/firebaseAdmin';
 import {
     getNextReminderSchedule,
     isValidReminderSlot,
     isValidTimeZone,
-} from '../lib/reminders';
+} from '../_lib/reminders';
 
 type NotificationTokenPayload = {
     deviceId?: unknown;
