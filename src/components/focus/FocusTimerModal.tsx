@@ -14,6 +14,7 @@ import {
     FOCUS_STEP_MINUTES,
     FOCUS_DEFAULT_MINUTES,
     FOCUS_FORFEIT_HP,
+    FOCUS_AWAY_GRACE_SEC,
     focusXp,
     focusCoins,
     focusForfeitXp,
@@ -42,14 +43,18 @@ const setupSection = (i: number) => ({
  * session survives navigation between tabs. Phases:
  *   setup     → pick a length (25/50/custom) + an optional quest; see the stakes
  *   running   → a countdown that "takes over" the app (deep focus). There's no
- *               close button and the back gesture is trapped — the only way out
- *               is to finish (reward) or hold-to-forfeit (real XP + HP penalty)
+ *               close button, the back gesture is trapped, and leaving the app
+ *               (app switch / home / lock) beyond a short grace window forfeits
+ *               the session — the only way out is to finish (reward) or
+ *               hold-to-forfeit (real XP + HP penalty)
  *   done      → reward summary (XP · coins · focus minutes · boss damage)
  *   forfeited → the damage you took for bailing (loss aversion with teeth)
  */
 export function FocusTimerModal() {
-    const { phase, active, lastResult, lastForfeit, start, showForfeit, showResult, openSetup, close, resume } =
-        useFocusSessionStore(
+    const {
+        phase, active, lastResult, lastForfeit, start, showForfeit, showResult, openSetup, close, resume,
+        markHidden, clearHidden,
+    } = useFocusSessionStore(
             useShallow((s) => ({
                 phase: s.phase,
                 active: s.active,
@@ -61,6 +66,8 @@ export function FocusTimerModal() {
                 openSetup: s.openSetup,
                 close: s.close,
                 resume: s.resume,
+                markHidden: s.markHidden,
+                clearHidden: s.clearHidden,
             }))
         );
     const tasks = useTaskStore((s) => s.tasks);
@@ -103,7 +110,33 @@ export function FocusTimerModal() {
         setQuestDone(false);
     }, [sessionKey]);
 
+    const handleForfeit = useCallback((reason: 'gave-up' | 'left-app' = 'gave-up') => {
+        const session = useFocusSessionStore.getState().active;
+        if (completingRef.current || !session) return;
+        completingRef.current = true;
+        try { navigator.vibrate?.([0, 90, 50, 140]); } catch { /* noop */ }
+        const result = forfeitFocusSession({
+            minutes: session.durationMin,
+            taskTitle: session.taskTitle,
+            reason,
+        });
+        showForfeit(result);
+    }, [showForfeit]);
+
+    // Staying out of the app past the grace window = bail. Checked on every
+    // tick, on return to the foreground, and before paying out a completion,
+    // so the order in which iOS resumes our timers/listeners can't matter.
+    const settleIfAwayTooLong = useCallback(() => {
+        const session = useFocusSessionStore.getState().active;
+        if (session?.hiddenAt && Date.now() - session.hiddenAt > FOCUS_AWAY_GRACE_SEC * 1000) {
+            handleForfeit('left-app');
+            return true;
+        }
+        return false;
+    }, [handleForfeit]);
+
     const handleComplete = useCallback(async () => {
+        if (settleIfAwayTooLong()) return;
         const session = useFocusSessionStore.getState().active;
         if (completingRef.current || !session) return;
         completingRef.current = true;
@@ -115,22 +148,20 @@ export function FocusTimerModal() {
             taskTitle: session.taskTitle,
         });
         showResult(result);
-    }, [showResult]);
-
-    const handleForfeit = useCallback(() => {
-        const session = useFocusSessionStore.getState().active;
-        if (!session) return;
-        try { navigator.vibrate?.([0, 90, 50, 140]); } catch { /* noop */ }
-        const result = forfeitFocusSession({
-            minutes: session.durationMin,
-            taskTitle: session.taskTitle,
-        });
-        showForfeit(result);
-    }, [showForfeit]);
+    }, [showResult, settleIfAwayTooLong]);
 
     // Countdown driven by wall-clock so throttled/background tabs stay accurate.
     useEffect(() => {
         if (phase !== 'running' || !active) return;
+        // Settle an absence still pending from before a reload/relaunch —
+        // killing the app while backgrounded doesn't dodge the forfeit.
+        if (active.hiddenAt) {
+            if (Date.now() - active.hiddenAt > FOCUS_AWAY_GRACE_SEC * 1000) {
+                handleForfeit('left-app');
+                return;
+            }
+            if (document.visibilityState === 'visible') clearHidden();
+        }
         const computeRemaining = () => active.durationSec - (Date.now() - active.startedAt) / 1000;
         const first = computeRemaining();
         setRemainingSec(first);
@@ -139,12 +170,13 @@ export function FocusTimerModal() {
             return;
         }
         const id = window.setInterval(() => {
+            if (settleIfAwayTooLong()) return;
             const rem = computeRemaining();
             setRemainingSec(rem);
             if (rem <= 0) void handleComplete();
         }, 250);
         return () => window.clearInterval(id);
-    }, [phase, active, handleComplete]);
+    }, [phase, active, handleComplete, handleForfeit, settleIfAwayTooLong, clearHidden]);
 
     // Deep focus: warn before the tab is closed/refreshed mid-session.
     useEffect(() => {
@@ -171,18 +203,60 @@ export function FocusTimerModal() {
         return () => window.removeEventListener('popstate', onPop);
     }, [phase]);
 
-    // Deep focus: nudge the user when they tab away and come back.
+    // Deep focus: leaving the app is the contract-breaker. Stamp the moment we
+    // go to background (persisted); on return either pardon a quick peek
+    // (within the grace window, with a warning nudge) or forfeit the session.
     useEffect(() => {
         if (phase !== 'running') return;
         const onVisibility = () => {
-            if (document.visibilityState === 'visible') {
+            if (document.visibilityState === 'hidden') {
+                markHidden();
+                return;
+            }
+            if (settleIfAwayTooLong()) return;
+            const wasAway = Boolean(useFocusSessionStore.getState().active?.hiddenAt);
+            clearHidden();
+            if (wasAway) {
                 setShowNudge(true);
                 if (nudgeTimerRef.current) window.clearTimeout(nudgeTimerRef.current);
                 nudgeTimerRef.current = window.setTimeout(() => setShowNudge(false), 4000);
             }
         };
+        const onPageHide = () => markHidden();
         document.addEventListener('visibilitychange', onVisibility);
-        return () => document.removeEventListener('visibilitychange', onVisibility);
+        window.addEventListener('pagehide', onPageHide);
+        return () => {
+            document.removeEventListener('visibilitychange', onVisibility);
+            window.removeEventListener('pagehide', onPageHide);
+        };
+    }, [phase, markHidden, clearHidden, settleIfAwayTooLong]);
+
+    // Keep the screen awake while running — otherwise iOS auto-lock would
+    // background the app and trip the away-forfeit through no fault of the user.
+    useEffect(() => {
+        if (phase !== 'running') return;
+        let released = false;
+        let sentinel: WakeLockSentinel | null = null;
+        const acquire = async () => {
+            try {
+                const lock = await navigator.wakeLock?.request('screen');
+                if (!lock) return;
+                if (released) { void lock.release().catch(() => undefined); return; }
+                sentinel = lock;
+            } catch { /* unsupported or denied — auto-lock stays on */ }
+        };
+        void acquire();
+        // The lock is dropped by the OS whenever the app is backgrounded —
+        // re-acquire it every time we come back to the foreground.
+        const reacquire = () => {
+            if (document.visibilityState === 'visible') void acquire();
+        };
+        document.addEventListener('visibilitychange', reacquire);
+        return () => {
+            released = true;
+            document.removeEventListener('visibilitychange', reacquire);
+            void sentinel?.release().catch(() => undefined);
+        };
     }, [phase]);
 
     const cancelHold = useCallback(() => {
@@ -438,7 +512,7 @@ export function FocusTimerModal() {
                                     Start {minutes}-minute session
                                 </motion.button>
                                 <p className="text-center text-[10px] text-[var(--color-text-tertiary)] mt-3 leading-relaxed">
-                                    Once it starts there's no easy exit — bailing costs XP and a heart.
+                                    Once it starts there's no escape — bailing or leaving the app costs XP and a heart.
                                 </p>
                             </motion.div>
                         </motion.div>
@@ -462,7 +536,7 @@ export function FocusTimerModal() {
                                     >
                                         <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" strokeWidth={2.6} />
                                         <span className="text-[11px] font-semibold text-amber-200">
-                                            Still ticking — get back in or you'll lose XP and a heart.
+                                            That was close — over {FOCUS_AWAY_GRACE_SEC}s outside the app forfeits the session.
                                         </span>
                                     </motion.div>
                                 )}
@@ -528,6 +602,9 @@ export function FocusTimerModal() {
                                     Bail −{runPenaltyXp} XP −<Heart className="w-3 h-3 fill-current" strokeWidth={2.6} />
                                 </span>
                             </div>
+                            <p className="mt-2 text-[10px] font-semibold text-[var(--color-text-tertiary)]">
+                                Switching apps or locking the screen for over {FOCUS_AWAY_GRACE_SEC}s counts as bailing.
+                            </p>
 
                             {/* Give-up: gated behind an explicit warning + hold-to-confirm */}
                             <div className="mt-8 w-full flex flex-col items-center min-h-[96px] justify-start">
@@ -690,9 +767,13 @@ export function FocusTimerModal() {
                                 <span className="text-4xl">💔</span>
                             </motion.div>
 
-                            <h2 className="text-2xl font-black text-red-400">You bailed</h2>
+                            <h2 className="text-2xl font-black text-red-400">
+                                {lastForfeit.reason === 'left-app' ? 'You left the app' : 'You bailed'}
+                            </h2>
                             <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-                                {formatFocusMinutes(lastForfeit.minutes)} of deep work, gone. No minutes counted.
+                                {lastForfeit.reason === 'left-app'
+                                    ? `Deep focus means staying in. ${formatFocusMinutes(lastForfeit.minutes)} of deep work, gone.`
+                                    : `${formatFocusMinutes(lastForfeit.minutes)} of deep work, gone. No minutes counted.`}
                             </p>
 
                             <div className="grid grid-cols-2 gap-2 w-full mt-6">

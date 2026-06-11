@@ -77,6 +77,7 @@ export const completeFocusSession = async (
 export const forfeitFocusSession = (input: {
     minutes: number;
     taskTitle: string | null;
+    reason?: 'gave-up' | 'left-app';
 }): FocusForfeitSummary => {
     const minutes = Math.max(1, Math.round(input.minutes));
     const level = useUserStore.getState().settings.gamificationLevel;
@@ -85,5 +86,11 @@ export const forfeitFocusSession = (input: {
     useUserStore.getState().removeXP(xpLost);
     useUserStore.getState().loseHealth();
 
-    return { minutes, xpLost, hpLost: FOCUS_FORFEIT_HP, taskTitle: input.taskTitle };
+    return {
+        minutes,
+        xpLost,
+        hpLost: FOCUS_FORFEIT_HP,
+        taskTitle: input.taskTitle,
+        reason: input.reason ?? 'gave-up',
+    };
 };

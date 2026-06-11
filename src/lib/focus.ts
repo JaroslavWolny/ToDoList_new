@@ -50,6 +50,14 @@ export const focusForfeitXp = (minutes: number, level: GamificationLevel): numbe
 export const FOCUS_FORFEIT_HP = 1;
 
 /**
+ * How long the app may be backgrounded mid-session before it counts as
+ * bailing (app switch, swipe to home, lock screen). Long enough to survive
+ * an accidental swipe or an incoming-call overlay, far too short to
+ * actually use another app.
+ */
+export const FOCUS_AWAY_GRACE_SEC = 5;
+
+/**
  * Map a session length to a raid-damage tier. Longer focus = heavier hit.
  * Focus damage always lands as a "quest" hit (×2 on the boss) — that's the
  * "bonus damage" payoff for grinding a deep-work block while in a raid.

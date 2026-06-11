@@ -6,9 +6,10 @@ import { toLocalDateKey } from '../lib/dates';
  * State for the Gamified Focus Timer / Deep-Work mode.
  *
  * Two concerns live here:
- *  1. The *running* session (`active`) — persisted so a reload or tab switch
- *     mid-session resumes by wall-clock instead of losing the block. This is
- *     what makes "deep focus" survive leaving the app.
+ *  1. The *running* session (`active`) — persisted so a reload mid-session
+ *     resumes by wall-clock instead of losing the block. `hiddenAt` is part of
+ *     it so backgrounding the app can't dodge the away-forfeit, even by
+ *     killing the app entirely.
  *  2. The *focus-minutes metric* — lifetime totals plus a per-day history that
  *     feeds Today's Focus, the Weekly Review and the focus achievements.
  */
@@ -27,6 +28,8 @@ export interface ActiveFocusSession {
     durationMin: number; // planned length in minutes (canonical reward basis)
     taskId: string | null; // linked quest, if any
     taskTitle: string | null;
+    /** Epoch ms when the app went to background mid-session; null while in-app. */
+    hiddenAt?: number | null;
 }
 
 export interface FocusResultSummary {
@@ -46,6 +49,8 @@ export interface FocusForfeitSummary {
     xpLost: number;
     hpLost: number;
     taskTitle: string | null;
+    /** Manual hold-to-forfeit vs. staying out of the app past the grace window. */
+    reason?: 'gave-up' | 'left-app';
 }
 
 const HISTORY_DAYS = 60;
@@ -81,6 +86,10 @@ interface FocusSessionStore {
     close: () => void;
     /** Re-enter the running phase if a persisted session is still in flight (after reload). */
     resume: () => void;
+    /** Stamp the moment the app goes to background mid-session (kept across relaunches). */
+    markHidden: () => void;
+    /** Pardon a quick peek away — clears the background stamp. */
+    clearHidden: () => void;
 
     // Metric recording (called by the focus-completion orchestrator)
     recordSession: (minutes: number) => void;
@@ -117,6 +126,7 @@ export const useFocusSessionStore = create<FocusSessionStore>()(
                         durationMin: minutes,
                         taskId,
                         taskTitle,
+                        hiddenAt: null,
                     },
                 });
             },
@@ -131,6 +141,18 @@ export const useFocusSessionStore = create<FocusSessionStore>()(
                 const { active, phase } = get();
                 if (active && phase === 'idle') set({ phase: 'running' });
             },
+
+            markHidden: () =>
+                set((state) =>
+                    state.phase === 'running' && state.active && !state.active.hiddenAt
+                        ? { active: { ...state.active, hiddenAt: Date.now() } }
+                        : {}
+                ),
+
+            clearHidden: () =>
+                set((state) =>
+                    state.active?.hiddenAt ? { active: { ...state.active, hiddenAt: null } } : {}
+                ),
 
             recordSession: (minutes) => {
                 const mins = Math.max(0, Math.round(minutes));
