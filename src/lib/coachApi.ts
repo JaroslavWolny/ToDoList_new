@@ -14,6 +14,7 @@ export type ChatTurn = { role: 'user' | 'assistant'; content: string };
 
 export interface CoachContext {
     displayName: string;
+    mainMotivation: string;
     level: number;
     xp: number;
     health: number;
@@ -61,6 +62,7 @@ export const buildCoachContext = (now = new Date()): CoachContext => {
 
     return {
         displayName: user.displayName || 'Hero',
+        mainMotivation: user.settings.mainMotivation || 'FOCUS',
         level: user.level,
         xp: user.xp,
         health: user.health,

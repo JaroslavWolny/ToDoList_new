@@ -21,6 +21,7 @@ type ChatTurn = { role: 'user' | 'assistant'; content: string };
 
 type CoachContext = {
     displayName?: string;
+    mainMotivation?: string;
     level?: number;
     xp?: number;
     health?: number;
@@ -54,7 +55,9 @@ Rules:
 - Keep it tight: ~60-120 words, short paragraphs or a short bullet list. Only go longer if explicitly asked for a full day plan.
 - Match the player's language. If they write in Czech, answer in Czech; if English, answer in English.
 - Encouraging but never cheesy or fake. No emoji spam (one is fine). No markdown headings.
-- If there are no tasks or no data, gently nudge them to add a quest or two.`;
+- If there are no tasks or no data, gently nudge them to add a quest or two.
+- Adapt to "mainMotivation" in the player JSON: FOCUS → push priorities, DECLUTTER → help them clear volume, HABITS → reinforce routines, REWARDS → lean into XP/loot framing.
+- If mainMotivation is "ADHD", coach for an ADHD brain: lead with ONE tiny, concrete next step to beat overwhelm; suggest a 2-minute start or a focus session to body-double; externalize (brain dump) when they spiral; celebrate starting, and never shame a missed day or broken streak — frame it as recoverable.`;
 
 const getString = (value: unknown): string | null =>
     typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;

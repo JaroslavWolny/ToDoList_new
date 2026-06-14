@@ -4,7 +4,7 @@ export type Recurrence = 'NONE' | 'DAILY' | 'WEEKLY';
 export type GamificationLevel = 'CASUAL' | 'STANDARD' | 'HARDCORE';
 export type ThemeMode = 'LIGHT' | 'DARK' | 'AUTO';
 export type WorkStyle = 'MORNING' | 'NIGHT' | 'FLEXIBLE';
-export type MainMotivation = 'FOCUS' | 'DECLUTTER' | 'HABITS' | 'REWARDS';
+export type MainMotivation = 'FOCUS' | 'DECLUTTER' | 'HABITS' | 'REWARDS' | 'ADHD';
 
 export interface Task {
     id: string;

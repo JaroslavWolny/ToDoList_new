@@ -16,6 +16,7 @@ import { MilestoneShareOverlay } from '../components/gamification/MilestoneShare
 import { ConfettiBurst } from '../components/gamification/ConfettiBurst';
 import { TodayScoreCard } from '../components/gamification/TodayScoreCard';
 import { QuestCoach } from '../components/coach/QuestCoach';
+import { CoachNudge } from '../components/coach/CoachNudge';
 import { FocusLauncher } from '../components/focus/FocusLauncher';
 import { BrainDumpModal } from '../components/tasks/BrainDumpModal';
 import { WeeklyReview } from '../components/coach/WeeklyReview';
@@ -196,6 +197,11 @@ export function Dashboard() {
         lastReminderSignatureRef.current = signature;
         syncTaskReminders(upcomingReminders);
     }, [upcomingReminders]);
+
+    const openCoachWith = useCallback((prompt: string) => {
+        setCoachPrompt(prompt);
+        setShowCoach(true);
+    }, []);
 
     const handleClaimDailyChest = useCallback(() => {
         const reward = claimDailyChest();
@@ -458,6 +464,11 @@ export function Dashboard() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* ============== PROACTIVE COACH NUDGE (headline AI surface) ============== */}
+            <div className="mb-4">
+                <CoachNudge onAsk={openCoachWith} />
+            </div>
 
             {/* ============== BRAIN DUMP / WEEKLY REVIEW ============== */}
             <div className="flex items-center gap-2 mb-4">

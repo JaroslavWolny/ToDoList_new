@@ -51,12 +51,13 @@ Most focus timers are polite. They suggest, you ignore, nothing happens. QuestDo
 
 ## 🤖 Your AI Coach — the productivity sidekick that knows your game
 
-The coach isn't a generic chatbot bolted on — it can **see your streak, HP, Focus score, missions, and every quest on your board**, and it acts on it.
+The coach isn't a generic chatbot bolted on — it can **see your streak, HP, Focus score, missions, and every quest on your board**, and it acts on it. It doesn't even wait to be asked: it **greets you on your dashboard with a context-aware next move** — a recovery plan when quests slip, a calm day plan on a blank board, your first three when the list is long.
 
 - **🧭 Ask anything, get answers grounded in *your* data.** *"What should I tackle first?"* → a prioritized next move, not filler. *"Why is my Focus low?"* → the real reason. *"Plan my day."* → a clear battle plan.
 - **🧠 Brain Dump → instant quest plan.** Empty your head in one go — type it or **say it out loud** — and the AI turns the mess into structured quests: titles, priorities, deadlines, recurrence, and tags, all parsed from natural language (English & Czech). Preview, untick what you don't want, add them all in one tap.
 - **🗓️ Weekly Review.** Every week, see the story — quests completed, XP earned, your best day — topped with an AI recap and a one-tap **"Plan next week"** that drafts your quests for the days ahead.
 - **🔔 Proactive nudges.** Your morning and evening notifications are written by the coach from your live stats — punchy, specific, and motivating. Never "open the app." Always "🔥 104-day streak — one quest locks the day."
+- **🧠 ADHD-friendly mode.** Tell us at onboarding you're here to *tame an ADHD brain* and the whole app adapts: a calmer daily goal, momentum-first missions (never the 7-task marathon), and a coach that leads with **one tiny next step** — externalize the spiral with Brain Dump, start with a 2-minute action, and never get shamed for a missed day.
 
 *100% free, powered by Google Gemini's free tier. No key configured? Brain Dump gracefully falls back to the on-device parser, and the app keeps humming.*
 

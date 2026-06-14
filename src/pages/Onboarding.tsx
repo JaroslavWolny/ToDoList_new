@@ -205,6 +205,7 @@ export function Onboarding() {
                                 </p>
                                 <div className="space-y-3 mt-4">
                                     {([
+                                        { value: 'ADHD', emoji: '🧠', label: 'Tame an ADHD brain', desc: 'Beat overwhelm — externalize & just start.' },
                                         { value: 'FOCUS', emoji: '🎯', label: 'Find focus', desc: 'Stop procrastinating & prioritize.' },
                                         { value: 'DECLUTTER', emoji: '🧘‍♂️', label: 'Declutter mind', desc: 'Clear your head from tasks chaos.' },
                                         { value: 'HABITS', emoji: '📈', label: 'Build habits', desc: 'Develop healthy daily routines.' },
@@ -215,6 +216,7 @@ export function Onboarding() {
                                             whileTap={{ scale: 0.98 }}
                                             onClick={() => {
                                                 setMainMotivation(opt.value);
+                                                if (opt.value === 'ADHD') setDailyGoal(2);
                                                 if (opt.value === 'FOCUS') setDailyGoal(3);
                                                 if (opt.value === 'DECLUTTER') setDailyGoal(6);
                                                 if (opt.value === 'HABITS') setDailyGoal(4);

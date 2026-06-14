@@ -101,6 +101,10 @@ function getMotivationWeights(motivation: MainMotivation, type: DailyMission['ty
             return ['complete_tasks', 'no_sweat', 'marathon'].includes(type) ? 3 : 1;
         case 'HABITS':
             return ['early_bird', 'night_owl'].includes(type) ? 4 : 1;
+        case 'ADHD':
+            // Anti-overwhelm: favour quick momentum wins, never push the 7-task marathon.
+            if (type === 'marathon') return 0;
+            return ['no_sweat', 'complete_tasks', 'early_bird'].includes(type) ? 4 : 1;
         default:
             return 1;
     }
