@@ -107,18 +107,22 @@ export function Tasks() {
 
     return (
         <div className="page-container">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-start justify-between mb-5 animate-rise">
                 <div>
-                    <h1 className="text-2xl font-bold">Tasks</h1>
-                    <p className="text-sm text-[var(--color-text-secondary)]">
-                        {stats.active} active • {stats.completed} done
+                    <p className="section-label mb-1.5">Your board</p>
+                    <h1 className="text-3xl font-black tracking-tight gradient-text leading-none">Quests</h1>
+                    <p className="text-xs text-[var(--color-text-secondary)] mt-2">
+                        <span className="font-bold text-stat text-[var(--color-text)]">{stats.active}</span> active
+                        <span className="text-[var(--color-text-tertiary)]"> · </span>
+                        <span className="font-bold text-stat text-[var(--color-text)]">{stats.completed}</span> done
                     </p>
                 </div>
                 <div className="flex gap-2">
                     <motion.button
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setShowFilters(!showFilters)}
-                        className={`p-2.5 rounded-xl ${showFilters ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20' : 'card-surface'}`}
+                        className={`p-2.5 rounded-xl border transition-colors ${showFilters ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' : 'glass-card text-[var(--color-text-secondary)]'}`}
+                        aria-label="Filters"
                     >
                         <Filter className="w-4 h-4" />
                     </motion.button>
@@ -142,7 +146,7 @@ export function Tasks() {
                     <button
                         onClick={() => setFilterTag(null)}
                         className={`flex-shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-xs font-semibold transition-all ${filterTag === null
-                                ? 'bg-[var(--color-text)] text-[var(--color-bg)]'
+                                ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
                                 : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)]'
                             }`}
                     >
@@ -153,7 +157,7 @@ export function Tasks() {
                             key={tag}
                             onClick={() => setFilterTag(tag === filterTag ? null : tag)}
                             className={`flex-shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-xs font-semibold transition-all ${filterTag === tag
-                                    ? 'bg-primary-500 text-white shadow-md shadow-primary-500/30'
+                                    ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
                                     : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)]'
                                 }`}
                         >
@@ -169,18 +173,18 @@ export function Tasks() {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="card-surface rounded-2xl p-4 mb-4 space-y-3"
+                    className="glass-card p-4 mb-4 space-y-3"
                 >
                     <div>
-                        <label className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">Status</label>
+                        <label className="section-label">Status</label>
                         <div className="flex gap-2 mt-1.5 flex-wrap">
                             {(['ALL', 'ACTIVE', 'COMPLETED', 'FAILED'] as FilterStatus[]).map((s) => (
                                 <button
                                     key={s}
                                     onClick={() => setFilterStatus(s)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterStatus === s
-                                        ? 'bg-primary-500 text-white'
-                                        : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]'
+                                        ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
+                                        : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] border border-transparent'
                                         }`}
                                 >
                                     {s === 'ALL' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase()}
@@ -189,15 +193,15 @@ export function Tasks() {
                         </div>
                     </div>
                     <div>
-                        <label className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">Priority</label>
+                        <label className="section-label">Priority</label>
                         <div className="flex gap-2 mt-1.5 flex-wrap">
                             {(['ALL', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as (Priority | 'ALL')[]).map((p) => (
                                 <button
                                     key={p}
                                     onClick={() => setFilterPriority(p)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterPriority === p
-                                        ? 'bg-primary-500 text-white'
-                                        : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]'
+                                        ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
+                                        : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] border border-transparent'
                                         }`}
                                 >
                                     {p === 'ALL' ? 'All' : p.charAt(0) + p.slice(1).toLowerCase()}
@@ -206,7 +210,7 @@ export function Tasks() {
                         </div>
                     </div>
                     <div>
-                        <label className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">Sort by</label>
+                        <label className="section-label">Sort by</label>
                         <div className="flex gap-2 mt-1.5">
                             {([
                                 { value: 'created', label: 'Newest' },
@@ -217,8 +221,8 @@ export function Tasks() {
                                     key={s.value}
                                     onClick={() => setSortBy(s.value)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${sortBy === s.value
-                                        ? 'bg-primary-500 text-white'
-                                        : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]'
+                                        ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
+                                        : 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] border border-transparent'
                                         }`}
                                 >
                                     {s.label}
