@@ -58,7 +58,10 @@ export function Stats() {
 
     return (
         <div className="page-container">
-            <h1 className="text-2xl font-bold mb-6">Statistics</h1>
+            <div className="mb-6 animate-rise">
+                <p className="section-label mb-1.5">Your journey</p>
+                <h1 className="text-3xl font-black tracking-tight gradient-text leading-none">Statistics</h1>
+            </div>
 
             {/* Weekly Review entry */}
             <button
@@ -87,13 +90,13 @@ export function Stats() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
-                        className={`card-surface rounded-2xl p-4 ${stat.shadow}`}
+                        className={`glass-card p-4 ${stat.shadow}`}
                     >
-                        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center text-white mb-2`}>
+                        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center text-white mb-2.5`}>
                             {stat.icon}
                         </div>
-                        <p className="text-xl font-extrabold">{stat.value}</p>
-                        <p className="text-xs text-[var(--color-text-secondary)]">{stat.label}</p>
+                        <p className="text-[26px] font-black text-stat leading-none">{stat.value}</p>
+                        <p className="text-[11px] text-[var(--color-text-tertiary)] mt-1.5">{stat.label}</p>
                     </motion.div>
                 ))}
             </div>
