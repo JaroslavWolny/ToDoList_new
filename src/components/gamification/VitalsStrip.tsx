@@ -58,6 +58,10 @@ export function VitalsStrip({ onOpenRituals }: VitalsStripProps) {
         return { total: rituals.length, remaining: rituals.filter((t) => t.status === 'ACTIVE').length };
     }, [tasks]);
 
+    const ritualDone = ritualStats.total - ritualStats.remaining;
+    const ritualAllDone = ritualStats.total > 0 && ritualStats.remaining === 0;
+    const ritualPct = ritualStats.total > 0 ? (ritualDone / ritualStats.total) * 100 : 0;
+
     // Streak risk (recomputed on render — no ticker needed for a glanceable cue).
     const risk = useMemo(() => {
         if (streakCurrent <= 0 || completionsToday > 0) return 'safe' as const;
@@ -75,13 +79,15 @@ export function VitalsStrip({ onOpenRituals }: VitalsStripProps) {
 
     return (
         <>
-            <div className="glass-card p-3">
-                <div className="flex items-center gap-2 flex-wrap">
+            <div className="glass-card p-3 flex flex-col gap-2.5">
+                {/* Primary vitals — single row that never wraps (scrolls if tight),
+                    so no pill is ever orphaned onto a second line. */}
+                <div className="flex items-center gap-2 flex-nowrap overflow-x-auto scrollbar-hide">
                     {/* Streak → share */}
                     <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setShowShare(true)}
-                        className="inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-full bg-white/5 border border-[var(--color-border)]"
+                        className="shrink-0 inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-full bg-white/5 border border-[var(--color-border)]"
                         aria-label="Share your streak"
                     >
                         <span className={`w-6 h-6 rounded-lg flex items-center justify-center ${flameClass}`}>
@@ -99,38 +105,62 @@ export function VitalsStrip({ onOpenRituals }: VitalsStripProps) {
                     </motion.button>
 
                     {/* HP (self-hides when disabled in settings) */}
-                    <HealthBar />
+                    <div className="shrink-0"><HealthBar /></div>
 
                     {/* Combo — only when active */}
-                    {combo > 1 && <ComboIndicator multiplier={combo} />}
+                    {combo > 1 && <div className="shrink-0"><ComboIndicator multiplier={combo} /></div>}
 
                     {/* Daily goal */}
                     {dailyGoal > 0 && (
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-[var(--color-border)]">
+                        <div className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-[var(--color-border)]">
                             <Target className="w-3.5 h-3.5 text-cyan-400" strokeWidth={2.6} />
                             <span className="text-[11px] font-bold text-stat text-[var(--color-text-secondary)]">
                                 {completionsToday}/{dailyGoal}
                             </span>
                         </div>
                     )}
-
-                    {/* Rituals → drawer (replaces the old floating FAB) */}
-                    {quickRitualsEnabled && ritualStats.total > 0 && (
-                        <motion.button
-                            whileTap={{ scale: 0.95 }}
-                            onClick={onOpenRituals}
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${
-                                ritualStats.remaining === 0
-                                    ? 'bg-green-500/15 text-green-400 border-green-500/30'
-                                    : 'bg-cyan-500/12 text-cyan-300 border-cyan-500/30'
-                            }`}
-                            aria-label="Open rituals"
-                        >
-                            <Sparkles className="w-3.5 h-3.5" strokeWidth={2.6} />
-                            {ritualStats.remaining === 0 ? 'Rituals ✓' : `${ritualStats.remaining} rituals`}
-                        </motion.button>
-                    )}
                 </div>
+
+                {/* Rituals — full-width tracker bar (was a wrapping pill that
+                    orphaned onto its own line). Progress fills as they're done. */}
+                {quickRitualsEnabled && ritualStats.total > 0 && (
+                    <motion.button
+                        whileTap={{ scale: 0.98 }}
+                        onClick={onOpenRituals}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-colors ${
+                            ritualAllDone
+                                ? 'bg-green-500/10 border-green-500/25'
+                                : 'bg-cyan-500/[0.08] border-cyan-500/25'
+                        }`}
+                        aria-label="Open rituals"
+                    >
+                        <span className={`shrink-0 w-6 h-6 rounded-lg flex items-center justify-center ${
+                            ritualAllDone ? 'bg-green-500/20 text-green-400' : 'bg-cyan-500/15 text-cyan-300'
+                        }`}>
+                            <Sparkles className="w-3.5 h-3.5" strokeWidth={2.6} />
+                        </span>
+                        <span className={`shrink-0 text-[11px] font-bold uppercase tracking-[0.14em] ${
+                            ritualAllDone ? 'text-green-400' : 'text-cyan-300'
+                        }`}>
+                            Rituals
+                        </span>
+                        <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                            <motion.div
+                                initial={false}
+                                animate={{ width: `${ritualPct}%` }}
+                                transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+                                className={`h-full rounded-full ${
+                                    ritualAllDone
+                                        ? 'bg-gradient-to-r from-green-400 to-emerald-500'
+                                        : 'bg-gradient-to-r from-cyan-400 to-blue-500'
+                                }`}
+                            />
+                        </div>
+                        <span className="shrink-0 text-[11px] font-black text-stat text-[var(--color-text-secondary)]">
+                            {ritualAllDone ? '✓' : `${ritualDone}/${ritualStats.total}`}
+                        </span>
+                    </motion.button>
+                )}
             </div>
 
             {showShare && (
