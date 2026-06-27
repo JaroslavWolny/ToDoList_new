@@ -155,7 +155,7 @@ export function Onboarding() {
                         {step === 0 && (
                             <div className="text-center space-y-6">
                                 <div className="text-5xl mb-4">👋</div>
-                                <h2 className="text-2xl font-bold">Welcome!</h2>
+                                <h2 className="text-2xl font-black gradient-text">Welcome!</h2>
                                 <p className="text-sm text-[var(--color-text-secondary)]">
                                     What should we call you?
                                 </p>
@@ -180,8 +180,8 @@ export function Onboarding() {
                                                 whileTap={{ scale: 0.98 }}
                                                 onClick={() => setWorkStyle(opt.value)}
                                                 className={`w-full text-left p-3.5 rounded-xl transition-all flex items-center gap-3 ${workStyle === opt.value
-                                                    ? 'bg-primary-500/10 border-2 border-primary-500'
-                                                    : 'card-surface'
+                                                    ? 'bg-cyan-500/10 border-2 border-cyan-500/40'
+                                                    : 'glass-card'
                                                     }`}
                                             >
                                                 <span className="text-2xl">{opt.emoji}</span>
@@ -199,7 +199,7 @@ export function Onboarding() {
                         {step === 1 && (
                             <div className="text-center space-y-6">
                                 <div className="text-5xl mb-4">🌟</div>
-                                <h2 className="text-2xl font-bold">Main Motivation</h2>
+                                <h2 className="text-2xl font-black gradient-text">Main Motivation</h2>
                                 <p className="text-sm text-[var(--color-text-secondary)]">
                                     Why are you here? This shapes your daily quests.
                                 </p>
@@ -223,8 +223,8 @@ export function Onboarding() {
                                                 if (opt.value === 'REWARDS') setDailyGoal(5);
                                             }}
                                             className={`w-full text-left p-4 rounded-xl transition-all ${mainMotivation === opt.value
-                                                ? 'bg-primary-500/10 border-2 border-primary-500'
-                                                : 'card-surface'
+                                                ? 'bg-cyan-500/10 border-2 border-cyan-500/40'
+                                                : 'glass-card'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3">
@@ -243,7 +243,7 @@ export function Onboarding() {
                         {step === 2 && (
                             <div className="text-center space-y-6">
                                 <div className="text-5xl mb-4">⚔️</div>
-                                <h2 className="text-2xl font-bold">Challenge Level</h2>
+                                <h2 className="text-2xl font-black gradient-text">Challenge Level</h2>
                                 <p className="text-sm text-[var(--color-text-secondary)]">
                                     How tough should the gamification be?
                                 </p>
@@ -258,8 +258,8 @@ export function Onboarding() {
                                             whileTap={{ scale: 0.98 }}
                                             onClick={() => setGamificationLevel(opt.value)}
                                             className={`w-full text-left p-4 rounded-xl transition-all ${gamificationLevel === opt.value
-                                                ? 'bg-primary-500/10 border-2 border-primary-500'
-                                                : 'card-surface'
+                                                ? 'bg-cyan-500/10 border-2 border-cyan-500/40'
+                                                : 'glass-card'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3">
@@ -278,12 +278,12 @@ export function Onboarding() {
                         {step === 3 && (
                             <div className="text-center space-y-6">
                                 <div className="text-5xl mb-4">🔔</div>
-                                <h2 className="text-2xl font-bold">Notifications</h2>
+                                <h2 className="text-2xl font-black gradient-text">Notifications</h2>
                                 <p className="text-sm text-[var(--color-text-secondary)]">
                                     Set your reminder times (can be changed later)
                                 </p>
                                 <div className="space-y-4 mt-4">
-                                    <div className="card-surface rounded-xl p-4">
+                                    <div className="glass-card rounded-xl p-4">
                                         <label className="text-sm font-medium block mb-2">Morning Reminder</label>
                                         <div className="w-full bg-[var(--color-surface-hover)] rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-primary-500/50 transition-all overflow-hidden flex items-center">
                                             <input
@@ -295,7 +295,7 @@ export function Onboarding() {
                                             />
                                         </div>
                                     </div>
-                                    <div className="card-surface rounded-xl p-4">
+                                    <div className="glass-card rounded-xl p-4">
                                         <label className="text-sm font-medium block mb-2">Evening Summary</label>
                                         <div className="w-full bg-[var(--color-surface-hover)] rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-primary-500/50 transition-all overflow-hidden flex items-center">
                                             <input
@@ -314,7 +314,7 @@ export function Onboarding() {
                         {step === 4 && (
                             <div className="text-center space-y-6">
                                 <div className="text-5xl mb-4">🎨</div>
-                                <h2 className="text-2xl font-bold">Theme</h2>
+                                <h2 className="text-2xl font-black gradient-text">Theme</h2>
                                 <p className="text-sm text-[var(--color-text-secondary)]">
                                     Choose your preferred appearance
                                 </p>
@@ -329,8 +329,8 @@ export function Onboarding() {
                                             whileTap={{ scale: 0.95 }}
                                             onClick={() => setTheme(opt.value)}
                                             className={`flex flex-col items-center gap-2 py-6 rounded-2xl transition-all ${theme === opt.value
-                                                ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-                                                : 'card-surface'
+                                                ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/40'
+                                                : 'glass-card text-[var(--color-text-secondary)]'
                                                 }`}
                                         >
                                             {opt.icon}
@@ -349,7 +349,7 @@ export function Onboarding() {
                 <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={prev}
-                    className={`flex items-center gap-1 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${step === 0 ? 'opacity-0 pointer-events-none' : 'card-surface'
+                    className={`flex items-center gap-1 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${step === 0 ? 'opacity-0 pointer-events-none' : 'glass-card'
                         }`}
                 >
                     <ChevronLeft className="w-4 h-4" />

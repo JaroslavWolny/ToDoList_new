@@ -189,9 +189,10 @@ export function Login() {
 
     return (
         <div className="page-container min-h-screen flex items-center justify-center px-4 py-8">
-            <div className="card-surface w-full max-w-md rounded-3xl p-6 sm:p-8 space-y-6">
+            <div className="glass-card w-full max-w-md rounded-3xl p-6 sm:p-8 space-y-6 animate-rise">
                 <div className="space-y-2 text-center">
-                    <h1 className="text-2xl font-bold">
+                    <p className="text-[11px] uppercase tracking-[0.22em] font-black gradient-text">⚔️ QuestDo</p>
+                    <h1 className="text-3xl font-black tracking-tight">
                         {mode === 'sign-in' ? 'Welcome back' : 'Create account'}
                     </h1>
                     <p className="text-sm text-[var(--color-text-secondary)]">
@@ -282,7 +283,7 @@ export function Login() {
                                 type="text"
                                 value={displayName}
                                 onChange={(e) => setDisplayName(e.target.value)}
-                                className="w-full rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] px-3 py-2.5 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+                                className="w-full rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] px-3 py-2.5 text-sm focus:outline-none focus:border-[var(--color-primary)]"
                                 placeholder="Hero"
                                 autoComplete="nickname"
                             />
@@ -298,7 +299,7 @@ export function Login() {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] px-3 py-2.5 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+                            className="w-full rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] px-3 py-2.5 text-sm focus:outline-none focus:border-[var(--color-primary)]"
                             placeholder="you@example.com"
                             autoComplete="email"
                         />
@@ -314,7 +315,7 @@ export function Login() {
                             minLength={6}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] px-3 py-2.5 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+                            className="w-full rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] px-3 py-2.5 text-sm focus:outline-none focus:border-[var(--color-primary)]"
                             placeholder="Min. 6 characters"
                             autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
                         />
@@ -348,7 +349,7 @@ export function Login() {
                             <button
                                 type="button"
                                 onClick={() => switchMode('sign-up')}
-                                className="font-semibold text-[var(--color-accent)] hover:underline"
+                                className="font-semibold text-[var(--color-primary)] hover:underline"
                             >
                                 Create one
                             </button>
@@ -359,7 +360,7 @@ export function Login() {
                             <button
                                 type="button"
                                 onClick={() => switchMode('sign-in')}
-                                className="font-semibold text-[var(--color-accent)] hover:underline"
+                                className="font-semibold text-[var(--color-primary)] hover:underline"
                             >
                                 Sign in
                             </button>
