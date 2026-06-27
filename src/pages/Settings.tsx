@@ -247,7 +247,10 @@ export function Settings() {
                 </AnimatePresence>
             </div>
 
-            <h1 className="text-2xl font-bold mb-6">Settings</h1>
+            <div className="mb-6 animate-rise">
+                <p className="section-label mb-1.5">Your setup</p>
+                <h1 className="text-3xl font-black tracking-tight gradient-text leading-none">Settings</h1>
+            </div>
 
             <Section title="Account">
                 <AccountSection />
@@ -262,9 +265,9 @@ export function Settings() {
                             key={opt.value}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => updateSettings({ theme: opt.value })}
-                            className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${settings.theme === opt.value
-                                ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-                                : 'card-surface'
+                            className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${settings.theme === opt.value
+                                ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
+                                : 'glass-card text-[var(--color-text-secondary)]'
                                 }`}
                         >
                             {opt.icon}
@@ -284,8 +287,8 @@ export function Settings() {
                             whileTap={{ scale: 0.98 }}
                             onClick={() => updateSettings({ gamificationLevel: opt.value })}
                             className={`w-full text-left p-3 rounded-xl transition-all ${settings.gamificationLevel === opt.value
-                                ? 'bg-primary-500/10 border-2 border-primary-500'
-                                : 'card-surface'
+                                ? 'bg-cyan-500/10 border-2 border-cyan-500/40'
+                                : 'glass-card'
                                 }`}
                         >
                             <div className="flex items-center justify-between">
@@ -294,7 +297,7 @@ export function Settings() {
                                     <p className="text-xs text-[var(--color-text-secondary)]">{opt.desc}</p>
                                 </div>
                                 {settings.gamificationLevel === opt.value && (
-                                    <div className="w-6 h-6 rounded-full bg-primary-500 flex items-center justify-center">
+                                    <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center">
                                         <Shield className="w-3.5 h-3.5 text-white" />
                                     </div>
                                 )}
@@ -467,8 +470,8 @@ export function Settings() {
                             whileTap={{ scale: 0.9 }}
                             onClick={() => toggleWorkDay(day)}
                             className={`w-10 h-10 rounded-xl text-xs font-bold transition-all ${settings.workDays.includes(day)
-                                ? 'bg-primary-500 text-white'
-                                : 'card-surface text-[var(--color-text-secondary)]'
+                                ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
+                                : 'glass-card text-[var(--color-text-secondary)]'
                                 }`}
                         >
                             {dayLabels[i]}
@@ -504,9 +507,9 @@ export function Settings() {
                 <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={handleExportData}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl card-surface mb-2"
+                    className="w-full flex items-center gap-3 p-3 rounded-xl glass-card mb-2"
                 >
-                    <Download className="w-5 h-5 text-primary-500" />
+                    <Download className="w-5 h-5 text-cyan-400" />
                     <div className="text-left">
                         <p className="text-sm font-medium">Export Data</p>
                         <p className="text-xs text-[var(--color-text-secondary)]">Download all your data as JSON</p>
@@ -515,7 +518,7 @@ export function Settings() {
                 <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={handleImportData}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl card-surface mb-2"
+                    className="w-full flex items-center gap-3 p-3 rounded-xl glass-card mb-2"
                 >
                     <Upload className="w-5 h-5 text-green-500" />
                     <div className="text-left">
@@ -528,7 +531,7 @@ export function Settings() {
                 <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={handleReset}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl card-surface border-red-500/20"
+                    className="w-full flex items-center gap-3 p-3 rounded-xl glass-card border-red-500/20"
                 >
                     <Trash2 className="w-5 h-5 text-red-500" />
                     <div className="text-left">
@@ -544,7 +547,7 @@ export function Settings() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
         <div className="mb-6">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)] mb-3">
+            <h2 className="section-label mb-3">
                 {title}
             </h2>
             {children}
@@ -577,7 +580,7 @@ function Toggle({
             <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={() => onChange(!checked)}
-                className={`relative w-12 h-7 rounded-full transition-colors flex-shrink-0 ${checked ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
+                className={`relative w-12 h-7 rounded-full transition-colors flex-shrink-0 ${checked ? 'bg-gradient-to-r from-cyan-500 to-blue-500 shadow-sm shadow-cyan-500/30' : 'bg-black/15 dark:bg-white/15'
                     }`}
             >
                 <motion.div
