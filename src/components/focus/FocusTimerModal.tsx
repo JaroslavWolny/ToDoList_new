@@ -31,6 +31,14 @@ const SETUP_DIAL_STROKE = 12;
 const SETUP_DIAL_R = SETUP_DIAL / 2 - SETUP_DIAL_STROKE;
 const SETUP_DIAL_C = SETUP_DIAL_R * 2 * Math.PI;
 
+/** Human label for a session length, so the raw number carries meaning. */
+const sessionType = (m: number): string =>
+    m >= 90 ? 'Ultradian cycle' :
+    m >= 50 ? 'Deep block' :
+    m >= 25 ? 'Pomodoro' :
+    m >= 15 ? 'Quick burst' :
+    'Micro sprint';
+
 /** Staggered entrance for the setup sections (header → dial → … → CTA). */
 const setupSection = (i: number) => ({
     initial: { opacity: 0, y: 12 },
@@ -435,6 +443,9 @@ export function FocusTimerModal() {
                                         </div>
                                         <span className="text-[10px] uppercase tracking-[0.24em] font-bold text-[var(--color-text-tertiary)] mt-1.5">
                                             minutes
+                                        </span>
+                                        <span className="text-[11px] font-bold text-cyan-400/90 mt-1.5">
+                                            {sessionType(minutes)}
                                         </span>
                                     </div>
                                 </div>
