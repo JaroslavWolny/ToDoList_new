@@ -45,7 +45,7 @@ export function RaidDetail() {
         return (
             <div className="page-container">
                 <BackLink />
-                <div className="card-surface rounded-2xl p-5 text-center">
+                <div className="glass-card rounded-2xl p-5 text-center">
                     <p className="text-sm mb-3">Sign in to view this raid.</p>
                     <Link to="/login" className="text-sm font-semibold underline">Sign in</Link>
                 </div>
@@ -106,7 +106,7 @@ export function RaidDetail() {
         <div className="page-container">
             <BackLink />
 
-            <div className="card-surface rounded-2xl p-4 mb-4">
+            <div className="glass-card rounded-2xl p-4 mb-4">
                 <div className="flex items-start justify-between mb-2 gap-2">
                     <div className="min-w-0">
                         <h1 className="text-lg font-bold truncate">{raid.name}</h1>
@@ -135,7 +135,7 @@ export function RaidDetail() {
             </div>
 
             {boss ? (
-                <div className="card-surface rounded-2xl p-5 mb-4 text-center space-y-3">
+                <div className="glass-card rounded-2xl p-5 mb-4 text-center space-y-3">
                     <div className="flex items-center justify-center gap-2">
                         <Skull className="w-6 h-6 text-red-400" />
                         <h2 className="text-xl font-bold">{boss.name}</h2>
@@ -168,7 +168,7 @@ export function RaidDetail() {
                     </div>
                 </div>
             ) : (
-                <div className="card-surface rounded-2xl p-5 mb-4 text-center">
+                <div className="glass-card rounded-2xl p-5 mb-4 text-center">
                     <Trophy className="w-10 h-10 mx-auto mb-2 text-amber-400" />
                     <p className="text-sm font-semibold">No active boss</p>
                 </div>
@@ -177,7 +177,7 @@ export function RaidDetail() {
             <Section title={`Members (${members.length})`}>
                 <div className="space-y-1.5">
                     {sortedMembers.map((m, idx) => (
-                        <div key={m.uid} className="card-surface rounded-xl p-2.5 flex items-center gap-3">
+                        <div key={m.uid} className="glass-card rounded-xl p-2.5 flex items-center gap-3">
                             <div
                                 className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
                                 style={{
@@ -201,7 +201,7 @@ export function RaidDetail() {
                                     {m.uid === user?.uid && <span className="text-[10px] text-[var(--color-text-tertiary)]">(you)</span>}
                                 </p>
                             </div>
-                            <div className="text-sm font-bold flex items-center gap-1 text-[var(--color-accent)] flex-shrink-0">
+                            <div className="text-sm font-bold flex items-center gap-1 text-cyan-400 flex-shrink-0">
                                 <Swords className="w-3.5 h-3.5" /> {m.totalDamage ?? 0}
                             </div>
                         </div>
@@ -211,13 +211,13 @@ export function RaidDetail() {
 
             <Section title="Last 50 hits">
                 {events.length === 0 ? (
-                    <div className="card-surface rounded-xl p-4 text-center text-xs text-[var(--color-text-secondary)]">
+                    <div className="glass-card rounded-xl p-4 text-center text-xs text-[var(--color-text-secondary)]">
                         No damage yet. Complete a task and you'll see it here.
                     </div>
                 ) : (
                     <div className="space-y-1.5">
                         {events.map((ev) => (
-                            <div key={ev.id} className="card-surface rounded-xl p-2.5 flex items-center justify-between gap-3 text-xs">
+                            <div key={ev.id} className="glass-card rounded-xl p-2.5 flex items-center justify-between gap-3 text-xs">
                                 <div className="min-w-0 flex-1">
                                     <p className="font-semibold truncate">
                                         {ev.actorName} · <span className="text-[var(--color-text-secondary)]">{ev.taskTitle}</span>
@@ -266,7 +266,7 @@ function BackLink() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
         <div className="mb-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)] mb-2">
+            <h3 className="section-label mb-2">
                 {title}
             </h3>
             {children}

@@ -65,7 +65,7 @@ export function Raids() {
         return (
             <div className="page-container">
                 <h1 className="text-2xl font-bold mb-4">Raids</h1>
-                <div className="card-surface rounded-2xl p-4 text-sm text-[var(--color-text-secondary)]">
+                <div className="glass-card rounded-2xl p-4 text-sm text-[var(--color-text-secondary)]">
                     Accounts and co-op raids are not configured.
                 </div>
             </div>
@@ -84,7 +84,7 @@ export function Raids() {
         return (
             <div className="page-container">
                 <h1 className="text-2xl font-bold mb-4">Raids</h1>
-                <div className="card-surface rounded-2xl p-5 text-center space-y-3">
+                <div className="glass-card rounded-2xl p-5 text-center space-y-3">
                     <p className="text-sm text-[var(--color-text-secondary)]">
                         Sign in first to play co-op raids.
                     </p>
@@ -147,13 +147,16 @@ export function Raids() {
 
     return (
         <div className="page-container">
-            <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-bold">Raids</h1>
+            <div className="flex items-start justify-between mb-5 animate-rise">
+                <div>
+                    <p className="section-label mb-1.5">Co-op</p>
+                    <h1 className="text-3xl font-black tracking-tight gradient-text leading-none">Raids</h1>
+                </div>
                 <div className="flex gap-2">
                     <button
                         type="button"
                         onClick={() => { setShowJoin(true); setActionError(null); }}
-                        className="card-surface rounded-xl px-3 py-2 text-xs font-semibold flex items-center gap-1.5"
+                        className="glass-card rounded-xl px-3 py-2 text-xs font-semibold text-[var(--color-text-secondary)] flex items-center gap-1.5"
                     >
                         <Users className="w-4 h-4" /> Join
                     </button>
@@ -175,14 +178,14 @@ export function Raids() {
             )}
 
             {sortedRaids === null && !loadError && (
-                <div className="card-surface rounded-2xl p-5 flex items-center gap-3">
+                <div className="glass-card rounded-2xl p-5 flex items-center gap-3">
                     <Loader2 className="w-5 h-5 animate-spin text-[var(--color-text-secondary)]" />
                     <span className="text-sm text-[var(--color-text-secondary)]">Loading raids...</span>
                 </div>
             )}
 
             {sortedRaids && sortedRaids.length === 0 && (
-                <div className="card-surface rounded-2xl p-5 text-center space-y-2">
+                <div className="glass-card rounded-2xl p-5 text-center space-y-2">
                     <Swords className="w-10 h-10 mx-auto text-[var(--color-text-tertiary)]" />
                     <p className="text-sm text-[var(--color-text-secondary)]">
                         No raids yet. Create your first one or join with a friend's invite code.
@@ -303,7 +306,7 @@ function RaidCard({ raid }: { raid: Raid }) {
     return (
         <Link
             to={`/raids/${raid.id}`}
-            className="card-surface rounded-2xl p-4 block transition hover:opacity-90"
+            className="glass-card rounded-2xl p-4 block transition hover:opacity-90"
         >
             <div className="flex items-center justify-between mb-2">
                 <div className="min-w-0">
@@ -360,7 +363,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 30, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="card-surface w-full max-w-md rounded-3xl p-5 space-y-4"
+                className="glass-card w-full max-w-md rounded-3xl p-5 space-y-4"
             >
                 <div className="flex items-center justify-between">
                     <h2 className="text-base font-bold">{title}</h2>
@@ -377,7 +380,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
     return (
         <div className="space-y-1">
-            <label className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
+            <label className="section-label">
                 {label}
             </label>
             {children}
@@ -391,7 +394,7 @@ const _styleInject = typeof document !== 'undefined' ? (() => {
     const el = document.createElement('style');
     el.id = 'raid-form-styles';
     el.textContent = `.form-input { width: 100%; border-radius: 0.75rem; background: var(--color-surface); border: 1px solid var(--color-border); padding: 0.5rem 0.75rem; font-size: 0.875rem; outline: none; }
-.form-input:focus { border-color: var(--color-accent); }`;
+.form-input:focus { border-color: var(--color-primary); }`;
     document.head.appendChild(el);
 })() : null;
 
