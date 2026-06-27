@@ -82,7 +82,7 @@ export function VitalsStrip({ onOpenRituals }: VitalsStripProps) {
             <div className="glass-card p-3 flex flex-col gap-2.5">
                 {/* Primary vitals — single row that never wraps (scrolls if tight),
                     so no pill is ever orphaned onto a second line. */}
-                <div className="flex items-center gap-2 flex-nowrap overflow-x-auto scrollbar-hide">
+                <div className="flex items-center gap-2 flex-nowrap overflow-x-auto scrollbar-hide scroll-fade-x">
                     {/* Streak → share */}
                     <motion.button
                         whileTap={{ scale: 0.95 }}

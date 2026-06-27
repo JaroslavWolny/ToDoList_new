@@ -491,6 +491,24 @@
     font-feature-settings: 'tnum';
     letter-spacing: -0.02em;
   }
+
+  /* Consistent section eyebrow label — one rhythm across the dashboard */
+  .section-label {
+    font-size: 11px;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-weight: 700;
+    color: var(--color-text-tertiary);
+  }
+
+  /* Right-edge fade to hint a horizontally-scrollable row. Pills are
+     left-aligned, so when the row doesn't overflow the fade only touches
+     empty space and is invisible; when it overflows it cues the scroll. */
+  .scroll-fade-x {
+    -webkit-mask-image: linear-gradient(to right, #000 88%, transparent 100%);
+    mask-image: linear-gradient(to right, #000 88%, transparent 100%);
+  }
 }
 
 /* Modal scroll lock */

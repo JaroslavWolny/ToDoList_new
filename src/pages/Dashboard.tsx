@@ -317,7 +317,7 @@ export function Dashboard() {
         // them to this container instead of the viewport.
         <div className="page-container">
             {/* ============== HERO IDENTITY (greeting · avatar · level · XP) ============== */}
-            <div className="glass-hero p-5 mb-4">
+            <div className="glass-hero p-5 mb-5">
                 {/* Ambient corner glow — adds depth so the hero reads as the signature surface */}
                 <div
                     aria-hidden
@@ -465,48 +465,37 @@ export function Dashboard() {
                 )}
             </AnimatePresence>
 
-            {/* ============== PROACTIVE COACH NUDGE (headline AI surface) ============== */}
-            <div className="mb-4">
+            {/* ============== COACH (headline AI surface) + AI tools ============== */}
+            <div className="mb-6">
                 <CoachNudge onAsk={openCoachWith} />
+                <div className="flex items-center gap-2 mt-2.5">
+                    <button
+                        type="button"
+                        onClick={() => setShowBrainDump(true)}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold glass-card text-[var(--color-text-secondary)] active:scale-[0.98] transition-transform"
+                    >
+                        <Brain className="w-3.5 h-3.5 text-[var(--color-text-tertiary)]" strokeWidth={2.6} /> Brain dump
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setShowWeekly(true)}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold glass-card text-[var(--color-text-secondary)] active:scale-[0.98] transition-transform"
+                    >
+                        <CalendarDays className="w-3.5 h-3.5 text-[var(--color-text-tertiary)]" strokeWidth={2.6} /> Weekly review
+                    </button>
+                </div>
             </div>
 
-            {/* ============== BRAIN DUMP / WEEKLY REVIEW ============== */}
-            <div className="flex items-center gap-2 mb-4">
-                <button
-                    type="button"
-                    onClick={() => setShowBrainDump(true)}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold glass-card text-[var(--color-text-secondary)] active:scale-[0.98] transition-transform"
-                >
-                    <Brain className="w-3.5 h-3.5 text-cyan-400" strokeWidth={2.6} /> Brain dump
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setShowWeekly(true)}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold glass-card text-[var(--color-text-secondary)] active:scale-[0.98] transition-transform"
-                >
-                    <CalendarDays className="w-3.5 h-3.5 text-cyan-400" strokeWidth={2.6} /> Weekly review
-                </button>
-            </div>
-
-            {/* ============== TODAY'S FOCUS (hero score + coach) ============== */}
-            <div className="mb-4">
-                <TodayScoreCard onAskCoach={() => { setCoachPrompt(undefined); setShowCoach(true); }} />
-            </div>
-
-            {/* ============== DEEP-WORK FOCUS TIMER ============== */}
-            <div className="mb-4">
-                <FocusLauncher />
-            </div>
-
-            {/* ============== VITALS STRIP (streak · HP · combo · goal · rituals · level) ============== */}
-            <div className="mb-4">
-                <VitalsStrip onOpenRituals={() => setShowRituals(true)} />
-            </div>
-
-            {/* ============== DAILY REVEAL (buff) ============== */}
-            <div className="mb-4">
-                <DailyRevealCard />
-            </div>
+            {/* ============== TODAY (focus score · deep work · vitals · daily buff) ============== */}
+            <section className="mb-6">
+                <h2 className="section-label mb-2.5">Today</h2>
+                <div className="space-y-3">
+                    <TodayScoreCard onAskCoach={() => { setCoachPrompt(undefined); setShowCoach(true); }} />
+                    <FocusLauncher />
+                    <VitalsStrip onOpenRituals={() => setShowRituals(true)} />
+                    <DailyRevealCard />
+                </div>
+            </section>
 
             {/* ============== DAILY MISSIONS (collapsible) — moved above quests so it's always visible ============== */}
             {dailyMissionsEnabled && missionsForToday.length > 0 && (
@@ -518,7 +507,7 @@ export function Dashboard() {
                     >
                         <div className="flex items-center gap-1.5">
                             <Zap className="w-3 h-3 text-amber-500" strokeWidth={3} />
-                            <span className="text-[11px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
+                            <span className="section-label">
                                 Daily Missions
                             </span>
                             <span className="text-[10px] font-bold text-amber-500 text-stat">
@@ -592,7 +581,7 @@ export function Dashboard() {
 
             {/* ============== DAILY CHEST CLAIM ============== */}
             {dailyMissionsEnabled && missionsForToday.length > 0 && (
-                <div className="mb-4">
+                <div className="mb-6">
                     <AnimatePresence>
                         {allMissionsDone && !dailyChestClaimed && (
                             <motion.button
@@ -633,7 +622,7 @@ export function Dashboard() {
             {/* ============== TODAY'S QUESTS (compact preview — full list lives on the Tasks tab) ============== */}
             <div className="mb-5">
                 <div className="flex items-center justify-between mb-2.5">
-                    <h2 className="text-[11px] uppercase tracking-[0.18em] font-bold text-[var(--color-text-tertiary)]">
+                    <h2 className="section-label">
                         Today's Quests
                     </h2>
                     <Link
