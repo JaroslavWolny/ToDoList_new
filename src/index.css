@@ -119,6 +119,18 @@
       radial-gradient(65% 55% at 50% 88%, var(--mesh-3) 0%, transparent 70%);
   }
 
+  /* Fine film grain over the mesh — kills gradient banding and adds a premium
+     frosted texture. Static, GPU-cheap (one tiled SVG noise), behind content. */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
   /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 4px;
@@ -159,14 +171,14 @@
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1.5px solid var(--color-border);
-    box-shadow: var(--shadow-elev-2);
+    box-shadow: var(--shadow-elev-2), inset 0 1px 0 rgba(255, 255, 255, 0.07);
     border-radius: 1.5rem;
     transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   }
 
   .glass-card:hover {
     border-color: var(--color-border-strong);
-    box-shadow: var(--shadow-elev-3);
+    box-shadow: var(--shadow-elev-3), inset 0 1px 0 rgba(255, 255, 255, 0.09);
   }
 
   .glass-hero {
@@ -196,6 +208,33 @@
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--color-border);
     box-shadow: var(--shadow-elev-2);
+  }
+
+  /* ============ VITALS CHIPS (one unified capsule system) ============ */
+
+  /* Every dashboard vital (streak · HP · combo · goal) shares this capsule so
+     the row reads as one premium control instead of mismatched pills. */
+  .vital-chip {
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex-shrink: 0;
+    padding-left: 0.375rem;
+    padding-right: 0.625rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--color-border);
+  }
+
+  .vital-chip-tile {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
 
   /* ============ TEXT GRADIENTS ============ */
@@ -592,6 +631,18 @@
   animation: unboxFlash 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
+/* Page entrance — OPACITY ONLY (never transform). A transform here would
+   establish a containing block and re-pin the position:fixed modals that
+   several dashboard cards render inside themselves. Fade is safe. */
+@keyframes riseFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-rise {
+  animation: riseFade 0.5s ease both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   body::before { animation: none; }
   .gradient-text, .gradient-text-fire, .xp-gradient, .fab-primary, .fab-ritual { animation: none; }
@@ -599,4 +650,5 @@
   .combo-tier-2, .combo-tier-3 { animation: none; }
   .reveal-card-shell::after { animation: none; }
   .animate-flame-flicker, .animate-screen-shake { animation: none; }
+  .animate-rise { animation: none; }
 }

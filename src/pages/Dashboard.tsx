@@ -317,7 +317,7 @@ export function Dashboard() {
         // them to this container instead of the viewport.
         <div className="page-container">
             {/* ============== HERO IDENTITY (greeting · avatar · level · XP) ============== */}
-            <div className="glass-hero p-5 mb-5">
+            <div className="glass-hero p-5 mb-5 animate-rise">
                 {/* Ambient corner glow — adds depth so the hero reads as the signature surface */}
                 <div
                     aria-hidden
@@ -344,7 +344,8 @@ export function Dashboard() {
             {/* ============== QUICK-ADD QUEST BAR ============== */}
             <div
                 onClick={() => quickInputRef.current?.focus()}
-                className={`relative w-full mb-5 flex items-center gap-2.5 pl-3.5 pr-1.5 py-1.5 rounded-2xl cursor-text transition-all duration-200 glass-card ${
+                style={{ animationDelay: '60ms' }}
+                className={`relative w-full mb-5 flex items-center gap-2.5 pl-3.5 pr-1.5 py-1.5 rounded-2xl cursor-text transition-all duration-200 glass-card animate-rise ${
                     quickFocused ? 'border-cyan-400/50 shadow-lg shadow-cyan-400/10' : ''
                 }`}
             >
@@ -466,7 +467,7 @@ export function Dashboard() {
             </AnimatePresence>
 
             {/* ============== COACH (headline AI surface) + AI tools ============== */}
-            <div className="mb-6">
+            <div className="mb-6 animate-rise" style={{ animationDelay: '120ms' }}>
                 <CoachNudge onAsk={openCoachWith} />
                 <div className="flex items-center gap-2 mt-2.5">
                     <button
@@ -487,7 +488,7 @@ export function Dashboard() {
             </div>
 
             {/* ============== TODAY (focus score · deep work · vitals · daily buff) ============== */}
-            <section className="mb-6">
+            <section className="mb-6 animate-rise" style={{ animationDelay: '180ms' }}>
                 <h2 className="section-label mb-2.5">Today</h2>
                 <div className="space-y-3">
                     <TodayScoreCard onAskCoach={() => { setCoachPrompt(undefined); setShowCoach(true); }} />
@@ -620,7 +621,7 @@ export function Dashboard() {
             )}
 
             {/* ============== TODAY'S QUESTS (compact preview — full list lives on the Tasks tab) ============== */}
-            <div className="mb-5">
+            <div className="mb-5 animate-rise" style={{ animationDelay: '240ms' }}>
                 <div className="flex items-center justify-between mb-2.5">
                     <h2 className="section-label">
                         Today's Quests

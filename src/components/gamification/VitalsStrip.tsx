@@ -87,11 +87,11 @@ export function VitalsStrip({ onOpenRituals }: VitalsStripProps) {
                     <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setShowShare(true)}
-                        className="shrink-0 inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-full bg-white/5 border border-[var(--color-border)]"
+                        className="vital-chip"
                         aria-label="Share your streak"
                     >
-                        <span className={`w-6 h-6 rounded-lg flex items-center justify-center ${flameClass}`}>
-                            <Flame className="w-3.5 h-3.5 text-white drop-shadow" strokeWidth={2.6} />
+                        <span className={`vital-chip-tile ${flameClass}`}>
+                            <Flame className="w-3 h-3 text-white drop-shadow" strokeWidth={2.6} />
                         </span>
                         <span className="text-sm font-black text-stat leading-none">{streakCurrent}</span>
                         {danger ? (
@@ -105,16 +105,18 @@ export function VitalsStrip({ onOpenRituals }: VitalsStripProps) {
                     </motion.button>
 
                     {/* HP (self-hides when disabled in settings) */}
-                    <div className="shrink-0"><HealthBar /></div>
+                    <HealthBar />
 
                     {/* Combo — only when active */}
-                    {combo > 1 && <div className="shrink-0"><ComboIndicator multiplier={combo} /></div>}
+                    {combo > 1 && <ComboIndicator multiplier={combo} />}
 
                     {/* Daily goal */}
                     {dailyGoal > 0 && (
-                        <div className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-[var(--color-border)]">
-                            <Target className="w-3.5 h-3.5 text-cyan-400" strokeWidth={2.6} />
-                            <span className="text-[11px] font-bold text-stat text-[var(--color-text-secondary)]">
+                        <div className="vital-chip">
+                            <span className="vital-chip-tile bg-cyan-500/15">
+                                <Target className="w-3 h-3 text-cyan-400" strokeWidth={2.6} />
+                            </span>
+                            <span className="text-[12px] font-bold text-stat text-[var(--color-text-secondary)] leading-none">
                                 {completionsToday}/{dailyGoal}
                             </span>
                         </div>

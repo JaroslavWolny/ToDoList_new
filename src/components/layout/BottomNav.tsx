@@ -50,21 +50,18 @@ export function BottomNav() {
                         >
                             {isActive && (
                                 <motion.div
-                                    layoutId="navIndicator"
-                                    className="absolute -top-2 w-1.5 h-1.5 rounded-full"
-                                    style={{
-                                        background: 'linear-gradient(135deg, #22d3ee, #3b82f6)',
-                                        boxShadow: '0 0 14px rgba(34, 211, 238, 0.7)',
-                                    }}
-                                    transition={{ type: 'spring', stiffness: 360, damping: 28 }}
+                                    layoutId="navPill"
+                                    className="absolute inset-0 rounded-2xl bg-cyan-400/10 border border-cyan-400/20"
+                                    style={{ boxShadow: '0 0 16px rgba(34, 211, 238, 0.18)' }}
+                                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                                 />
                             )}
                             <item.icon
-                                className={`w-5 h-5 transition-colors ${isActive ? 'text-[var(--color-text)]' : 'text-[var(--color-text-tertiary)] group-hover:text-[var(--color-text-secondary)]'}`}
-                                strokeWidth={isActive ? 2.4 : 2}
+                                className={`relative z-10 w-5 h-5 transition-colors ${isActive ? 'text-cyan-300' : 'text-[var(--color-text-tertiary)] group-hover:text-[var(--color-text-secondary)]'}`}
+                                strokeWidth={isActive ? 2.5 : 2}
                             />
                             <span
-                                className={`text-[10px] font-bold tracking-wide transition-colors ${isActive ? 'text-[var(--color-text)]' : 'text-[var(--color-text-tertiary)]'}`}
+                                className={`relative z-10 text-[10px] font-bold tracking-wide transition-colors ${isActive ? 'text-cyan-300' : 'text-[var(--color-text-tertiary)]'}`}
                             >
                                 {item.label}
                             </span>

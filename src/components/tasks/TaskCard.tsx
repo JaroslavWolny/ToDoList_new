@@ -22,6 +22,13 @@ const isDatePast = (isoString: string): boolean =>
 const isDateFuture = (isoString: string): boolean =>
     new Date(isoString).getTime() > Date.now();
 
+const PRIORITY_SPINE: Record<Task['priority'], string> = {
+    LOW: 'from-blue-400 to-blue-600',
+    MEDIUM: 'from-amber-400 to-orange-500',
+    HIGH: 'from-orange-400 to-red-500',
+    CRITICAL: 'from-red-500 to-rose-600',
+};
+
 interface TaskCardProps {
     task: Task;
     onComplete: (id: string) => void;
@@ -65,10 +72,16 @@ export const TaskCard = memo(function TaskCard({ task, onComplete, onDelete, onE
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, x: -120, transition: { duration: 0.2 } }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
-            className={`glass-card relative px-4 py-3.5 ${
+            className={`glass-card relative pl-5 pr-4 py-3.5 ${
                 isOverdue ? 'border-red-500/50' : ''
-            } ${task.status === 'COMPLETED' ? 'opacity-55' : ''}`}
+            } ${task.priority === 'CRITICAL' && task.status === 'ACTIVE' ? 'shadow-[0_0_22px_-4px_rgba(244,63,94,0.35)]' : ''} ${task.status === 'COMPLETED' ? 'opacity-55' : ''}`}
         >
+            {/* Priority spine — instant threat-level read down the quest list */}
+            <span
+                aria-hidden
+                className={`absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-9 rounded-full bg-gradient-to-b ${PRIORITY_SPINE[task.priority]} ${task.status === 'COMPLETED' ? 'opacity-40' : ''}`}
+            />
+
             <AnimatePresence>
                 {showXP && (
                     <motion.div
