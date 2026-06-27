@@ -368,10 +368,10 @@ export function FocusTimerModal() {
                                 </div>
                                 <button
                                     onClick={close}
-                                    className="p-2 -mr-2 rounded-full hover:bg-white/5 active:scale-95 text-[var(--color-text-tertiary)] transition-transform"
+                                    className="w-9 h-9 shrink-0 rounded-full glass flex items-center justify-center text-[var(--color-text-secondary)] active:scale-95 transition-transform"
                                     aria-label="Close"
                                 >
-                                    <X className="w-5 h-5" strokeWidth={2.4} />
+                                    <X className="w-[18px] h-[18px]" strokeWidth={2.4} />
                                 </button>
                             </motion.div>
 

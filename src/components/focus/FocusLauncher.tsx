@@ -26,7 +26,7 @@ export function FocusLauncher() {
         <motion.button
             whileTap={{ scale: 0.98 }}
             onClick={openSetup}
-            className="relative w-full glass-card p-4 flex items-center gap-4 text-left overflow-hidden active:scale-[0.99] transition-transform"
+            className="relative w-full glass-card p-4 flex items-center gap-3.5 text-left overflow-hidden active:scale-[0.99] transition-transform"
             aria-label="Start a focus session"
         >
             {/* Ambient corner glow — signature premium surface */}
@@ -88,7 +88,10 @@ export function FocusLauncher() {
                 )}
             </div>
 
-            <ChevronRight className="w-4 h-4 text-[var(--color-text-tertiary)] shrink-0 relative" strokeWidth={2.6} />
+            <span className="relative shrink-0 inline-flex items-center gap-0.5 pl-3 pr-2.5 py-1.5 rounded-full bg-cyan-500/12 border border-cyan-500/25 text-cyan-300 text-[11px] font-black">
+                Start
+                <ChevronRight className="w-3.5 h-3.5" strokeWidth={2.8} />
+            </span>
         </motion.button>
     );
 }
