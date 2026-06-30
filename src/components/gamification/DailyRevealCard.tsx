@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Gift,
@@ -163,8 +164,11 @@ export function DailyRevealCard({ onReveal }: DailyRevealCardProps) {
         );
     }
 
-    // Just revealed → big celebration card (then collapses to banner via state)
-    return (
+    // Just revealed → big celebration card (then collapses to banner via state).
+    // Portalled to <body> so the fixed overlay escapes the dashboard's
+    // backdrop-filter ancestors (glass cards), which otherwise become the
+    // containing block for position:fixed and let later content paint over it.
+    return createPortal(
         <AnimatePresence>
             {justRevealedTheme && (
                 <motion.div
@@ -224,6 +228,7 @@ export function DailyRevealCard({ onReveal }: DailyRevealCardProps) {
                     </motion.div>
                 </motion.div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     );
 }
