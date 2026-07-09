@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
-import { Coins, Sparkles, Star, Zap } from 'lucide-react';
+import { Coins, Star, Zap } from 'lucide-react';
 import { RandomReward } from '../../types';
 
 interface RandomRewardModalProps {
@@ -11,98 +11,77 @@ interface RandomRewardModalProps {
 type Stage = 'closed' | 'shaking' | 'bursting' | 'revealed';
 
 /**
- * Loot-drop visual language — built as chunky, cel-shaded game assets in the
- * spirit of Duolingo / Royal Match / Clash Royale chests (bold materials,
- * strong light-top / shadow-bottom shading, thick rim light), NOT a flat
- * minimalist tile. The two rarities are genuinely different objects:
- *   • EPIC  → a wooden treasure CHEST (gold straps + lock, hinged lid)
- *   • RARE  → a cloth drawstring POUCH (cinched neck, gold coin emblem)
+ * Loot-drop visual language — restrained, premium "jewel case" presentation:
+ * dark lacquered materials, one metallic accent per rarity, fine dust motes
+ * instead of confetti. The two rarities are genuinely different objects:
+ *   • EPIC  → a black-lacquer treasure CHEST with champagne-gold hardware
+ *   • RARE  → an ink-velvet drawstring POUCH with platinum cords
  */
 const RARITY = {
     CHEST: {
         label: 'EPIC',
         stars: 3,
-        title: 'EPIC CHEST',
-        tag: 'LEGENDARY DROP',
-        // Material palette — warm wood + gold
-        woodLight: '#d49a5b',
-        woodMid: '#9c6531',
-        woodDeep: '#5d3a1b',
-        woodEdge: '#3a2310',
-        clothLight: '#d49a5b',
-        clothMid: '#9c6531',
-        clothDeep: '#5d3a1b',
-        clothEdge: '#3a2310',
-        metalLight: '#ffe7a6',
-        metalMid: '#f4bf52',
-        metalDeep: '#aa771d',
-        metalEdge: '#6d4a12',
-        interior: '#2a1808',
-        // FX palette
-        gradient: 'linear-gradient(135deg, #f59e0b 0%, #f97316 35%, #ef4444 70%, #fbbf24 100%)',
-        glow: 'rgba(249, 115, 22, 0.65)',
-        glowSoft: 'rgba(244, 114, 182, 0.45)',
-        rayColor: '#fbbf24',
-        particleColors: ['#fbbf24', '#f97316', '#ef4444', '#fbbf24', '#fde68a'],
-        conic: 'conic-gradient(from 0deg, #fbbf24, #f97316, #ef4444, #fbbf24, #f59e0b, #fbbf24)',
+        title: 'Epic Chest',
+        tag: 'EPIC DROP',
+        // Material palette — black lacquer + champagne gold
+        woodLight: '#574f45',
+        woodMid: '#332f29',
+        woodDeep: '#1c1915',
+        woodEdge: '#0e0c0a',
+        clothLight: '#574f45',
+        clothMid: '#332f29',
+        clothDeep: '#1c1915',
+        clothEdge: '#0e0c0a',
+        metalLight: '#f6e7bd',
+        metalMid: '#d3ae66',
+        metalDeep: '#8c6f3c',
+        metalEdge: '#4f3d20',
+        interior: '#141009',
+        // FX palette — single champagne accent, low saturation
+        gradient: 'linear-gradient(135deg, #f6e7bd 0%, #d9b979 50%, #a9884e 100%)',
+        glow: 'rgba(211, 174, 102, 0.32)',
+        glowSoft: 'rgba(211, 174, 102, 0.14)',
+        rayColor: '#e7cd8f',
+        particleColors: ['#e7cd8f', '#d3ae66', '#f6e7bd'],
+        border: 'linear-gradient(160deg, rgba(231,205,143,0.55) 0%, rgba(231,205,143,0.10) 30%, rgba(231,205,143,0.32) 55%, rgba(231,205,143,0.08) 80%, rgba(231,205,143,0.45) 100%)',
     },
     POUCH: {
         label: 'RARE',
         stars: 2,
-        title: 'LUCKY POUCH',
-        tag: 'MYSTERY DROP',
-        // Material palette — sapphire cloth + gold coin
-        woodLight: '#63b3ff',
-        woodMid: '#2f74e6',
-        woodDeep: '#1a3f9c',
-        woodEdge: '#10266b',
-        clothLight: '#6fb4ff',
-        clothMid: '#2f74e6',
-        clothDeep: '#1a3f9c',
-        clothEdge: '#0f2566',
-        metalLight: '#ffe7a6',
-        metalMid: '#f4bf52',
-        metalDeep: '#aa771d',
-        metalEdge: '#6d4a12',
-        interior: '#0a1c3a',
-        // FX palette
-        gradient: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 35%, #22d3ee 70%, #fbbf24 100%)',
-        glow: 'rgba(56, 189, 248, 0.65)',
-        glowSoft: 'rgba(99, 102, 241, 0.45)',
-        rayColor: '#67e8f9',
-        particleColors: ['#67e8f9', '#818cf8', '#67e8f9', '#f0abfc', '#ddd6fe'],
-        conic: 'conic-gradient(from 0deg, #67e8f9, #818cf8, #67e8f9, #fbbf24, #06b6d4, #67e8f9)',
+        title: 'Lucky Pouch',
+        tag: 'RARE DROP',
+        // Material palette — ink velvet + platinum
+        woodLight: '#5f6675',
+        woodMid: '#3a404d',
+        woodDeep: '#232833',
+        woodEdge: '#141821',
+        clothLight: '#5f6675',
+        clothMid: '#3a404d',
+        clothDeep: '#232833',
+        clothEdge: '#141821',
+        metalLight: '#f2f4f8',
+        metalMid: '#c6cdd8',
+        metalDeep: '#848d9b',
+        metalEdge: '#4d5460',
+        interior: '#0e1118',
+        // FX palette — single platinum accent, low saturation
+        gradient: 'linear-gradient(135deg, #f2f4f8 0%, #c6cdd8 50%, #98a2b1 100%)',
+        glow: 'rgba(198, 205, 216, 0.28)',
+        glowSoft: 'rgba(198, 205, 216, 0.12)',
+        rayColor: '#dbe1ea',
+        particleColors: ['#dbe1ea', '#c6cdd8', '#f2f4f8'],
+        border: 'linear-gradient(160deg, rgba(219,225,234,0.50) 0%, rgba(219,225,234,0.08) 30%, rgba(219,225,234,0.28) 55%, rgba(219,225,234,0.06) 80%, rgba(219,225,234,0.40) 100%)',
     },
 } as const;
 
-// 24 light rays emanating from the loot
-const RAYS = Array.from({ length: 24 }, (_, i) => (i * 360) / 24);
-// 32 particles flying outward — coins / sparks
-const PARTICLES = Array.from({ length: 32 }, (_, i) => ({
-    angle: (i * 360) / 32 + (i % 2 ? 6 : -6),
-    distance: 130 + Math.random() * 80,
-    delay: Math.random() * 0.18,
-    size: 5 + Math.random() * 7,
+// Fine dust motes drifting up from the opened loot — replaces confetti/rays.
+const DUST = Array.from({ length: 14 }, (_, i) => ({
+    x: (i - 6.5) * 11 + (Math.random() * 8 - 4),
+    rise: 90 + Math.random() * 70,
+    delay: Math.random() * 0.6,
+    duration: 1.6 + Math.random() * 1.2,
+    size: 2 + Math.random() * 2.5,
 }));
-// 22 confetti pieces
-const CONFETTI = Array.from({ length: 22 }, (_, i) => ({
-    x: (i / 22) * 100 + (Math.random() * 6 - 3),
-    delay: Math.random() * 0.5,
-    duration: 1.8 + Math.random() * 1.4,
-    rotation: Math.random() * 720 - 360,
-    size: 6 + Math.random() * 6,
-}));
-// 6 coins that arc out when it opens
-const ARC_COINS = Array.from({ length: 6 }, (_, i) => {
-    const spread = (i - 2.5) * 22; // -55 to +55 deg
-    return {
-        dx: spread * 1.6,
-        dy: -90 - Math.random() * 30,
-        delay: 0.12 + i * 0.04,
-        rotate: spread * 4 + (Math.random() * 180 - 90),
-        size: 14 + Math.random() * 8,
-    };
-});
 
 function AnimatedCounter({ value }: { value: number }) {
     const count = useMotionValue(0);
@@ -132,10 +111,10 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
 
     const handleOpen = () => {
         if (stage !== 'closed') return;
-        try { navigator.vibrate?.([8, 30, 12, 30, 18, 20, 40]); } catch { /* noop */ }
+        try { navigator.vibrate?.([6, 28, 10]); } catch { /* noop */ }
         setStage('shaking');
-        window.setTimeout(() => setStage('bursting'), 380);
-        window.setTimeout(() => setStage('revealed'), 760);
+        window.setTimeout(() => setStage('bursting'), 420);
+        window.setTimeout(() => setStage('revealed'), 840);
     };
 
     const isOpen = stage === 'bursting' || stage === 'revealed';
@@ -160,34 +139,12 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                     aria-hidden
                     className="pointer-events-none absolute inset-0"
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: stage === 'revealed' ? 0.6 : stage === 'bursting' ? 0.5 : 0.22 }}
+                    animate={{ opacity: stage === 'revealed' ? 0.35 : stage === 'bursting' ? 0.3 : 0.12 }}
                     transition={{ duration: 0.5 }}
                     style={{
                         background: `radial-gradient(circle at 50% 50%, ${cfg.glow} 0%, transparent 55%)`,
                     }}
                 />
-
-                {/* Confetti rain after burst */}
-                {isOpen && (
-                    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-                        {CONFETTI.map((c, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ y: '-12vh', x: `${c.x}vw`, rotate: 0, opacity: 0 }}
-                                animate={{ y: '112vh', rotate: c.rotation, opacity: [0, 1, 1, 0] }}
-                                transition={{ duration: c.duration, delay: c.delay, ease: 'linear' }}
-                                style={{
-                                    position: 'absolute',
-                                    width: c.size,
-                                    height: c.size * 1.4,
-                                    background: cfg.particleColors[i % cfg.particleColors.length],
-                                    borderRadius: 2,
-                                    boxShadow: `0 0 8px ${cfg.glow}`,
-                                }}
-                            />
-                        ))}
-                    </div>
-                )}
 
                 <motion.div
                     initial={{ scale: 0.7, y: 30, opacity: 0 }}
@@ -197,54 +154,50 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                     className="relative w-full max-w-sm"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {/* Animated gradient border wrapper */}
+                    {/* Hairline metallic border wrapper */}
                     <div
-                        className="relative rounded-[2rem] p-[2px] overflow-hidden"
+                        className="relative rounded-[2rem] p-px overflow-hidden"
                         style={{
-                            background: cfg.conic,
-                            animation: 'rewardBorderSpin 6s linear infinite',
-                            boxShadow: `0 30px 80px -10px ${cfg.glow}, 0 0 60px ${cfg.glowSoft}`,
+                            background: cfg.border,
+                            boxShadow: `0 30px 90px -20px rgba(0,0,0,0.8), 0 0 50px ${cfg.glowSoft}`,
                         }}
                     >
                         <div
-                            className="relative rounded-[calc(2rem-2px)] overflow-hidden px-7 pt-9 pb-7 text-center"
+                            className="relative rounded-[calc(2rem-1px)] overflow-hidden px-7 pt-9 pb-7 text-center"
                             style={{
                                 background:
-                                    'linear-gradient(160deg, #0a1626 0%, #0f2138 42%, #122a45 70%, #0a1626 100%)',
+                                    'linear-gradient(170deg, #14161b 0%, #0e1014 55%, #101218 100%)',
                             }}
                         >
-                            {/* Star-field background */}
-                            <div aria-hidden className="absolute inset-0 opacity-60">
-                                <div
-                                    className="absolute inset-0"
-                                    style={{
-                                        background:
-                                            'radial-gradient(1.5px 1.5px at 20% 30%, white, transparent 60%),' +
-                                            'radial-gradient(1px 1px at 70% 20%, white, transparent 60%),' +
-                                            'radial-gradient(1.5px 1.5px at 40% 70%, white, transparent 60%),' +
-                                            'radial-gradient(1px 1px at 85% 60%, white, transparent 60%),' +
-                                            'radial-gradient(1px 1px at 15% 85%, white, transparent 60%),' +
-                                            'radial-gradient(1.5px 1.5px at 60% 90%, white, transparent 60%),' +
-                                            'radial-gradient(1px 1px at 90% 35%, white, transparent 60%)',
-                                    }}
-                                />
-                            </div>
+                            {/* Faint top sheen + grounded accent glow */}
+                            <div
+                                aria-hidden
+                                className="absolute inset-0"
+                                style={{
+                                    background:
+                                        `radial-gradient(120% 60% at 50% -10%, rgba(255,255,255,0.06) 0%, transparent 60%),` +
+                                        `radial-gradient(80% 50% at 50% 105%, ${cfg.glowSoft} 0%, transparent 70%)`,
+                                }}
+                            />
 
                             {/* Rarity tag */}
                             <motion.div
                                 initial={{ y: -8, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
                                 transition={{ delay: 0.1 }}
-                                className="relative z-10 inline-flex items-center gap-1.5 px-3 py-1 rounded-full"
+                                className="relative z-10 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full"
                                 style={{
-                                    background: 'rgba(0, 0, 0, 0.4)',
-                                    border: `1px solid ${cfg.glow}`,
-                                    boxShadow: `0 0 16px ${cfg.glowSoft}`,
+                                    background: 'rgba(255, 255, 255, 0.04)',
+                                    border: '1px solid rgba(255, 255, 255, 0.10)',
                                 }}
                             >
-                                <Sparkles className="w-3 h-3" style={{ color: cfg.rayColor }} />
                                 <span
-                                    className="text-[9px] font-black tracking-[0.24em]"
+                                    aria-hidden
+                                    className="w-1 h-1 rounded-full"
+                                    style={{ background: cfg.rayColor }}
+                                />
+                                <span
+                                    className="text-[9px] font-semibold tracking-[0.28em]"
                                     style={{ color: cfg.rayColor }}
                                 >
                                     {cfg.tag}
@@ -264,131 +217,65 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                                             transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
                                             className="pointer-events-none absolute"
                                             style={{
-                                                width: 110,
-                                                height: 200,
+                                                width: 70,
+                                                height: 190,
                                                 bottom: 40,
                                                 left: '50%',
-                                                marginLeft: -55,
+                                                marginLeft: -35,
                                                 transformOrigin: 'bottom center',
-                                                background: `linear-gradient(to top, ${cfg.rayColor}cc 0%, ${cfg.rayColor}55 40%, transparent 100%)`,
-                                                filter: 'blur(6px)',
-                                                clipPath: 'polygon(35% 100%, 65% 100%, 100% 0%, 0% 0%)',
+                                                background: `linear-gradient(to top, ${cfg.rayColor}66 0%, ${cfg.rayColor}22 45%, transparent 100%)`,
+                                                filter: 'blur(10px)',
+                                                clipPath: 'polygon(38% 100%, 62% 100%, 92% 0%, 8% 0%)',
                                             }}
                                         />
                                     )}
                                 </AnimatePresence>
 
-                                {/* Rotating light rays — appear during burst */}
-                                <AnimatePresence>
-                                    {isOpen && (
-                                        <motion.div
-                                            key="rays"
-                                            initial={{ opacity: 0, scale: 0.4 }}
-                                            animate={{ opacity: 1, scale: 1, rotate: 360 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{
-                                                opacity: { duration: 0.3 },
-                                                scale: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
-                                                rotate: { duration: 18, repeat: Infinity, ease: 'linear' },
-                                            }}
-                                            className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                                        >
-                                            {RAYS.map((angle) => (
-                                                <div
-                                                    key={angle}
-                                                    style={{
-                                                        position: 'absolute',
-                                                        width: 3,
-                                                        height: 200,
-                                                        background: `linear-gradient(to top, transparent, ${cfg.rayColor} 60%, transparent)`,
-                                                        transform: `rotate(${angle}deg)`,
-                                                        transformOrigin: 'center',
-                                                        opacity: 0.55,
-                                                        filter: 'blur(0.5px)',
-                                                    }}
-                                                />
-                                            ))}
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-
-                                {/* Burst flash */}
+                                {/* Burst flash — brief, soft */}
                                 <AnimatePresence>
                                     {stage === 'bursting' && (
                                         <motion.div
                                             key="flash"
-                                            initial={{ scale: 0, opacity: 0.95 }}
-                                            animate={{ scale: 4, opacity: 0 }}
-                                            transition={{ duration: 0.6, ease: 'easeOut' }}
+                                            initial={{ scale: 0.3, opacity: 0.55 }}
+                                            animate={{ scale: 2.4, opacity: 0 }}
+                                            transition={{ duration: 0.55, ease: 'easeOut' }}
                                             className="absolute w-32 h-32 rounded-full"
                                             style={{
-                                                background: `radial-gradient(circle, white 0%, ${cfg.rayColor} 30%, transparent 70%)`,
-                                                filter: 'blur(8px)',
+                                                background: `radial-gradient(circle, rgba(255,255,255,0.85) 0%, ${cfg.rayColor} 40%, transparent 70%)`,
+                                                filter: 'blur(12px)',
                                             }}
                                         />
                                     )}
                                 </AnimatePresence>
 
-                                {/* Particles burst */}
+                                {/* Fine dust motes drifting up from the opening */}
                                 {isOpen && (
-                                    <div aria-hidden className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                        {PARTICLES.map((p, i) => {
-                                            const rad = (p.angle * Math.PI) / 180;
-                                            const dx = Math.cos(rad) * p.distance;
-                                            const dy = Math.sin(rad) * p.distance;
-                                            return (
-                                                <motion.div
-                                                    key={i}
-                                                    initial={{ x: 0, y: 0, scale: 0, opacity: 0 }}
-                                                    animate={{ x: dx, y: dy, scale: [0, 1.2, 0], opacity: [0, 1, 0] }}
-                                                    transition={{
-                                                        duration: 1.5,
-                                                        delay: p.delay,
-                                                        ease: [0.16, 1, 0.3, 1],
-                                                    }}
-                                                    style={{
-                                                        position: 'absolute',
-                                                        width: p.size,
-                                                        height: p.size,
-                                                        borderRadius: '50%',
-                                                        background: cfg.particleColors[i % cfg.particleColors.length],
-                                                        boxShadow: `0 0 12px ${cfg.particleColors[i % cfg.particleColors.length]}`,
-                                                    }}
-                                                />
-                                            );
-                                        })}
-                                    </div>
-                                )}
-
-                                {/* Arc-tossed coins flying out and falling back */}
-                                {isOpen && (
-                                    <div aria-hidden className="absolute inset-0 flex items-end justify-center pb-10 pointer-events-none">
-                                        {ARC_COINS.map((c, i) => (
+                                    <div aria-hidden className="absolute inset-0 flex items-end justify-center pointer-events-none">
+                                        {DUST.map((d, i) => (
                                             <motion.div
                                                 key={i}
-                                                initial={{ x: 0, y: 0, scale: 0, opacity: 0, rotate: 0 }}
+                                                initial={{ x: d.x, y: 0, opacity: 0, scale: 0.6 }}
                                                 animate={{
-                                                    x: [0, c.dx * 0.6, c.dx],
-                                                    y: [0, c.dy, c.dy + 70],
-                                                    scale: [0.4, 1, 0.6],
-                                                    opacity: [0, 1, 0],
-                                                    rotate: [0, c.rotate, c.rotate * 1.4],
+                                                    x: d.x,
+                                                    y: -d.rise,
+                                                    opacity: [0, 0.8, 0],
+                                                    scale: [0.6, 1, 0.8],
                                                 }}
                                                 transition={{
-                                                    duration: 1.2,
-                                                    delay: c.delay,
-                                                    ease: [0.45, 0.05, 0.55, 0.95],
-                                                    times: [0, 0.45, 1],
+                                                    duration: d.duration,
+                                                    delay: d.delay,
+                                                    ease: [0.16, 1, 0.3, 1],
                                                 }}
                                                 style={{
                                                     position: 'absolute',
-                                                    bottom: 24,
-                                                    width: c.size + 6,
-                                                    height: c.size + 6,
+                                                    bottom: 96,
+                                                    width: d.size,
+                                                    height: d.size,
+                                                    borderRadius: '50%',
+                                                    background: cfg.particleColors[i % cfg.particleColors.length],
+                                                    boxShadow: `0 0 6px ${cfg.glowSoft}`,
                                                 }}
-                                            >
-                                                <CoinSparkle size={c.size + 6} color={cfg.rayColor} />
-                                            </motion.div>
+                                            />
                                         ))}
                                     </div>
                                 )}
@@ -400,20 +287,20 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                                         initial={{ scale: 0.5, y: 30, opacity: 0 }}
                                         animate={
                                             stage === 'closed'
-                                                ? { scale: [1, 1.04, 1], y: [0, -3, 0], opacity: 1 }
+                                                ? { scale: [1, 1.015, 1], y: [0, -2, 0], opacity: 1 }
                                                 : stage === 'shaking'
-                                                ? { x: [0, -6, 7, -8, 6, -4, 4, 0], y: 0, scale: 1.05, opacity: 1 }
+                                                ? { x: [0, -2, 2, -2, 1, 0], y: 0, scale: 1.02, opacity: 1 }
                                                 : { scale: 1, y: 0, opacity: 1 }
                                         }
                                         transition={
                                             stage === 'closed'
                                                 ? {
-                                                      scale: { duration: 1.4, repeat: Infinity, ease: 'easeInOut' },
-                                                      y: { duration: 1.4, repeat: Infinity, ease: 'easeInOut' },
+                                                      scale: { duration: 2.4, repeat: Infinity, ease: 'easeInOut' },
+                                                      y: { duration: 2.4, repeat: Infinity, ease: 'easeInOut' },
                                                       opacity: { duration: 0.4 },
                                                   }
                                                 : stage === 'shaking'
-                                                ? { duration: 0.38, ease: 'easeInOut' }
+                                                ? { duration: 0.42, ease: 'easeInOut' }
                                                 : { type: 'spring', stiffness: 240, damping: 20 }
                                         }
                                         className="relative"
@@ -480,12 +367,11 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                                             {stage === 'revealed' && (
                                                 <motion.div
                                                     key="emerged-reward"
-                                                    initial={{ y: 0, scale: 0.3, opacity: 0, rotate: -20 }}
+                                                    initial={{ y: 0, scale: 0.6, opacity: 0 }}
                                                     animate={{
-                                                        y: [-6, -52, -42],
-                                                        scale: [1, 1.3, 1.15],
+                                                        y: [-6, -52, -44],
+                                                        scale: [0.9, 1.08, 1],
                                                         opacity: 1,
-                                                        rotate: [0, 8, -4, 0],
                                                     }}
                                                     transition={{
                                                         duration: 0.9,
@@ -503,43 +389,26 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                                                     }}
                                                 >
                                                     <motion.div
-                                                        animate={{ y: [0, -4, 0] }}
-                                                        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.9 }}
+                                                        animate={{ y: [0, -3, 0] }}
+                                                        transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut', delay: 0.9 }}
                                                         className="w-full h-full flex items-center justify-center rounded-2xl"
                                                         style={{
-                                                            background: cfg.gradient,
-                                                            boxShadow: `0 0 30px ${cfg.glow}, 0 8px 24px rgba(0,0,0,0.4), inset 0 2px 0 rgba(255,255,255,0.4)`,
+                                                            background: 'linear-gradient(170deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
+                                                            border: '1px solid rgba(255,255,255,0.14)',
+                                                            boxShadow: `0 0 24px ${cfg.glowSoft}, 0 8px 24px rgba(0,0,0,0.45)`,
+                                                            backdropFilter: 'blur(4px)',
+                                                            WebkitBackdropFilter: 'blur(4px)',
                                                         }}
                                                     >
                                                         {isCoins ? (
-                                                            <Coins className="w-9 h-9 text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]" strokeWidth={2.4} />
+                                                            <Coins className="w-8 h-8" strokeWidth={2} style={{ color: cfg.rayColor }} />
                                                         ) : (
-                                                            <Zap className="w-9 h-9 text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]" strokeWidth={2.6} fill="white" />
+                                                            <Zap className="w-8 h-8" strokeWidth={2} style={{ color: cfg.rayColor }} fill={cfg.rayColor} />
                                                         )}
                                                     </motion.div>
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>
-
-                                        {/* Pulse halo around the closed loot */}
-                                        {stage === 'closed' && (
-                                            <motion.div
-                                                aria-hidden
-                                                animate={{ scale: [1, 1.2, 1.35], opacity: [0.55, 0.25, 0] }}
-                                                transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
-                                                className="absolute"
-                                                style={{
-                                                    left: '50%',
-                                                    marginLeft: -80,
-                                                    bottom: 0,
-                                                    width: 160,
-                                                    height: 160,
-                                                    border: `2px solid ${cfg.rayColor}`,
-                                                    borderRadius: 24,
-                                                    pointerEvents: 'none',
-                                                }}
-                                            />
-                                        )}
                                     </motion.div>
                                 </div>
                             </div>
@@ -555,17 +424,14 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                                         transition={{ duration: 0.3 }}
                                         className="relative z-10 mt-2"
                                     >
-                                        <p
-                                            className="text-2xl font-black text-white tracking-tight mb-1"
-                                            style={{ textShadow: `0 2px 20px ${cfg.glow}` }}
-                                        >
+                                        <p className="text-lg font-semibold text-white/95 uppercase tracking-[0.14em] mb-2">
                                             {cfg.title}
                                         </p>
                                         <RarityStars count={cfg.stars} color={cfg.rayColor} />
                                         <motion.p
-                                            animate={{ opacity: [0.7, 1, 0.7] }}
-                                            transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-                                            className="mt-4 text-[11px] uppercase tracking-[0.3em] font-bold text-white/80"
+                                            animate={{ opacity: [0.45, 0.85, 0.45] }}
+                                            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                                            className="mt-4 text-[10px] uppercase tracking-[0.32em] font-medium text-white/60"
                                         >
                                             Tap to open
                                         </motion.p>
@@ -580,7 +446,7 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                                     >
                                         <RarityStars count={cfg.stars} color={cfg.rayColor} />
                                         <p
-                                            className="mt-3 text-xs font-bold uppercase tracking-[0.22em] text-white/70"
+                                            className="mt-3 text-[10px] font-medium uppercase tracking-[0.28em] text-white/50"
                                         >
                                             You earned
                                         </p>
@@ -588,22 +454,22 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                                         {/* The massive number */}
                                         <div className="mt-1 flex items-baseline justify-center gap-2">
                                             <motion.div
-                                                initial={{ scale: 0.5, opacity: 0 }}
+                                                initial={{ scale: 0.85, opacity: 0 }}
                                                 animate={{ scale: 1, opacity: 1 }}
                                                 transition={{
                                                     type: 'spring',
                                                     stiffness: 220,
-                                                    damping: 14,
+                                                    damping: 18,
                                                     delay: 0.65,
                                                 }}
-                                                className="text-7xl font-black tracking-tighter text-stat"
+                                                className="text-6xl font-bold tracking-tight text-stat"
                                                 style={{
                                                     background: cfg.gradient,
                                                     WebkitBackgroundClip: 'text',
                                                     backgroundClip: 'text',
                                                     color: 'transparent',
-                                                    filter: `drop-shadow(0 4px 18px ${cfg.glow})`,
-                                                    lineHeight: 0.9,
+                                                    filter: `drop-shadow(0 2px 12px ${cfg.glowSoft})`,
+                                                    lineHeight: 0.95,
                                                 }}
                                             >
                                                 <AnimatedCounter value={reward.amount} />
@@ -613,15 +479,15 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                                             initial={{ opacity: 0, y: 4 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.8, duration: 0.3 }}
-                                            className="mt-1 flex items-center justify-center gap-1.5"
+                                            className="mt-2 flex items-center justify-center gap-1.5"
                                         >
                                             {isCoins ? (
-                                                <Coins className="w-4 h-4" style={{ color: cfg.rayColor }} />
+                                                <Coins className="w-3.5 h-3.5" style={{ color: cfg.rayColor }} />
                                             ) : (
-                                                <Zap className="w-4 h-4" style={{ color: cfg.rayColor }} fill={cfg.rayColor} />
+                                                <Zap className="w-3.5 h-3.5" style={{ color: cfg.rayColor }} fill={cfg.rayColor} />
                                             )}
                                             <span
-                                                className="text-sm font-black tracking-[0.18em]"
+                                                className="text-xs font-semibold tracking-[0.22em]"
                                                 style={{ color: cfg.rayColor }}
                                             >
                                                 {reward.currency}
@@ -632,23 +498,16 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                                             initial={{ opacity: 0, y: 12 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 1, duration: 0.35 }}
-                                            whileHover={{ scale: 1.03 }}
-                                            whileTap={{ scale: 0.96 }}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.97 }}
                                             onClick={onClose}
-                                            className="mt-6 w-full py-3.5 rounded-2xl font-black text-sm tracking-[0.18em] uppercase text-[#0a1626] relative overflow-hidden"
+                                            className="mt-6 w-full py-3.5 rounded-2xl font-semibold text-sm tracking-[0.14em] uppercase text-[#0d0f13]"
                                             style={{
-                                                background: 'linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%)',
-                                                boxShadow: `0 8px 24px -6px ${cfg.glow}, inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -2px 0 rgba(0,0,0,0.08)`,
+                                                background: 'linear-gradient(180deg, #ffffff 0%, #eceef1 100%)',
+                                                boxShadow: '0 10px 30px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.9)',
                                             }}
                                         >
-                                            <span className="relative z-10">Claim Reward</span>
-                                            <motion.div
-                                                aria-hidden
-                                                animate={{ x: ['-120%', '220%'] }}
-                                                transition={{ duration: 2.4, repeat: Infinity, ease: 'linear' }}
-                                                className="absolute top-0 left-0 h-full w-1/3 skew-x-12"
-                                                style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.65), transparent)' }}
-                                            />
+                                            Claim Reward
                                         </motion.button>
                                     </motion.div>
                                 )}
@@ -656,16 +515,6 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                         </div>
                     </div>
                 </motion.div>
-
-                {/* Keyframes injected once */}
-                <style>{`
-                    @keyframes rewardBorderSpin {
-                        to { filter: hue-rotate(360deg); }
-                    }
-                    @media (prefers-reduced-motion: reduce) {
-                        [style*="rewardBorderSpin"] { animation: none !important; }
-                    }
-                `}</style>
             </motion.div>
         </AnimatePresence>
     );
@@ -677,16 +526,15 @@ function RarityStars({ count, color }: { count: number; color: string }) {
             {Array.from({ length: 3 }).map((_, i) => (
                 <motion.div
                     key={i}
-                    initial={{ scale: 0, rotate: -180 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ delay: 0.2 + i * 0.08, type: 'spring', stiffness: 260, damping: 16 }}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.2 + i * 0.08, type: 'spring', stiffness: 260, damping: 20 }}
                 >
                     <Star
-                        className="w-4 h-4"
+                        className="w-3.5 h-3.5"
                         fill={i < count ? color : 'transparent'}
-                        stroke={i < count ? color : 'rgba(255,255,255,0.25)'}
-                        strokeWidth={2}
-                        style={i < count ? { filter: `drop-shadow(0 0 6px ${color})` } : undefined}
+                        stroke={i < count ? color : 'rgba(255,255,255,0.2)'}
+                        strokeWidth={1.5}
                     />
                 </motion.div>
             ))}
@@ -849,7 +697,7 @@ function ChestLidSvg({ cfg }: { cfg: LootCfg }) {
                     <stop offset="1" stopColor={cfg.metalDeep} />
                 </linearGradient>
                 <linearGradient id={`lidGloss-${id}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stopColor="#ffffff" stopOpacity="0.75" />
+                    <stop offset="0" stopColor="#ffffff" stopOpacity="0.3" />
                     <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
                 </linearGradient>
                 <clipPath id={`lidClip-${id}`}>
@@ -1027,23 +875,6 @@ function PouchSvg({ cfg, isOpen }: { cfg: LootCfg; isOpen: boolean }) {
                 />
                 <ellipse cx="-6" cy="-7" rx="5" ry="3" fill="#ffffff" opacity="0.5" />
             </g>
-        </svg>
-    );
-}
-
-function CoinSparkle({ size, color }: { size: number; color: string }) {
-    return (
-        <svg width={size} height={size} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{ filter: `drop-shadow(0 0 8px ${color})` }}>
-            <defs>
-                <radialGradient id={`coinGrad-${color.replace('#', '')}`} cx="0.35" cy="0.35" r="0.8">
-                    <stop offset="0" stopColor="#fffbe6" />
-                    <stop offset="0.55" stopColor={color} />
-                    <stop offset="1" stopColor="#7c4a0a" />
-                </radialGradient>
-            </defs>
-            <circle cx="12" cy="12" r="10" fill={`url(#coinGrad-${color.replace('#', '')})`} stroke="#7c4a0a" strokeWidth="1" />
-            <circle cx="12" cy="12" r="7" fill="none" stroke="#fffbe6" strokeWidth="0.6" opacity="0.6" />
-            <path d="M10 8 L10 16 M14 8 L14 16 M8 10 L16 10 M8 14 L16 14" stroke="#7c4a0a" strokeWidth="1.4" strokeLinecap="round" opacity="0.7" />
         </svg>
     );
 }
