@@ -151,7 +151,7 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                     animate={{ scale: 1, y: 0, opacity: 1 }}
                     exit={{ scale: 0.8, y: 20, opacity: 0 }}
                     transition={{ type: 'spring', stiffness: 240, damping: 22 }}
-                    className="relative w-full max-w-sm"
+                    className="relative w-full max-w-xs"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Hairline metallic border wrapper */}
@@ -205,7 +205,7 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                             </motion.div>
 
                             {/* Loot stage area */}
-                            <div className="relative z-10 mt-6 mb-2 flex items-end justify-center h-56">
+                            <div className="relative z-10 mt-6 mb-2 flex items-end justify-center h-44">
                                 {/* Vertical beam of light shooting up from the open loot */}
                                 <AnimatePresence>
                                     {isOpen && (
@@ -217,11 +217,11 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                                             transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
                                             className="pointer-events-none absolute"
                                             style={{
-                                                width: 70,
-                                                height: 190,
-                                                bottom: 40,
+                                                width: 54,
+                                                height: 145,
+                                                bottom: 30,
                                                 left: '50%',
-                                                marginLeft: -35,
+                                                marginLeft: -27,
                                                 transformOrigin: 'bottom center',
                                                 background: `linear-gradient(to top, ${cfg.rayColor}66 0%, ${cfg.rayColor}22 45%, transparent 100%)`,
                                                 filter: 'blur(10px)',
@@ -239,7 +239,7 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                                             initial={{ scale: 0.3, opacity: 0.55 }}
                                             animate={{ scale: 2.4, opacity: 0 }}
                                             transition={{ duration: 0.55, ease: 'easeOut' }}
-                                            className="absolute w-32 h-32 rounded-full"
+                                            className="absolute w-24 h-24 rounded-full"
                                             style={{
                                                 background: `radial-gradient(circle, rgba(255,255,255,0.85) 0%, ${cfg.rayColor} 40%, transparent 70%)`,
                                                 filter: 'blur(12px)',
@@ -268,7 +268,7 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                                                 }}
                                                 style={{
                                                     position: 'absolute',
-                                                    bottom: 96,
+                                                    bottom: 70,
                                                     width: d.size,
                                                     height: d.size,
                                                     borderRadius: '50%',
@@ -280,8 +280,13 @@ export function RandomRewardModal({ reward, onClose }: RandomRewardModalProps) {
                                     </div>
                                 )}
 
-                                {/* THE LOOT — chest or pouch, plus shared open FX */}
-                                <div className="relative z-10 flex items-end justify-center h-full w-full">
+                                {/* THE LOOT — chest or pouch, plus shared open FX.
+                                    Art is authored at 180×170; scaled down here so the
+                                    loot reads as an object, not a full-width poster. */}
+                                <div
+                                    className="relative z-10 flex items-end justify-center h-full w-full"
+                                    style={{ transform: 'scale(0.72)', transformOrigin: 'bottom center' }}
+                                >
                                     <motion.div
                                         key="loot-container"
                                         initial={{ scale: 0.5, y: 30, opacity: 0 }}

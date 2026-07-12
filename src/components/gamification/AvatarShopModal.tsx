@@ -42,7 +42,7 @@ const CONFETTI_PARTICLES = Array.from({ length: 16 }, (_, i) => ({
     y: -(Math.random() * 100 + 30),
     rotation: Math.random() * 720 - 360,
     scale: Math.random() * 0.4 + 0.6,
-    color: ['#FFD700', '#FF6B6B', '#4ECDC4', '#A855F7', '#3B82F6', '#F59E0B'][Math.floor(Math.random() * 6)],
+    color: ['#f6e7bd', '#e7cd8f', '#d3ae66', '#f2f4f8', '#c6cdd8', '#ffffff'][Math.floor(Math.random() * 6)],
     delay: Math.random() * 0.2,
 }));
 
