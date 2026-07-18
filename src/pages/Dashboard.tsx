@@ -14,6 +14,7 @@ import { CompletionFeedback, CompletionFeedbackData } from '../components/gamifi
 import { DailyRevealCard } from '../components/gamification/DailyRevealCard';
 import { MoodCheckIn } from '../components/gamification/MoodCheckIn';
 import { MilestoneShareOverlay } from '../components/gamification/MilestoneShareOverlay';
+import { DayRecapShareModal } from '../components/gamification/DayRecapShareModal';
 import { ConfettiBurst } from '../components/gamification/ConfettiBurst';
 import { TodayScoreCard } from '../components/gamification/TodayScoreCard';
 import { QuestCoach } from '../components/coach/QuestCoach';
@@ -27,6 +28,8 @@ import { QuickRituals } from '../components/tasks/QuickRituals';
 import { Task, RandomReward } from '../types';
 import { completeTaskTransaction } from '../lib/taskCompletion';
 import { toLocalDateKey } from '../lib/dates';
+import { slugifyHandle } from '../lib/shareCard';
+import { useFocusSessionStore } from '../stores/focusSessionStore';
 import { parseQuickInput, formatDeadlineChip } from '../lib/quickParse';
 import { updateNotificationStats, syncTaskReminders } from '../lib/notificationSync';
 import { DAILY_CHEST_XP, DAILY_CHEST_COINS } from '../stores/missionStore';
@@ -86,10 +89,11 @@ export function Dashboard() {
             quickParsed.tags.length > 0)
     );
 
-    const { displayName, dailyMissionsEnabled } = useUserStore(
+    const { displayName, dailyMissionsEnabled, moodLog } = useUserStore(
         useShallow((state) => ({
             displayName: state.displayName,
             dailyMissionsEnabled: state.settings.dailyMissionsEnabled,
+            moodLog: state.moodLog,
         }))
     );
     const { tasks, completions, addTask, updateTask, deleteTask } = useTaskStore(
@@ -140,6 +144,13 @@ export function Dashboard() {
             .slice(0, TODAY_PREVIEW_LIMIT);
     }, [todayTasks]);
     const completionsToday = useMemo(() => getCompletionsToday(completions), [completions]);
+    const [showDayRecap, setShowDayRecap] = useState(false);
+    const focusMinutesToday = useFocusSessionStore((s) => s.getTodayMinutes());
+    const xpToday = useMemo(
+        () => completionsToday.reduce((sum, c) => sum + c.xpEarned, 0),
+        [completionsToday]
+    );
+    const todayMood = moodLog[toLocalDateKey(new Date())] ?? null;
 
     const missionsForToday = useMemo(() => {
         const today = toLocalDateKey(new Date());
@@ -493,7 +504,10 @@ export function Dashboard() {
             <section className="mb-6 animate-rise" style={{ animationDelay: '180ms' }}>
                 <h2 className="section-label mb-2.5">Today</h2>
                 <div className="space-y-3">
-                    <TodayScoreCard onAskCoach={() => { setCoachPrompt(undefined); setShowCoach(true); }} />
+                    <TodayScoreCard
+                        onAskCoach={() => { setCoachPrompt(undefined); setShowCoach(true); }}
+                        onShareDay={() => setShowDayRecap(true)}
+                    />
                     <FocusLauncher />
                     <VitalsStrip onOpenRituals={() => setShowRituals(true)} />
                     <MoodCheckIn />
@@ -684,6 +698,19 @@ export function Dashboard() {
             />
 
             <QuestCoach isOpen={showCoach} onClose={() => setShowCoach(false)} autoPrompt={coachPrompt} />
+
+            <DayRecapShareModal
+                isOpen={showDayRecap}
+                onClose={() => setShowDayRecap(false)}
+                quests={completionsToday.length}
+                goal={dailyGoal}
+                xpToday={xpToday}
+                focusMin={focusMinutesToday}
+                streak={streakCurrent}
+                mood={todayMood}
+                username={displayName || 'Quester'}
+                handle={slugifyHandle(displayName || 'hero')}
+            />
 
             <BrainDumpModal isOpen={showBrainDump} onClose={() => setShowBrainDump(false)} />
 

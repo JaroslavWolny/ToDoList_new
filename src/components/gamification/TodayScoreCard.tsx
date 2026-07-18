@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, TrendingUp, TrendingDown, Minus, Timer } from 'lucide-react';
+import { Sparkles, TrendingUp, TrendingDown, Minus, Timer, Share2 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useUserStore } from '../../stores/userStore';
 import { getCompletionsToday, useTaskStore } from '../../stores/taskStore';
@@ -20,9 +20,10 @@ const reasonClasses: Record<FocusReason['tone'], string> = {
 
 interface TodayScoreCardProps {
     onAskCoach: () => void;
+    onShareDay?: () => void;
 }
 
-export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach }: TodayScoreCardProps) {
+export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach, onShareDay }: TodayScoreCardProps) {
     const { health, maxHealth, streakCurrent, dailyGoal } = useUserStore(
         useShallow((s) => ({
             health: s.health,
@@ -178,17 +179,30 @@ export const TodayScoreCard = memo(function TodayScoreCard({ onAskCoach }: Today
                 </div>
             )}
 
-            {/* ── Ask coach — full-width CTA so it sits evenly across the card
-                   instead of being jammed against the right edge. ── */}
-            <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={onAskCoach}
-                className="mt-3 w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold text-white fab-primary active:scale-[0.99] transition-transform"
-                aria-label="Ask the AI coach"
-            >
-                <Sparkles className="w-3.5 h-3.5" strokeWidth={2.6} />
-                Ask coach
-            </motion.button>
+            {/* ── Ask coach (+ Share day once something's done) — even CTA row
+                   instead of a button jammed against the right edge. ── */}
+            <div className="mt-3 flex gap-2">
+                <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={onAskCoach}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold text-white fab-primary active:scale-[0.99] transition-transform"
+                    aria-label="Ask the AI coach"
+                >
+                    <Sparkles className="w-3.5 h-3.5" strokeWidth={2.6} />
+                    Ask coach
+                </motion.button>
+                {onShareDay && completedToday > 0 && (
+                    <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        onClick={onShareDay}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 active:scale-[0.99] transition-transform"
+                        aria-label="Share today's recap"
+                    >
+                        <Share2 className="w-3.5 h-3.5" strokeWidth={2.6} />
+                        Share day
+                    </motion.button>
+                )}
+            </div>
         </div>
     );
 });

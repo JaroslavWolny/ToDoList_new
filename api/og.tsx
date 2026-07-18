@@ -27,11 +27,214 @@ function getStreakEmoji(streak: number): string {
     return '🌱';
 }
 
+const MOOD_EMOJI: Record<string, string> = {
+    '1': '😫',
+    '2': '😕',
+    '3': '😐',
+    '4': '🙂',
+    '5': '🔥',
+};
+
+function getRecapLine(quests: number, goal: number): string {
+    if (goal > 0 && quests >= goal * 2) return 'ABSOLUTELY UNHINGED';
+    if (goal > 0 && quests >= goal) return 'DAILY GOAL DESTROYED';
+    if (quests >= 1) return 'PROGRESS OVER PERFECTION';
+    return 'TOMORROW WE RIDE';
+}
+
+// 1080x1920 (9:16) end-of-day recap card for Instagram Stories
+function renderDailyRecap(searchParams: URLSearchParams): ImageResponse {
+    const username = searchParams.get('username') || 'Quester';
+    const handle = (searchParams.get('handle') || '').replace(/[^a-z0-9-]/gi, '').slice(0, 24) || 'hero';
+    const quests = parseInt(searchParams.get('quests') || '0', 10);
+    const goal = parseInt(searchParams.get('goal') || '0', 10);
+    const xpToday = parseInt(searchParams.get('xpToday') || '0', 10);
+    const focusMin = parseInt(searchParams.get('focusMin') || '0', 10);
+    const streak = parseInt(searchParams.get('streak') || '0', 10);
+    const mood = MOOD_EMOJI[searchParams.get('mood') || ''] || '';
+    const dateLabel = (searchParams.get('date') || '').slice(0, 24);
+
+    const requestedWidth = parseInt(searchParams.get('w') || '1080', 10);
+    const requestedHeight = parseInt(searchParams.get('h') || '1920', 10);
+    const imageWidth = Number.isFinite(requestedWidth) ? Math.min(Math.max(requestedWidth, 720), 1440) : 1080;
+    const imageHeight = Number.isFinite(requestedHeight) ? Math.min(Math.max(requestedHeight, 1280), 3200) : 1920;
+    const u = (value: number) => `${Math.round((value * imageWidth) / 1080)}px`;
+
+    const goalHit = goal > 0 && quests >= goal;
+    const accentColor = goalHit ? '#ffcb46' : '#22d3ee';
+    const accentGlow = goalHit ? 'rgba(255, 203, 70, 0.35)' : 'rgba(34, 211, 238, 0.35)';
+    const bgMain = goalHit
+        ? 'linear-gradient(160deg, #0b0a08 0%, #14110a 50%, #08070a 100%)'
+        : 'linear-gradient(160deg, #0b0d12 0%, #0d141c 50%, #0a0c11 100%)';
+    const meshOverlay = goalHit
+        ? 'radial-gradient(ellipse at 25% 18%, rgba(255, 203, 70, 0.08) 0%, transparent 55%), radial-gradient(ellipse at 75% 82%, rgba(255, 168, 50, 0.05) 0%, transparent 55%)'
+        : 'radial-gradient(ellipse at 25% 18%, rgba(34, 211, 238, 0.08) 0%, transparent 55%), radial-gradient(ellipse at 75% 82%, rgba(56, 189, 248, 0.05) 0%, transparent 55%)';
+
+    const stats: { label: string; value: string; icon: string }[] = [
+        { label: 'XP EARNED', value: `+${xpToday}`, icon: '⚡' },
+        { label: 'FOCUS MIN', value: `${focusMin}`, icon: '⏱️' },
+        { label: 'DAY STREAK', value: `${streak}`, icon: '🔥' },
+        ...(mood ? [{ label: 'TODAY FELT', value: mood, icon: '' }] : []),
+    ];
+
+    return new ImageResponse(
+        (
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    width: `${imageWidth}px`,
+                    height: `${imageHeight}px`,
+                    background: bgMain,
+                    position: 'relative',
+                    color: 'white',
+                    boxSizing: 'border-box',
+                    overflow: 'hidden',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: `${u(120)} ${u(80)}`,
+                }}
+            >
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: meshOverlay,
+                        display: 'flex',
+                    }}
+                />
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        opacity: 0.03,
+                        background: 'repeating-linear-gradient(0deg, white 0px, transparent 1px, transparent 3px)',
+                        display: 'flex',
+                    }}
+                />
+
+                {/* Header: brand + date */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: u(24) }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: u(10) }}>
+                        <div style={{ display: 'flex', width: u(8), height: u(8), borderRadius: '50%', background: accentColor }} />
+                        <div style={{ display: 'flex', fontSize: u(30), fontWeight: '900', letterSpacing: u(8), color: 'rgba(255,255,255,0.7)' }}>
+                            QUESTDO
+                        </div>
+                        <div style={{ display: 'flex', width: u(8), height: u(8), borderRadius: '50%', background: accentColor }} />
+                    </div>
+                    {dateLabel ? (
+                        <div
+                            style={{
+                                display: 'flex',
+                                padding: `${u(12)} ${u(28)}`,
+                                borderRadius: u(100),
+                                border: `${u(1)} solid rgba(255,255,255,0.14)`,
+                                background: 'rgba(255,255,255,0.05)',
+                                fontSize: u(26),
+                                fontWeight: '700',
+                                letterSpacing: u(4),
+                                color: 'rgba(255,255,255,0.75)',
+                            }}
+                        >
+                            {dateLabel.toUpperCase()}
+                        </div>
+                    ) : null}
+                </div>
+
+                {/* Hero: quests crushed today */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: u(6) }}>
+                    <div
+                        style={{
+                            display: 'flex',
+                            fontSize: u(340),
+                            fontWeight: '900',
+                            lineHeight: 1,
+                            color: accentColor,
+                            textShadow: `0 0 ${u(80)} ${accentGlow}`,
+                        }}
+                    >
+                        {quests}
+                    </div>
+                    <div style={{ display: 'flex', fontSize: u(44), fontWeight: '900', letterSpacing: u(10), color: 'white' }}>
+                        QUESTS CRUSHED
+                    </div>
+                    <div style={{ display: 'flex', marginTop: u(18), fontSize: u(30), fontWeight: '700', letterSpacing: u(4), color: accentColor }}>
+                        {getRecapLine(quests, goal)}
+                    </div>
+                </div>
+
+                {/* Stats row */}
+                <div style={{ display: 'flex', gap: u(20), width: '100%', justifyContent: 'center' }}>
+                    {stats.map((stat) => (
+                        <div
+                            key={stat.label}
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: u(10),
+                                padding: `${u(28)} ${u(30)}`,
+                                borderRadius: u(28),
+                                border: `${u(1)} solid rgba(255,255,255,0.1)`,
+                                background: 'linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 100%)',
+                                minWidth: u(200),
+                            }}
+                        >
+                            <div style={{ display: 'flex', fontSize: u(52), fontWeight: '900', color: 'white' }}>
+                                {stat.icon ? `${stat.icon} ` : ''}{stat.value}
+                            </div>
+                            <div style={{ display: 'flex', fontSize: u(20), fontWeight: '700', letterSpacing: u(3), color: 'rgba(255,255,255,0.55)' }}>
+                                {stat.label}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Footer: player + referral */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: u(16) }}>
+                    <div style={{ display: 'flex', fontSize: u(30), fontWeight: '800', color: 'rgba(255,255,255,0.85)' }}>
+                        {username}
+                    </div>
+                    <div
+                        style={{
+                            display: 'flex',
+                            padding: `${u(14)} ${u(30)}`,
+                            borderRadius: u(100),
+                            background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%)',
+                            border: `${u(1)} solid ${accentColor}55`,
+                            fontSize: u(26),
+                            fontWeight: '700',
+                            letterSpacing: u(1),
+                            color: 'white',
+                        }}
+                    >
+                        questdo.app/from/{handle}
+                    </div>
+                </div>
+            </div>
+        ),
+        {
+            width: imageWidth,
+            height: imageHeight,
+        }
+    );
+}
+
 // Vercel OG API Endpoint
 // Generates a 1080x1920 (9:16) collectible share card for Instagram Stories
 export default function handler(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
+
+        if (searchParams.get('variant') === 'daily') {
+            return renderDailyRecap(searchParams);
+        }
 
         const username = searchParams.get('username') || 'Quester';
         const currentStreak = parseInt(searchParams.get('streak') || '0', 10);
