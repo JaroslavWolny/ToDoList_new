@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Calendar, Lock, Repeat, Zap, AlertTriangle, Flame, Shield, Check, X, Rocket, Target, CalendarClock, Tags } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Calendar, Lock, Repeat, Zap, AlertTriangle, Flame, Shield, Check, X, Rocket, Target, CalendarClock, Tags, Clock } from 'lucide-react';
 import { Task, Priority, Recurrence } from '../../types';
 import { toDateTimeLocalInputValue } from '../../lib/dates';
 
@@ -73,6 +73,7 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
     const [deadline, setDeadline] = useState(toDateTimeLocalInputValue(editTask?.deadline ?? null));
     const [startDate, setStartDate] = useState(toDateTimeLocalInputValue(editTask?.startDate ?? null));
     const [recurrence, setRecurrence] = useState<Recurrence>(editTask?.recurrence || 'NONE');
+    const [plannedTime, setPlannedTime] = useState(editTask?.plannedTime ?? '');
     const [tagInput, setTagInput] = useState('');
     const [tags, setTags] = useState<string[]>(editTask?.tags || []);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -114,10 +115,11 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                 startDate: toISOOrNull(startDate),
                 recurrence,
                 tags,
+                plannedTime: plannedTime || null,
             });
             onClose();
         }, 500);
-    }, [title, description, priority, deadline, startDate, recurrence, tags, onSubmit, onClose]);
+    }, [title, description, priority, deadline, startDate, recurrence, tags, plannedTime, onSubmit, onClose]);
 
     const addTag = useCallback(() => {
         const trimmed = tagInput.trim();
@@ -428,6 +430,26 @@ export function TaskForm({ onSubmit, onClose, editTask }: TaskFormProps) {
                                                 type="datetime-local"
                                                 value={deadline}
                                                 onChange={(e) => setDeadline(e.target.value)}
+                                                className="w-full box-border bg-transparent border-none outline-none appearance-none font-medium"
+                                                style={{ fontSize: 15, height: 50, paddingLeft: 16, paddingRight: 16 }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Planned time (today's time-block) */}
+                                    <div className="w-full">
+                                        <label className="flex items-center font-semibold" style={{ gap: 8, fontSize: 15, marginBottom: 4 }}>
+                                            <Clock className="text-cyan-500" style={{ width: 18, height: 18 }} />
+                                            Plan for
+                                        </label>
+                                        <p className="text-[var(--color-text-secondary)]" style={{ fontSize: 12, marginBottom: 8 }}>
+                                            Time-block this quest into today&apos;s plan
+                                        </p>
+                                        <div className="card-surface rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-primary-500/50 transition-all">
+                                            <input
+                                                type="time"
+                                                value={plannedTime}
+                                                onChange={(e) => setPlannedTime(e.target.value)}
                                                 className="w-full box-border bg-transparent border-none outline-none appearance-none font-medium"
                                                 style={{ fontSize: 15, height: 50, paddingLeft: 16, paddingRight: 16 }}
                                             />

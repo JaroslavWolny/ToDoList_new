@@ -167,7 +167,7 @@ const COMPLETIONS_MAX_AGE_MS = 180 * DAY_MS; // ~6 months
 interface TaskStore {
     tasks: Task[];
     completions: Completion[];
-    addTask: (task: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate' | 'lastPenaltyAt'>) => Task;
+    addTask: (task: Omit<Task, 'id' | 'createdAt' | 'completedAt' | 'status' | 'lastResetDate' | 'lastPenaltyAt' | 'plannedTime'> & { plannedTime?: string | null }) => Task;
     updateTask: (id: string, updates: Partial<Task>) => void;
     deleteTask: (id: string) => void;
     completeTask: (id: string) => { xpEarned: number; comboMultiplier: number; reward: RandomReward | null; appliedBuff: DailyThemeId | null } | null;
@@ -192,6 +192,7 @@ export const useTaskStore = create<TaskStore>()(
                 const newTask: Task = {
                     id: uuidv4(),
                     ...taskData,
+                    plannedTime: taskData.plannedTime ?? null,
                     status: 'ACTIVE',
                     createdAt: new Date().toISOString(),
                     completedAt: null,

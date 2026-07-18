@@ -22,6 +22,8 @@ export interface Task {
     completedAt: string | null;
     lastResetDate: string | null;
     lastPenaltyAt: string | null;
+    /** "HH:MM" local time the player plans to work on this quest today (time-blocking) */
+    plannedTime: string | null;
 }
 
 export interface Completion {

@@ -22,6 +22,7 @@ import { FocusLauncher } from '../components/focus/FocusLauncher';
 import { BrainDumpModal } from '../components/tasks/BrainDumpModal';
 import { WeeklyReview } from '../components/coach/WeeklyReview';
 import { TaskList } from '../components/tasks/TaskList';
+import { DayPlanTimeline } from '../components/tasks/DayPlanTimeline';
 import { QuickRituals } from '../components/tasks/QuickRituals';
 import { Task, RandomReward } from '../types';
 import { completeTaskTransaction } from '../lib/taskCompletion';
@@ -496,6 +497,7 @@ export function Dashboard() {
                     <FocusLauncher />
                     <VitalsStrip onOpenRituals={() => setShowRituals(true)} />
                     <MoodCheckIn />
+                    <DayPlanTimeline onEdit={handleEditTask} />
                     <DailyRevealCard />
                 </div>
             </section>

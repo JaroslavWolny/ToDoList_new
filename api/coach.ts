@@ -40,7 +40,7 @@ type CoachContext = {
     focusTier?: string;
     focusMinutesToday?: number;
     moodToday?: number | null;
-    todayTasks?: { title: string; priority: string; deadline: string | null; overdue: boolean }[];
+    todayTasks?: { title: string; priority: string; deadline: string | null; overdue: boolean; plannedTime?: string | null }[];
 };
 
 type CoachPayload = {
@@ -62,7 +62,8 @@ Rules:
 - If there are no tasks or no data, gently nudge them to add a quest or two.
 - Adapt to "mainMotivation" in the player JSON: FOCUS → push priorities, DECLUTTER → help them clear volume, HABITS → reinforce routines, REWARDS → lean into XP/loot framing.
 - If mainMotivation is "ADHD", coach for an ADHD brain: lead with ONE tiny, concrete next step to beat overwhelm; suggest a 2-minute start or a focus session to body-double; externalize (brain dump) when they spiral; celebrate starting, and never shame a missed day or broken streak — frame it as recoverable.
-- "moodToday" is the player's self-reported energy (1 = drained … 5 = on fire, null = not logged). At 1-2, soften the tone and shrink the plan to one small quest; at 4-5, push ambition — suggest tackling the hardest quest or a long focus session.`;
+- "moodToday" is the player's self-reported energy (1 = drained … 5 = on fire, null = not logged). At 1-2, soften the tone and shrink the plan to one small quest; at 4-5, push ambition — suggest tackling the hardest quest or a long focus session.
+- Quests may carry "plannedTime" ("HH:MM"), the player's time-block for today. When planning a day, respect existing time-blocks, point out clashes with deadlines, and suggest concrete times for unplanned quests.`;
 
 const PERSONALITY_PROMPTS: Record<CoachPersonality, string> = {
     MENTOR:
@@ -110,6 +111,7 @@ const buildContextBlock = (context: unknown): string => {
                 priority: String(t.priority ?? 'MEDIUM'),
                 deadline: t.deadline ?? null,
                 overdue: Boolean(t.overdue),
+                plannedTime: t.plannedTime ?? null,
             }))
             : [],
     };

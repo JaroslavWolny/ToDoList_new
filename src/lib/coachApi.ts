@@ -32,7 +32,7 @@ export interface CoachContext {
     focusMinutesToday: number;
     /** Today's mood check-in, 1 (drained) to 5 (on fire), null if not logged */
     moodToday: number | null;
-    todayTasks: { title: string; priority: string; deadline: string | null; overdue: boolean }[];
+    todayTasks: { title: string; priority: string; deadline: string | null; overdue: boolean; plannedTime: string | null }[];
 }
 
 /**
@@ -87,6 +87,7 @@ export const buildCoachContext = (now = new Date()): CoachContext => {
             priority: t.priority,
             deadline: t.deadline,
             overdue: overdueIds.has(t.id),
+            plannedTime: t.plannedTime ?? null,
         })),
     };
 };
