@@ -5,6 +5,7 @@ import { useUserStore } from '../stores/userStore';
 import { useAchievementStore } from '../stores/achievementStore';
 import { HeatmapCalendar } from '../components/stats/HeatmapCalendar';
 import { XPChart } from '../components/stats/XPChart';
+import { MoodTrendChart } from '../components/stats/MoodTrendChart';
 import { AchievementGrid } from '../components/stats/AchievementGrid';
 import { WeeklyReview } from '../components/coach/WeeklyReview';
 import { Flame, Zap, CheckCircle2, Trophy, CalendarDays, Sparkles, ChevronRight } from 'lucide-react';
@@ -109,6 +110,11 @@ export function Stats() {
             {/* XP Chart */}
             <div className="mb-6">
                 <XPChart days={14} />
+            </div>
+
+            {/* Vibe Trend (hidden until mood check-ins accumulate) */}
+            <div className="mb-6">
+                <MoodTrendChart days={14} />
             </div>
 
             {/* Achievements */}
