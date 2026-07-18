@@ -6,6 +6,7 @@ export type ThemeMode = 'LIGHT' | 'DARK' | 'AUTO';
 export type WorkStyle = 'MORNING' | 'NIGHT' | 'FLEXIBLE';
 export type MoodLevel = 1 | 2 | 3 | 4 | 5;
 export type MainMotivation = 'FOCUS' | 'DECLUTTER' | 'HABITS' | 'REWARDS' | 'ADHD';
+export type CoachPersonality = 'MENTOR' | 'DRILL_SERGEANT' | 'HYPE_FRIEND' | 'STRATEGIST';
 
 export interface Task {
     id: string;
@@ -62,6 +63,7 @@ export interface Penalty {
 
 export interface UserSettings {
     mainMotivation: MainMotivation;
+    coachPersonality: CoachPersonality;
     dailyGoal: number;
     gamificationLevel: GamificationLevel;
     theme: ThemeMode;

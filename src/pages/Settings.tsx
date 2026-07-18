@@ -10,7 +10,7 @@ import {
 } from '../lib/notificationSync';
 import { AccountSection } from '../components/account/AccountSection';
 import { Moon, Sun, Smartphone, Download, Trash2, Shield, Snowflake, Bell, BellOff, Upload, AlertTriangle, CheckCircle, XCircle, Info, X } from 'lucide-react';
-import { GamificationLevel, ThemeMode } from '../types';
+import { CoachPersonality, GamificationLevel, ThemeMode } from '../types';
 import { toLocalDateKey } from '../lib/dates';
 import {
     DEFAULT_NOTIFICATION_EVENING,
@@ -101,6 +101,13 @@ export function Settings() {
         { value: 'CASUAL', label: 'Casual', desc: 'Light penalties, relaxed' },
         { value: 'STANDARD', label: 'Standard', desc: 'Balanced challenge' },
         { value: 'HARDCORE', label: 'Hardcore', desc: 'Heavy penalties, no freezes' },
+    ];
+
+    const personalityOptions: { value: CoachPersonality; label: string; desc: string }[] = [
+        { value: 'MENTOR', label: 'Mentor', desc: 'Calm and wise, explains the why' },
+        { value: 'DRILL_SERGEANT', label: 'Drill Sergeant', desc: 'Hard push, zero excuses' },
+        { value: 'HYPE_FRIEND', label: 'Hype Friend', desc: 'Big energy, celebrates every win' },
+        { value: 'STRATEGIST', label: 'Strategist', desc: 'Numbers first, optimal plays' },
     ];
 
     const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -297,6 +304,35 @@ export function Settings() {
                                     <p className="text-xs text-[var(--color-text-secondary)]">{opt.desc}</p>
                                 </div>
                                 {settings.gamificationLevel === opt.value && (
+                                    <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center">
+                                        <Shield className="w-3.5 h-3.5 text-white" />
+                                    </div>
+                                )}
+                            </div>
+                        </motion.button>
+                    ))}
+                </div>
+            </Section>
+
+            {/* Coach Personality */}
+            <Section title="Quest Coach">
+                <div className="space-y-2">
+                    {personalityOptions.map((opt) => (
+                        <motion.button
+                            key={opt.value}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => updateSettings({ coachPersonality: opt.value })}
+                            className={`w-full text-left p-3 rounded-xl transition-all ${settings.coachPersonality === opt.value
+                                ? 'bg-cyan-500/10 border-2 border-cyan-500/40'
+                                : 'glass-card'
+                                }`}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-bold">{opt.label}</p>
+                                    <p className="text-xs text-[var(--color-text-secondary)]">{opt.desc}</p>
+                                </div>
+                                {settings.coachPersonality === opt.value && (
                                     <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center">
                                         <Shield className="w-3.5 h-3.5 text-white" />
                                     </div>

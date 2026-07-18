@@ -19,9 +19,12 @@ const MAX_HISTORY = 12;
 
 type ChatTurn = { role: 'user' | 'assistant'; content: string };
 
+type CoachPersonality = 'MENTOR' | 'DRILL_SERGEANT' | 'HYPE_FRIEND' | 'STRATEGIST';
+
 type CoachContext = {
     displayName?: string;
     mainMotivation?: string;
+    coachPersonality?: string;
     level?: number;
     xp?: number;
     health?: number;
@@ -60,6 +63,23 @@ Rules:
 - Adapt to "mainMotivation" in the player JSON: FOCUS → push priorities, DECLUTTER → help them clear volume, HABITS → reinforce routines, REWARDS → lean into XP/loot framing.
 - If mainMotivation is "ADHD", coach for an ADHD brain: lead with ONE tiny, concrete next step to beat overwhelm; suggest a 2-minute start or a focus session to body-double; externalize (brain dump) when they spiral; celebrate starting, and never shame a missed day or broken streak — frame it as recoverable.
 - "moodToday" is the player's self-reported energy (1 = drained … 5 = on fire, null = not logged). At 1-2, soften the tone and shrink the plan to one small quest; at 4-5, push ambition — suggest tackling the hardest quest or a long focus session.`;
+
+const PERSONALITY_PROMPTS: Record<CoachPersonality, string> = {
+    MENTOR:
+        'Persona: calm, wise mentor. Steady encouragement, explain the WHY behind each nudge, teach the player to see their own patterns.',
+    DRILL_SERGEANT:
+        'Persona: drill sergeant. Short, commanding sentences. No tolerance for excuses — call them out and demand the next rep ("Quest. Now."). Tough love only: never insulting, demeaning or personal.',
+    HYPE_FRIEND:
+        'Persona: hype best friend. Big energy, celebrate every win loudly, playful tone; up to two emoji per reply allowed.',
+    STRATEGIST:
+        'Persona: cool-headed strategist. Lead with the numbers (XP math, streak risk, focus stats), rank moves by expected payoff, keep pep talk minimal.',
+};
+
+const pickPersonality = (context: unknown): CoachPersonality => {
+    if (typeof context !== 'object' || context === null) return 'MENTOR';
+    const p = (context as CoachContext).coachPersonality;
+    return p && p in PERSONALITY_PROMPTS ? (p as CoachPersonality) : 'MENTOR';
+};
 
 const getString = (value: unknown): string | null =>
     typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
@@ -143,7 +163,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 'x-goog-api-key': apiKey,
             },
             body: JSON.stringify({
-                system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+                system_instruction: {
+                    parts: [{ text: `${SYSTEM_PROMPT}\n\n${PERSONALITY_PROMPTS[pickPersonality(body.context)]}` }],
+                },
                 contents,
                 generationConfig: {
                     temperature: 0.7,
