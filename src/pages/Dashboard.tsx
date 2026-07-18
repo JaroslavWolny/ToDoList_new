@@ -163,6 +163,12 @@ export function Dashboard() {
     );
     const allMissionsDone = missionsForToday.length > 0 && missionsCompleted === missionsForToday.length;
 
+    // Once every mission is done the full list is just noise — collapse it to
+    // the progress bar (manual expand still works via the section header).
+    useEffect(() => {
+        if (allMissionsDone) setMissionsExpanded(false);
+    }, [allMissionsDone]);
+
     const tasksDueSoon = useMemo(() => {
         // eslint-disable-next-line react-hooks/purity -- "now" is intentionally read at compute time
         const now = Date.now();

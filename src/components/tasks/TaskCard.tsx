@@ -172,12 +172,13 @@ export const TaskCard = memo(function TaskCard({ task, onComplete, onDelete, onE
                 </div>
 
                 {task.status === 'ACTIVE' && (
-                    <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-0.5 self-center">
                         <motion.button
                             whileHover={{ scale: 1.12 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={() => onEdit(task)}
-                            className="p-1.5 rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-text)] hover:bg-white/5"
+                            aria-label="Edit quest"
+                            className="p-2 rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-text)] hover:bg-white/5"
                         >
                             <Edit3 className="w-3.5 h-3.5" />
                         </motion.button>
@@ -185,7 +186,8 @@ export const TaskCard = memo(function TaskCard({ task, onComplete, onDelete, onE
                             whileHover={{ scale: 1.12 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={() => onDelete(task.id)}
-                            className="p-1.5 rounded-lg text-[var(--color-text-tertiary)] hover:text-red-400 hover:bg-red-500/10"
+                            aria-label="Delete quest"
+                            className="p-2 rounded-lg text-[var(--color-text-tertiary)] hover:text-red-400 hover:bg-red-500/10"
                         >
                             <Trash2 className="w-3.5 h-3.5" />
                         </motion.button>
