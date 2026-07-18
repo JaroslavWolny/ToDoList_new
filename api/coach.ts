@@ -36,6 +36,7 @@ type CoachContext = {
     focusScore?: number;
     focusTier?: string;
     focusMinutesToday?: number;
+    moodToday?: number | null;
     todayTasks?: { title: string; priority: string; deadline: string | null; overdue: boolean }[];
 };
 
@@ -57,7 +58,8 @@ Rules:
 - Encouraging but never cheesy or fake. No emoji spam (one is fine). No markdown headings.
 - If there are no tasks or no data, gently nudge them to add a quest or two.
 - Adapt to "mainMotivation" in the player JSON: FOCUS → push priorities, DECLUTTER → help them clear volume, HABITS → reinforce routines, REWARDS → lean into XP/loot framing.
-- If mainMotivation is "ADHD", coach for an ADHD brain: lead with ONE tiny, concrete next step to beat overwhelm; suggest a 2-minute start or a focus session to body-double; externalize (brain dump) when they spiral; celebrate starting, and never shame a missed day or broken streak — frame it as recoverable.`;
+- If mainMotivation is "ADHD", coach for an ADHD brain: lead with ONE tiny, concrete next step to beat overwhelm; suggest a 2-minute start or a focus session to body-double; externalize (brain dump) when they spiral; celebrate starting, and never shame a missed day or broken streak — frame it as recoverable.
+- "moodToday" is the player's self-reported energy (1 = drained … 5 = on fire, null = not logged). At 1-2, soften the tone and shrink the plan to one small quest; at 4-5, push ambition — suggest tackling the hardest quest or a long focus session.`;
 
 const getString = (value: unknown): string | null =>
     typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;

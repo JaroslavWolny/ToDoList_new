@@ -4,6 +4,7 @@ export type Recurrence = 'NONE' | 'DAILY' | 'WEEKLY';
 export type GamificationLevel = 'CASUAL' | 'STANDARD' | 'HARDCORE';
 export type ThemeMode = 'LIGHT' | 'DARK' | 'AUTO';
 export type WorkStyle = 'MORNING' | 'NIGHT' | 'FLEXIBLE';
+export type MoodLevel = 1 | 2 | 3 | 4 | 5;
 export type MainMotivation = 'FOCUS' | 'DECLUTTER' | 'HABITS' | 'REWARDS' | 'ADHD';
 
 export interface Task {
@@ -115,6 +116,8 @@ export interface UserState {
     dailyThemeId: DailyThemeId | null;
     /** Last streak milestone (7/30/100/365) for which a share takeover was shown */
     lastSharedStreakMilestone: number;
+    /** Daily mood check-ins, keyed by YYYY-MM-DD (kept to recent entries) */
+    moodLog: Record<string, MoodLevel>;
 }
 
 export type AvatarRarity = 'STARTER' | 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY' | 'MYTHIC';

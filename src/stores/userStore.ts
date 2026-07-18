@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { UserState, UserSettings, DailyThemeId } from '../types';
+import { UserState, UserSettings, DailyThemeId, MoodLevel } from '../types';
 import { calculateLevel, calculateStreakBreakPenalty } from '../lib/gamification';
 import { pickRandomTheme } from '../lib/dailyThemes';
 import {
@@ -58,6 +58,7 @@ interface UserStore extends UserState {
     checkStreakOnLoad: () => void;
     revealDailyTheme: () => DailyThemeId;
     markStreakMilestoneShared: (milestone: number) => void;
+    logMood: (level: MoodLevel) => void;
 }
 
 const defaultSettings: UserSettings = {
@@ -96,7 +97,11 @@ const initialState: UserState = {
     lastRevealDate: null,
     dailyThemeId: null,
     lastSharedStreakMilestone: 0,
+    moodLog: {},
 };
+
+// Cap synced mood history so the Firestore user doc stays small.
+const MOOD_LOG_MAX_DAYS = 60;
 
 export const useUserStore = create<UserStore>()(
     persist(
@@ -309,6 +314,16 @@ export const useUserStore = create<UserStore>()(
                             : state.streakFreezeTokens,
                 }));
                 return themeId;
+            },
+
+            logMood: (level: MoodLevel) => {
+                const today = toDateOnlyString(new Date());
+                set((state) => {
+                    const entries = Object.entries({ ...state.moodLog, [today]: level })
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .slice(-MOOD_LOG_MAX_DAYS);
+                    return { moodLog: Object.fromEntries(entries) as Record<string, MoodLevel> };
+                });
             },
 
             markStreakMilestoneShared: (milestone: number) => {

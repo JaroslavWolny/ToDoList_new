@@ -12,6 +12,7 @@ import { XPBar } from '../components/gamification/XPBar';
 import { VitalsStrip } from '../components/gamification/VitalsStrip';
 import { CompletionFeedback, CompletionFeedbackData } from '../components/gamification/CompletionFeedback';
 import { DailyRevealCard } from '../components/gamification/DailyRevealCard';
+import { MoodCheckIn } from '../components/gamification/MoodCheckIn';
 import { MilestoneShareOverlay } from '../components/gamification/MilestoneShareOverlay';
 import { ConfettiBurst } from '../components/gamification/ConfettiBurst';
 import { TodayScoreCard } from '../components/gamification/TodayScoreCard';
@@ -494,6 +495,7 @@ export function Dashboard() {
                     <TodayScoreCard onAskCoach={() => { setCoachPrompt(undefined); setShowCoach(true); }} />
                     <FocusLauncher />
                     <VitalsStrip onOpenRituals={() => setShowRituals(true)} />
+                    <MoodCheckIn />
                     <DailyRevealCard />
                 </div>
             </section>

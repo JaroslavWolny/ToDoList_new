@@ -29,6 +29,8 @@ export interface CoachContext {
     focusScore: number;
     focusTier: string;
     focusMinutesToday: number;
+    /** Today's mood check-in, 1 (drained) to 5 (on fire), null if not logged */
+    moodToday: number | null;
     todayTasks: { title: string; priority: string; deadline: string | null; overdue: boolean }[];
 }
 
@@ -77,6 +79,7 @@ export const buildCoachContext = (now = new Date()): CoachContext => {
         focusScore: focus.score,
         focusTier: focus.tier.label,
         focusMinutesToday,
+        moodToday: user.moodLog[todayKey] ?? null,
         todayTasks: todayTasks.map((t) => ({
             title: t.title,
             priority: t.priority,

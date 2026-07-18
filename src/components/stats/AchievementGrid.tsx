@@ -49,6 +49,7 @@ export function AchievementGrid() {
             lastRevealDate: state.lastRevealDate,
             dailyThemeId: state.dailyThemeId,
             lastSharedStreakMilestone: state.lastSharedStreakMilestone,
+            moodLog: state.moodLog,
         }))
     );
     const completions = useTaskStore((state) => state.completions);
